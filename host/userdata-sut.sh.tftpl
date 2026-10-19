@@ -1,0 +1,40 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+#
+# User-data of the system under test (two-host topology), rendered by Terraform.
+# Prepares the host and signals readiness; the load generator drives the run.
+set -euo pipefail
+mkdir -p /var/log/vericto-bench /etc/vericto-bench
+exec > >(tee -a /var/log/vericto-bench/userdata.log) 2>&1
+
+# Runtime guard: whatever happens, this host stops after ${max_minutes} minutes.
+/usr/sbin/shutdown -h +${max_minutes} "vericto-bench runtime guard" || true
+
+fail() { echo "SUT setup failed at line $1" > /etc/vericto-bench/failed; }
+trap 'fail $LINENO' ERR
+
+cat > /etc/vericto-bench/run.env <<'ENV'
+RUN_ID=${run_id}
+SUITE=${suite}
+TOPOLOGY=${topology}
+ROLE=sut
+BUCKET=${bucket}
+REGION=${region}
+AUTO_SHUTDOWN=${auto_shutdown}
+PROXY_IMAGE_OVERRIDE=${proxy_image_override}
+ENV
+echo '${sut_authorized_key}' > /etc/vericto-bench/sut_authorized_key
+
+dnf -y -q install unzip >/dev/null
+aws s3 cp --only-show-errors --region ${region} s3://${bucket}/${harness_key} /var/tmp/harness.zip
+rm -rf /opt/vericto-bench && mkdir -p /opt/vericto-bench
+unzip -q /var/tmp/harness.zip -d /opt/vericto-bench
+rm -f /var/tmp/harness.zip
+chmod -R a+rX /opt/vericto-bench
+
+bash /opt/vericto-bench/host/setup.sh sut
+LIBRARY_MIRROR=public.ecr.aws/docker/library PROXY_FROM_MIRROR=1 bash /opt/vericto-bench/host/pull-images.sh
+chmod -R a+rX /var/log/vericto-bench
+touch /etc/vericto-bench/ready
+echo "SUT ready"

@@ -1,0 +1,14 @@
+# build and run artefacts
+/.build/
+/results/*
+!/results/README.md
+/target/
+engine-eval/target/
+# terraform
+terraform/aws/.terraform/
+terraform/aws/.build/
+*.tfstate
+*.tfstate.*
+*.tfplan
+__pycache__/
+*.pyc

@@ -1,0 +1,67 @@
+# Lint and unit tests on GitHub-hosted runners. Nothing here builds images,
+# pulls databases or touches AWS: the benchmark itself never runs in CI.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go (gofmt, vet, test -race)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+
+  python:
+    name: Python (runner and report tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: python -m py_compile runner/run.py runner/vbr/*.py analysis/*.py
+      - run: python -m unittest discover -s runner/tests -t runner -v
+      - run: python -m unittest discover -s analysis/tests -t analysis -v
+
+  shell-and-terraform:
+    name: Shell and Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: bash -n and shellcheck
+        run: |
+          for f in host/*.sh terraform/aws/*.sh compose/*.sh; do bash -n "$f"; done
+          shellcheck -S warning host/*.sh terraform/aws/*.sh compose/*.sh
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: "1.9.8"
+      - name: terraform fmt and validate (no backend, no AWS)
+        working-directory: terraform/aws
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false -input=false
+          terraform validate

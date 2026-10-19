@@ -1,0 +1,100 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+#
+# User-data of the host that runs the suite, rendered by Terraform: the load
+# generator (two-host) or the only host (single). Prepares the host, waits for
+# the SUT, runs the suite as user bench and always uploads results (finish.sh).
+set -euo pipefail
+mkdir -p /var/log/vericto-bench /etc/vericto-bench
+exec > >(tee -a /var/log/vericto-bench/userdata.log) 2>&1
+
+# Runtime guard: whatever happens, this host stops after ${max_minutes} minutes.
+/usr/sbin/shutdown -h +${max_minutes} "vericto-bench runtime guard" || true
+
+cat > /etc/vericto-bench/run.env <<'ENV'
+RUN_ID=${run_id}
+SUITE=${suite}
+TOPOLOGY=${topology}
+ROLE=${role}
+SUT_IP=${sut_ip}
+BUCKET=${bucket}
+REGION=${region}
+AUTO_SHUTDOWN=${auto_shutdown}
+PROXY_IMAGE_OVERRIDE=${proxy_image_override}
+ENV
+
+RC=1
+finish() {
+  if [ -x /opt/vericto-bench/host/finish.sh ]; then
+    /opt/vericto-bench/host/finish.sh "$RC"
+  else
+    # The harness never arrived: report the failure so nobody waits for results.
+    echo "run_id=${run_id} runner_exit=$RC harness=missing" > /var/tmp/FAILED
+    aws s3 cp --only-show-errors --region ${region} /var/tmp/FAILED s3://${bucket}/${run_id}/FAILED || true
+    aws s3 cp --only-show-errors --region ${region} /var/log/vericto-bench/userdata.log s3://${bucket}/${run_id}/userdata-${role}.log || true
+  fi
+}
+trap finish EXIT
+
+dnf -y -q install unzip >/dev/null
+aws s3 cp --only-show-errors --region ${region} s3://${bucket}/${harness_key} /var/tmp/harness.zip
+rm -rf /opt/vericto-bench && mkdir -p /opt/vericto-bench
+unzip -q /var/tmp/harness.zip -d /opt/vericto-bench
+rm -f /var/tmp/harness.zip
+chmod -R a+rX /opt/vericto-bench
+chmod +x /opt/vericto-bench/host/*.sh
+
+bash /opt/vericto-bench/host/setup.sh ${role}
+LIBRARY_MIRROR=public.ecr.aws/docker/library PROXY_FROM_MIRROR=1 bash /opt/vericto-bench/host/pull-images.sh
+
+if [ "${topology}" = "two-host" ]; then
+  # Key to reach the SUT (docker over SSH, hostmon stream). Never logged.
+  umask 077
+  aws ssm get-parameter --region ${region} --with-decryption --name '${ssh_param_name}' \
+    --query Parameter.Value --output text > /home/bench/.ssh/id_ed25519
+  umask 022
+  chown bench:bench /home/bench/.ssh/id_ed25519
+  chmod 0600 /home/bench/.ssh/id_ed25519
+  cat > /home/bench/.ssh/config <<'SSH'
+Host ${sut_ip}
+  User bench
+  IdentityFile ~/.ssh/id_ed25519
+  StrictHostKeyChecking accept-new
+  ServerAliveInterval 15
+  ControlMaster auto
+  ControlPath ~/.ssh/cm-%r@%h:%p
+  ControlPersist 10m
+SSH
+  chown bench:bench /home/bench/.ssh/config
+  chmod 0600 /home/bench/.ssh/config
+
+  echo "waiting for the SUT at ${sut_ip}"
+  ready=0
+  for _ in $(seq 1 120); do
+    set +e
+    sudo -u bench -H ssh -o BatchMode=yes -o ConnectTimeout=5 bench@${sut_ip} /opt/vericto-bench/host/ready.sh
+    st=$?
+    set -e
+    if [ "$st" = 0 ]; then ready=1; break; fi
+    if [ "$st" = 2 ]; then echo "the SUT reported a failed setup"; exit 1; fi
+    sleep 30
+  done
+  [ "$ready" = 1 ] || { echo "the SUT was not ready after 60 minutes"; exit 1; }
+  SUT_ARGS=(--sut-ssh bench@${sut_ip})
+else
+  SUT_ARGS=()
+fi
+
+mkdir -p /var/lib/vericto-bench/results/${run_id}
+chown bench:bench /var/lib/vericto-bench/results/${run_id}
+set +e
+sudo -u bench -H env RUN_ID=${run_id} LIBRARY_MIRROR=public.ecr.aws/docker/library PROXY_FROM_MIRROR=1 python3.11 /opt/vericto-bench/runner/run.py \
+  --suite /opt/vericto-bench/suites/${suite}.toml \
+  --topology ${topology} \
+  "$${SUT_ARGS[@]}" \
+  --out /var/lib/vericto-bench/results/${run_id} --report \
+  > /var/log/vericto-bench/runner.log 2>&1
+RC=$?
+set -e
+echo "runner exit $RC"
