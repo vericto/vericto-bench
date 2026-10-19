@@ -1,0 +1,179 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# SMOKE RUN: NOT FOR PUBLISHED NUMBERS. Every tool, target and workload family
+# once, in short cells, to prove the pipeline end to end (compose/smoke.sh).
+[suite]
+name = "smoke"
+profile = "smoke"
+order_seed = 20261019
+reps = 1
+warmup_s = 3
+duration_s = 15
+cooldown_s = 2
+interval_s = 5
+
+[datasets]
+pgbench_scale = 1
+sysbench_tables = 2
+sysbench_rows = 10000
+payload_rows = 2000
+
+# W1 headline shape: pgbench select-only, extended protocol, TLS, every PG target, open loop.
+[[curve]]
+id = "w1-pg-extended"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "pgbouncer-session", "vericto-offline", "vericto-enforce", "vericto-observe"]
+rates = [100]
+conns = 4
+
+# W3 headline shape: sysbench oltp_read_only replayed by vbench (text protocol), every MySQL target.
+[[curve]]
+id = "w3-my-ro"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "proxysql", "vericto-offline", "vericto-enforce", "vericto-observe"]
+rates = [20]
+
+# Closed-loop saturation (P-sat shape) feeding the next curve's rates.
+[[curve]]
+id = "sat-pg"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+loop = "closed"
+concurrency = [1, 2]
+duration_s = 8
+warmup_s = 2
+
+# W4 ORM mix at percentages of S from the closed-loop curve.
+[[curve]]
+id = "w4-pg-orm"
+engine = "pg"
+tool = "vbench"
+workload = "orm"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [5, 10]
+saturation_from = "sat-pg"
+
+# W8 large results, plain and masked (reduced rates, section 8a).
+[[curve]]
+id = "w8-pg-100k"
+engine = "pg"
+tool = "vbench"
+workload = "payload-100k"
+mode = "extended"
+tls = true
+targets = ["direct", "vericto-enforce"]
+rates = [5]
+
+[[curve]]
+id = "w8-pg-100k-masked"
+engine = "pg"
+tool = "vbench"
+workload = "payload-100k-masked"
+mode = "extended"
+tls = true
+targets = ["vericto-enforce"]
+rates = [5]
+
+# W5 size sweep point and W6 blocked statements.
+[[curve]]
+id = "w5-pg-batch100"
+engine = "pg"
+tool = "vbench"
+workload = "batch100"
+mode = "extended"
+tls = true
+targets = ["direct", "vericto-enforce"]
+rates = [10]
+conns = 1
+
+[[curve]]
+id = "w6-my-blocked"
+engine = "mysql"
+tool = "vbench"
+workload = "blocked-delete"
+mode = "text"
+tls = true
+targets = ["direct", "vericto-enforce", "vericto-observe"]
+rates = [20]
+
+# Two proxy tasks at 0.5 vCPU each.
+[[curve]]
+id = "h2-my-oltp"
+engine = "mysql"
+tool = "vbench"
+workload = "orm-oltp"
+mode = "text"
+tls = true
+size = "2x0.5"
+targets = ["vericto-enforce"]
+rates = [40]
+
+# sysbench closed loop (throughput only; TLS off: sysbench 1.0.20 cannot do unverified TLS; point selects so that a
+# laptop's closed loop stays under the traffic caps) and W7 connection setup.
+[[curve]]
+id = "sat-my-sysbench"
+engine = "mysql"
+tool = "sysbench"
+workload = "oltp_point_select"
+tls = false
+targets = ["direct", "proxysql"]
+loop = "closed"
+concurrency = [2]
+duration_s = 8
+warmup_s = 2
+
+[[curve]]
+id = "w7-pg-connect"
+engine = "pg"
+tool = "vbench"
+workload = "connect"
+conn_mode = "newconn"
+mode = "extended"
+tls = true
+targets = ["direct", "vericto-offline"]
+rates = [5]
+
+# TLS off: the clean TCP-hop cost.
+[[curve]]
+id = "w2-pg-tpcb-simple-notls"
+engine = "pg"
+tool = "pgbench"
+workload = "tpcb-like"
+mode = "simple"
+tls = false
+targets = ["direct", "haproxy-tcp"]
+rates = [30]
+
+# Generator validation: the database paused 1 s every 10 s must show up as a
+# ~1-s tail in every request due during the pause.
+[[curve]]
+id = "validate-generator"
+engine = "pg"
+tool = "vbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+targets = ["direct"]
+rates = [50]
+duration_s = 30
+pause_every_s = 10
+pause_s = 1

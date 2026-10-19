@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# SMOKE RUN: NOT FOR PUBLISHED NUMBERS.
+#
+# Proves the harness works on your machine: every service of Tier P (both
+# databases, cpstub, vericto-proxy in its three modes, HAProxy, PgBouncer,
+# ProxySQL, vbench, pgbench, sysbench, the traffic-cap guard and the report)
+# runs once, in short cells, on one Docker host with no CPU isolation. The
+# report, every chart and the CSV carry the smoke banner, and the analysis
+# refuses to write a publishable report from it.
+#
+#   make images && docker compose -f compose/smoke.yml up --abort-on-container-exit --exit-code-from runner
+#   (or simply: compose/smoke.sh, which also copies the results out and cleans up)
+name: vericto-bench-smoke
+services:
+  runner:
+    build:
+      context: .
+      dockerfile: runner.Dockerfile
+      args:
+        ALPINE_IMAGE: ${ALPINE_IMAGE:?set by compose/smoke.sh from versions.lock}
+    image: vericto-bench/runner:local
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - data:/data
+      - ..:/opt/vericto-bench:ro
+    environment:
+      VBENCH_NETWORK: vericto-bench-smoke_default
+      VBENCH_DATA_VOLUME: vericto-bench-smoke_data
+      RUN_ID: ${RUN_ID:-smoke}
+      LIBRARY_MIRROR: ${LIBRARY_MIRROR:-}
+      PROXY_FROM_MIRROR: ${PROXY_FROM_MIRROR:-}
+      HARNESS_COMMIT: ${HARNESS_COMMIT:-unknown}
+    command:
+      - python3
+      - /opt/vericto-bench/runner/run.py
+      - --suite
+      - /opt/vericto-bench/suites/${SUITE:-smoke}.toml
+      - --topology
+      - compose
+      - --out
+      - /data/${RUN_ID:-smoke}
+      - --report
+volumes:
+  data: {}

@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Every component of a run, pinned. Images by digest (the digest is what is
+# pulled; the tag is a label for humans). Read by host/pull-images.sh, the
+# Makefile and runner/run.py, and copied into every run's manifest.json.
+#
+# Official Docker images (library/*) can be pulled from a mirror with the same
+# digest: LIBRARY_MIRROR=public.ecr.aws/docker/library (the default on EC2,
+# where Docker Hub's anonymous pull limit is shared by many hosts). A digest
+# identifies the image whatever the registry.
+
+# --- System under test --------------------------------------------------------
+# The campaign measures the release that carries the P0 fixes (4.14.3: default
+# log level info, corrected size comment). Until that tag is published this
+# pins 4.14.1, which the smoke uses; runner/run.py refuses profile=published
+# unless the tag equals PUBLISHED_PROXY_VERSION.
+VERICTO_PROXY_IMAGE=docker.io/vericto/vericto-proxy:4.14.1@sha256:a8f1e02d72b041397a45c7c90be3ba6da7bb65fdeb3d956e8cee70dde24ef631
+VERICTO_PROXY_MIRROR=ghcr.io/vericto/vericto-proxy
+PUBLISHED_PROXY_VERSION=4.14.3
+# The engine the proxy pins (vericto-proxy Cargo.toml): engine-eval and the stub's rules use the same tag.
+VERICTO_ENGINE_TAG=v4.3.0
+
+# --- Databases ----------------------------------------------------------------
+POSTGRES_IMAGE=docker.io/library/postgres:17.6@sha256:00bc86618629af00d2937fdc5a5d63db3ff8450acf52f0636ec813c7f4902929
+MYSQL_IMAGE=docker.io/library/mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70
+
+# --- Baselines ----------------------------------------------------------------
+HAPROXY_IMAGE=docker.io/library/haproxy:3.0.30@sha256:836f65081bc532d2d024641ca868122105cca2f150effd2e04f8c155258b9ef8
+# PgBouncer has no official image: built from the release tarball (docker/pgbouncer).
+PGBOUNCER_VERSION=1.24.1
+PGBOUNCER_SHA256=da72a3aba13072876d055a3e58dd4aba4a5de4ed6148e73033185245598fd3e0
+# ProxySQL: built from the upstream release .deb (docker/proxysql), per architecture.
+PROXYSQL_VERSION=2.7.3
+PROXYSQL_DEB_SHA256_ARM64=da7aba2be2f98fabc48487130f7a285b4157dbb96dea7251e8aa5bdeae96eeef
+PROXYSQL_DEB_SHA256_AMD64=8a372ff5fcae6a1bfa55982bb11f4380fb47252e933d690ecc82ffcb1998c4f0
+
+# --- Load generators ----------------------------------------------------------
+# pgbench comes from POSTGRES_IMAGE (17.6). sysbench from Ubuntu 24.04 (docker/sysbench).
+SYSBENCH_APT_VERSION=1.0.20+ds-6build2
+
+# --- Build and analysis images --------------------------------------------------
+GO_IMAGE=docker.io/library/golang:1.23-alpine@sha256:383395b794dffa5b53012a212365d40c8e37109a626ca30d6151c8348d380b5f
+RUST_IMAGE=docker.io/library/rust:1.88-bookworm@sha256:af306cfa71d987911a781c37b59d7d67d934f49684058f96cf72079c3626bfe0
+ALPINE_IMAGE=docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+UBUNTU_IMAGE=docker.io/library/ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac
+MATPLOTLIB_APT_VERSION=3.6.3-1ubuntu5

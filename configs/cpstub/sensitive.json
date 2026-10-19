@@ -1,0 +1,4 @@
+[
+  {"schema": "vbench", "table": "payload_m", "column": "email", "policy": "mask", "mask_style": "email"},
+  {"schema": "vbench", "table": "customers_masked", "column": "email", "policy": "mask", "mask_style": "email"}
+]
