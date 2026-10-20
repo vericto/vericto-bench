@@ -561,6 +561,8 @@ class Runner:
         if curve.loop == "closed" and best:
             self.saturation[curve.id] = statistics.mean(best.values())
             log(f"curve {curve.id}: S(vericto-enforce) = {self.saturation[curve.id]:.0f}/s")
+            # Recorded in full: day 2 runs the same absolute rates (suites/day2.toml).
+            self.manifest.setdefault("saturation", {})[curve.id] = self.saturation[curve.id]
 
     def engine_only(self):
         """Evaluation only (vantage point 1 of the blocked-statement cost, and

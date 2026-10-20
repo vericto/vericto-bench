@@ -101,6 +101,20 @@ def _rank(cid):
     return len(ORDER)
 
 
+# Day 1's S (closed-loop maximum of vericto-enforce at 0.5 vCPU, TLS) from run
+# bench-2026-11-p2-day1 (cells.jsonl: sat-pg-w1-05 c8, sat-my-w3-05 c4), so day 2
+# runs the headline curves at exactly day 1's absolute rates.
+DAY1_S = {"head-pg-w1-05": 6032.566666666667, "head-my-w3-05": 356.59166666666664}
+
+
+def day2_curves():
+    out = []
+    for c in head_curves("0.5", suffix="-day2"):
+        base = c["id"][: -len("-day2")]
+        out.append(dict(c, saturation_from="", saturation_qps=DAY1_S.get(base, 0)))
+    return out
+
+
 def published_trimmed():
     cs = published()
     for c in cs:
@@ -208,10 +222,10 @@ def main():
         "published.toml": render("Tier P published campaign, day 1 (c7g.2xlarge SUT + c7g.xlarge load generator, two-host).",
                                  {"name": "published-day1", "profile": "published", **base}, data, published_trimmed(), ee),
         "day2.toml": render("Tier P day 2: the headline curves again on a freshly launched SUT, at day 1's absolute rates.\n"
-                            "# Before running: set saturation_qps of both curves to day 1's S (manifest.json of the day-1 run,\n"
-                            "# 'curve ... S(vericto-enforce)' in runner.log). The suite refuses to run until then.",
+                            "# saturation_qps is day 1's S (suites/generate.py DAY1_S, from run bench-2026-11-p2-day1); with\n"
+                            "# 0 the suite refuses to run. Run with: terraform apply -var suite=day2 (records day 2).",
                             {"name": "published-day2", "profile": "published", **{**base, "order_seed": 2026111902}}, data,
-                            [dict(c, saturation_from="", saturation_qps=0) for c in head_curves("0.5", suffix="-day2")]),
+                            day2_curves()),
         "c7i.toml": render("Tier P cross-check on c7i.2xlarge (x86, SMT): saturation and the headline PG curve.",
                            {"name": "published-c7i", "profile": "published", **{**base, "order_seed": 2026111903}}, data,
                            [sat_curves(["0.5"])[0], head_curves("0.5")[0]]),
