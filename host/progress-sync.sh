@@ -15,6 +15,15 @@ set -uo pipefail
 RESULTS_DIR="/var/lib/vericto-bench/results/$RUN_ID"
 DEST="s3://$BUCKET/$RUN_ID/partial"
 EVERY="${PROGRESS_SYNC_S:-600}"
+# Owner rule: no traffic near 1 Gbps, harness overhead included. Day 1 showed
+# 1-s bursts of ~850 Mbps on the load generator's NIC while this sync uploaded
+# (S3 gateway endpoint): cap the CLI at 8 MB/s (64 Mbps) and keep it on the OS core,
+# off the load generator's cores.
+export AWS_CONFIG_FILE=/etc/vericto-bench/aws-s3-capped.ini
+printf '[default]\ns3 =\n  max_bandwidth = 8MB/s\n  max_concurrent_requests = 2\n' > "$AWS_CONFIG_FILE"
+CPU_OS="$(sed -n 's/^CPU_OS=//p' /etc/vericto-bench/host.env 2>/dev/null)"
+[ -n "$CPU_OS" ] && taskset -cp "$CPU_OS" $$ >/dev/null 2>&1
+renice -n 10 $$ >/dev/null 2>&1 || true
 echo $$ > /var/run/vericto-bench-progress-sync.pid
 while :; do
   sleep "$EVERY"

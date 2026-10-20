@@ -21,6 +21,9 @@ log() { printf '%s finish: %s\n' "$(date -u +%FT%TZ)" "$*"; }
 if [ -f /var/run/vericto-bench-progress-sync.pid ]; then
   kill "$(cat /var/run/vericto-bench-progress-sync.pid)" 2>/dev/null || true
 fi
+# The same bandwidth cap as host/progress-sync.sh for the final upload (GBs).
+export AWS_CONFIG_FILE=/etc/vericto-bench/aws-s3-capped.ini
+printf '[default]\ns3 =\n  max_bandwidth = 8MB/s\n  max_concurrent_requests = 2\n' > "$AWS_CONFIG_FILE"
 mkdir -p "$RESULTS_DIR" "$STAGE/logs/$ROLE"
 cp -a /var/log/vericto-bench/. "$STAGE/logs/$ROLE/" 2>/dev/null || true
 cp /etc/vericto-bench/provenance.json "$STAGE/logs/$ROLE/" 2>/dev/null || true
