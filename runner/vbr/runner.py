@@ -507,7 +507,10 @@ class Runner:
             poisson = rec.get("tool") == "pgbench" or rec.get("arrival") == "poisson"
             steady = steady_state(os.path.join(self.out, rec["intervals"]), rec.get("offered_rate") or 0, poisson)
             rec["steady"] = steady
-            if steady.get("flag"):
+            # A saturated cell is the end of its curve by construction (design
+            # section 8: kept in the raw data, never a latency figure), so its
+            # unsteady rate is expected, not a reason to invalidate and rerun it.
+            if steady.get("flag") and rec.get("status") != "saturated":
                 inv.append("not steady: " + steady["flag"])
         if self.suite.profile == "smoke":
             rec["smoke"] = True

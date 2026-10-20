@@ -81,6 +81,36 @@ def head_curves(size, rates=CURVE_RATES, reps=None, suffix=""):
     return [pg, my]
 
 
+# Budget trim of day 1 (owner rule, 2026-10-19: P1 + P2 under about USD 45 of
+# AWS spend, about USD 0.51/h for both hosts and the NAT gateway). In the owner's
+# order: (1) the c7i cross-check is not run; (2) every non-headline open-loop
+# curve runs NONHEAD_REPS interleaved repetitions instead of 3; (3) the two
+# headline curves keep 3. Closed-loop saturation curves already run 1.
+NONHEAD_REPS = 2
+# Run order (pre-registered with the suite): saturation first (it sets S), the
+# generator validation next (a pre-flight, design section 8), then the curves
+# the day-1 report needs most, so a stop by the runtime guard loses the least.
+ORDER = ["sat-", "validate-", "head-pg-w1-05", "head-my-w3-05", "decomp-", "size-", "bytes-", "blocked-", "conn-",
+         "tlsoff-", "modes-", "orm-", "head-pg-w1-1", "head-my-w3-1", "h2-"]
+
+
+def _rank(cid):
+    for i, pre in enumerate(ORDER):
+        if cid == pre or cid.startswith(pre):
+            return i
+    return len(ORDER)
+
+
+def published_trimmed():
+    cs = published()
+    for c in cs:
+        if c.get("loop", "open") == "open" and not c["id"].startswith(("head-pg-w1-05", "head-my-w3-05")):
+            c["reps"] = NONHEAD_REPS
+    # sat-pg-w2 / sat-pg-w4 / sat-my-w4 are closed loop and set the rates of
+    # their own curves: keep them with the saturation block.
+    return sorted(cs, key=lambda c: _rank(c["id"]))  # stable: the design order within a block
+
+
 def published():
     cs = sat_curves(["0.5", "1"])
     cs.append(curve(_comment="sysbench oltp_read_only and read_write, closed loop (standard throughput figures, prepared "
@@ -176,7 +206,7 @@ def main():
     ee = "[engine_eval]\nsizes = [\"0.5\", \"1\"]\niters = 20000\nbudget_s = 20\nmin_iters = 1000\n"
     files = {
         "published.toml": render("Tier P published campaign, day 1 (c7g.2xlarge SUT + c7g.xlarge load generator, two-host).",
-                                 {"name": "published-day1", "profile": "published", **base}, data, published(), ee),
+                                 {"name": "published-day1", "profile": "published", **base}, data, published_trimmed(), ee),
         "day2.toml": render("Tier P day 2: the headline curves again on a freshly launched SUT, at day 1's absolute rates.\n"
                             "# Before running: set saturation_qps of both curves to day 1's S (manifest.json of the day-1 run,\n"
                             "# 'curve ... S(vericto-enforce)' in runner.log). The suite refuses to run until then.",

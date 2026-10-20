@@ -62,6 +62,42 @@ class Report(unittest.TestCase):
         f = R.ols([1, 2, 3, 4], [0.12, 0.235, 0.35, 0.465])
         self.assertAlmostEqual(f["slope"], 0.115, places=3)
 
+    def test_timestamps_with_nanoseconds_keep_their_timezone(self):
+        self.assertEqual(R._ts("2026-10-20T04:12:19.000083529Z"), R._ts("2026-10-20T04:12:19.000083+00:00"))
+        self.assertAlmostEqual(R._ts("2026-10-20T04:12:19.5Z") - R._ts("2026-10-20T04:12:19+00:00"), 0.5)
+
+    def test_size_curve_slope_and_1ms_crossing(self):
+        drows = []
+        for n, kb, d in ((1, 0.1, 0.12), (100, 2.0, 0.6), (1000, 20.0, 5.1)):
+            drows.append({"curve": f"size-pg-batch{n}-1", "target": "vericto-enforce", "n": 3, "added_p50_ms": d,
+                          "added_p50_lo": d - 0.01, "added_p50_hi": d + 0.01, "added_p99_ms": d * 2,
+                          "added_p99_lo": None, "added_p99_hi": None, "added_p999_ms": d * 3})
+        sizes = {("pg", "batch1"): 102, ("pg", "batch100"): 2048, ("pg", "batch1000"): 20480}
+        pts, fits = R.size_rows(drows, sizes)
+        self.assertEqual(len(pts), 3)
+        f = fits[0]
+        self.assertAlmostEqual(f["p50_ms_per_kb"], 0.25, delta=0.01)
+        self.assertGreater(f["p50_kb_at_1ms"], 2.0)
+        self.assertLess(f["p50_kb_at_1ms"], 20.0)
+        self.assertEqual(f["first_measured_kb_with_added_p50_over_1ms"], 20.0)
+
+    def test_directions_from_window_samples(self):
+        d = tempfile.mkdtemp()
+        cdir = os.path.join(d, "cells", "x.vericto-enforce.r10.rep1")
+        os.makedirs(cdir)
+        json.dump({"intermediary": ["sut:nft:p6432_in", "sut:nft:p6432_out"]}, open(os.path.join(cdir, "components.json"), "w"))
+        with open(os.path.join(cdir, "samples.jsonl"), "w") as f:
+            for i, t in enumerate(("2026-10-20T04:00:00Z", "2026-10-20T04:00:10Z", "2026-10-20T04:00:20Z")):
+                f.write(json.dumps({"t": t, "host": "sut", "c": {"sut:nft:p6432_in": 1000 * i, "sut:nft:p6432_out": 125000 * i,
+                                                                "sut:nft:db5432_lo_in": 1000 * i, "sut:nft:db5432_lo_out": 125000 * i,
+                                                                "sut:nft:cp9090_in": 0}}) + "\n")
+        c = {"_run": d, "cell": "x.vericto-enforce.r10.rep1", "engine": "pg", "target": "vericto-enforce", "status": "ok",
+             "loop": "open", "achieved_rate": 10.0, "measure_from": "2026-10-20T04:00:00Z", "end": "2026-10-20T04:00:20Z"}
+        r = R.direction_rows([c])[0]
+        self.assertAlmostEqual(r["target_to_client_mbps"], 0.1)  # 12,500 B/s
+        self.assertAlmostEqual(r["result_bytes_per_request"], 1250.0)
+        self.assertAlmostEqual(r["target_total_mbps"], 0.2016)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -133,9 +133,14 @@ guard that shuts the hosts down). The suite runs unattended from user-data; the
 results (raw data, report, manifest with every digest) land in an S3 bucket of
 the same stack. Details and per-hour prices: [terraform/aws/README.md](terraform/aws/README.md).
 
-The campaign (design section 10): `suite=published` (day 1, the full matrix:
-1,455 cells, at most 118 machine-hours by the planner, less in practice because
-closed-loop step-ups stop at the knee), `suite=day2` (headline curves on a fresh
+The campaign (design section 10): `suite=published` (day 1; the full matrix is
+1,455 cells and at most 118 machine-hours by the planner; BENCH-2026-11's day 1
+runs it trimmed to the owner's budget of about USD 45: the c7i cross-check is
+not run and every non-headline open-loop curve has 2 repetitions instead of 3,
+the headline curves keep 3, which gives 1,116 cells and at most 89.8 planner
+hours, about 70 in practice because closed-loop step-ups stop at the knee and the
+network pre-flight drops rates above the traffic targets; see
+`suites/generate.py`), `suite=day2` (headline curves on a fresh
 SUT at day 1's rates), `suite=c7i` with `-var sut_instance_type=c7i.2xlarge`.
 At list prices about USD 0.48 per hour for the two hosts and the NAT gateway:
 about USD 55 to 65 for the whole Tier P campaign.
