@@ -231,7 +231,7 @@ def main():
                                "# day 1's S_0.5 (DAY1_S), so 30% and 90% are the 1x0.5 curve's absolute rates and\n"
                                "# 120-220% show whether two tasks of 0.5 vCPU scale (staging P3: PG with two tasks\n"
                                "# saturated below one task, cause unexplained). Its own SUT host, so it also runs 1 x 0.5 at\n"
-                               "# 30-120% for a same-host comparison.",
+                               "# 30, 90 and 120% for a same-host comparison. Runs after head-my-w3-05 (combined traffic caps).",
                                {"name": "core-h2", "profile": "published", **{**base, "order_seed": 2026112001}}, data,
                                [curve(_comment="P-2tasks core: 2 x 0.5 vCPU vericto-enforce vs direct, PG W1 extended, TLS",
                                       id="h2-pg-w1-2x05", engine="pg", tool="pgbench", workload="select-only", mode="extended",
@@ -241,7 +241,7 @@ def main():
                                 curve(_comment="Same host, 1 x 0.5 vCPU, the same absolute rates up to past one task's saturation",
                                       id="h2-pg-w1-05", engine="pg", tool="pgbench", workload="select-only", mode="extended",
                                       tls=True, size="0.5", targets=["direct", "vericto-enforce"],
-                                      rates_pct=[30, 60, 90, 120], saturation_qps=DAY1_S["head-pg-w1-05"], conns=128)]),
+                                      rates_pct=[30, 90, 120], saturation_qps=DAY1_S["head-pg-w1-05"], conns=128)]),
         "c7i.toml": render("Tier P cross-check on c7i.2xlarge (x86, SMT): saturation and the headline PG curve.",
                            {"name": "published-c7i", "profile": "published", **{**base, "order_seed": 2026111903}}, data,
                            [sat_curves(["0.5"])[0], head_curves("0.5")[0]]),
