@@ -398,7 +398,8 @@ class Runner:
             rec.update({k: r.get(k) for k in ("status", "reason", "offered_rate", "achieved_rate", "statements_per_s",
                                                "scheduled", "completed", "incomplete", "unsent", "errors", "blocked",
                                                "latency", "latency_all", "service", "queue_wait", "gen_lag", "classes",
-                                               "measure_from", "end", "client", "invalid", "error_samples", "conns", "latency_scope")})
+                                               "measure_from", "end", "client", "invalid", "error_samples", "conns", "latency_scope",
+                                               "sent_total", "scheduled_total")})
             rec["intervals"] = f"cells/{cid}/load/intervals.jsonl"
             rec["hlog"] = f"cells/{cid}/load/latency.hlog"
         elif c.tool == "pgbench":
@@ -408,6 +409,9 @@ class Runner:
                 for i in ints:
                     f.write(json.dumps(i) + "\n")
             r["summary"] = TL.parse_pgbench_summary(output)
+            # The per-transaction logs stay in the raw data, compressed (one
+            # line per transaction: tens of MB per cell, hundreds of cells a day).
+            r["pgbench_logs"] = TL.gzip_logs(os.path.join(local, "pgbench", "tx"))
             if proc.returncode != 0 and r.get("status") == "ok":
                 r["status"], r["reason"] = "aborted", f"pgbench exit {proc.returncode}"
             if r["summary"].get("clients_aborted"):
@@ -599,7 +603,12 @@ class Runner:
         if rec.get("status") == "aborted" or not rec.get("net"):
             raise T.SetupError(f"network pre-flight probe of {curve.id} failed: {rec.get('reason')}")
         bytes_ = (rec.get("net") or {}).get("bytes") or {}
-        reqs = rec.get("completed") or 0
+        # Bytes per REQUEST (the unit of the planned rates; a sysbench-ro request
+        # is a 16-statement transaction). The counters cover the whole probe
+        # (connection setup, warm-up, window), so divide by every request sent
+        # over it (vbench sent_total); pgbench reports only the window, which
+        # overstates bytes per request slightly (the safe side of the caps).
+        reqs = rec.get("sent_total") or rec.get("completed") or 0
         comps = json.load(open(os.path.join(self.out, "cells", probe.id + ".netprobe", "components.json")))
         plan = {"components": comps, "cells": [{"id": f"{curve.id}@{r:g}", "rate": r,
                                                 "probe": {"bytes": bytes_, "requests": reqs}} for r in rates]}

@@ -17,6 +17,10 @@ STAGE="$(mktemp -d /var/tmp/vbench-finish.XXXXXX)"
 DEST="s3://$BUCKET/$RUN_ID"
 log() { printf '%s finish: %s\n' "$(date -u +%FT%TZ)" "$*"; }
 
+# Stop the progress sync (host/progress-sync.sh): the final archives replace it.
+if [ -f /var/run/vericto-bench-progress-sync.pid ]; then
+  kill "$(cat /var/run/vericto-bench-progress-sync.pid)" 2>/dev/null || true
+fi
 mkdir -p "$RESULTS_DIR" "$STAGE/logs/$ROLE"
 cp -a /var/log/vericto-bench/. "$STAGE/logs/$ROLE/" 2>/dev/null || true
 cp /etc/vericto-bench/provenance.json "$STAGE/logs/$ROLE/" 2>/dev/null || true
@@ -28,7 +32,7 @@ if [ "$TOPOLOGY" = two-host ] && [ -n "${SUT_IP:-}" ]; then
     "bench@$SUT_IP:/etc/vericto-bench/provenance.json" "$STAGE/logs/sut/" 2>/dev/null || true
 fi
 
-tar -C "$(dirname "$RESULTS_DIR")" -czf "$STAGE/results-$RUN_ID.tar.gz" "$RUN_ID"
+tar -C "$(dirname "$RESULTS_DIR")" --exclude="$RUN_ID/certs/server.key" -czf "$STAGE/results-$RUN_ID.tar.gz" "$RUN_ID"
 tar -C "$STAGE" -czf "$STAGE/logs-$RUN_ID.tar.gz" logs
 ( cd "$STAGE" && sha256sum "results-$RUN_ID.tar.gz" "logs-$RUN_ID.tar.gz" > SHA256SUMS )
 

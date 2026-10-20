@@ -169,10 +169,13 @@ versions.lock                   every component pinned by digest or checksum
   without changing the client, so it relays the end-to-end TLS session and pays
   no cryptography there. The TLS-off cells give its clean hop cost; the report
   labels it. PgBouncer, ProxySQL and the proxy pay both TLS legs.
-- **The campaign measures vericto-proxy 4.14.3** (decision 8: the log-level and
-  size-comment fixes ship before the run). `versions.lock` pins 4.14.1 until
-  4.14.3 is published, and the runner refuses `profile=published` until the
-  pinned tag is 4.14.3.
+- **The campaign measures vericto-proxy 4.14.2** (owner decision 2026-10-19,
+  the latest release; it supersedes the earlier plan to wait for a 4.14.3 with
+  the log-level and size-comment fixes). 4.14.2 is documentation-only over
+  4.14.1: same code, engine v4.3.0, 42 built-in rules. Its code default log
+  filter is still `info,vericto_proxy=debug`, so the harness sets
+  `RUST_LOG=info` explicitly. `versions.lock` pins it by digest, and the runner
+  refuses `profile=published` for any other tag.
 - **Poisson noise in the steady-state rule**: pgbench `-R` draws Poisson
   arrivals, so a 1% bound on the per-part rate is replaced by three standard
   deviations of a Poisson count when that is larger (it never is at the

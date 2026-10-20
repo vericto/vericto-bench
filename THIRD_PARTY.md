@@ -6,7 +6,7 @@ SHA-256 in [versions.lock](versions.lock).
 
 | Component | Version | License | How it is used |
 | --- | --- | --- | --- |
-| vericto-proxy | 4.14.3 (4.14.1 until 4.14.3 is published) | FSL-1.1-ALv2 | the system under test, pulled as an image by digest; running it to benchmark it is a permitted purpose |
+| vericto-proxy | 4.14.2 (by digest, `versions.lock`) | FSL-1.1-ALv2 | the system under test, pulled as an image by digest; running it to benchmark it is a permitted purpose |
 | vericto-engine | v4.3.0 | FSL-1.1-ALv2 | a git dependency of `engine-eval`, pinned by tag. **A built `engine-eval` binary, and the `vericto-bench/tools` image that contains it, include FSL code; the FSL's terms apply to that part** |
 | PostgreSQL, pgbench | 17.6 (official image) | PostgreSQL License | database and load generator |
 | MySQL Community Server | 8.4.11 (official image) | GPL-2.0 with the Universal FOSS Exception | database |

@@ -106,3 +106,14 @@ variable "max_hours" {
     error_message = "max_hours must be between 0 (automatic) and 144."
   }
 }
+
+variable "harness_commit" {
+  description = "Commit of this checkout (git rev-parse HEAD), recorded in the run's manifest; the archive sent to the hosts carries no .git. Empty = \"unknown\"."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.harness_commit == "" || can(regex("^[0-9a-f]{7,40}$", var.harness_commit))
+    error_message = "harness_commit must be a git commit id (hex)."
+  }
+}

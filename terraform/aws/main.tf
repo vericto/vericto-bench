@@ -461,6 +461,7 @@ locals {
     max_minutes          = local.max_minutes
     auto_shutdown        = var.auto_shutdown ? "1" : "0"
     proxy_image_override = var.proxy_image_override
+    harness_commit       = var.harness_commit
   }
 }
 
