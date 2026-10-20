@@ -117,3 +117,14 @@ variable "harness_commit" {
     error_message = "harness_commit must be a git commit id (hex)."
   }
 }
+
+variable "day" {
+  description = "Campaign day recorded in every cell (runner --day). 0 = automatic: 2 for suite=day2, otherwise 1."
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.day >= 0 && var.day <= 9
+    error_message = "day must be between 0 (automatic) and 9."
+  }
+}

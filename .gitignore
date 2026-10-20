@@ -12,3 +12,5 @@ terraform/aws/.build/
 *.tfplan
 __pycache__/
 *.pyc
+terraform/archive/.terraform/
+terraform/archive/.terraform.lock.hcl

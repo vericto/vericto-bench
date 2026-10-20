@@ -88,6 +88,11 @@ def load_run(path: str) -> tuple[dict, list[dict]]:
             if line.strip():
                 c = json.loads(line)
                 c["_run"] = path
+                # Day 2 repeats day 1's headline curves under "<id>-day2": the
+                # same curve for the analysis (pooled n = 6, between-day row).
+                if str(c.get("curve", "")).endswith("-day2"):
+                    c["curve_id"] = c["curve"]
+                    c["curve"] = c["curve"][: -len("-day2")]
                 c["_profile"] = man.get("profile")
                 cells.append(c)
     return man, cells
@@ -170,8 +175,9 @@ def pct(c: dict, p: str) -> float | None:
 
 # ---- analysis ----------------------------------------------------------------------
 
-def deltas(used: list[dict]) -> list[dict]:
-    """Paired deltas: target minus direct, same curve, rate, repetition and day."""
+def deltas(used: list[dict], by_day: bool = False) -> list[dict]:
+    """Paired deltas: target minus direct, same curve, rate, repetition and day
+    (and run). Pooled across days unless by_day."""
     open_ok = [c for c in used if c.get("loop") == "open" and c.get("status") == "ok"]
     direct = {(c["_run"], c["curve"], c["offered_rate"], c["rep"], c.get("day")): c for c in open_ok if c["target"] == "direct"}
     groups: dict[tuple, dict[str, list[float]]] = {}
@@ -181,14 +187,18 @@ def deltas(used: list[dict]) -> list[dict]:
         d = direct.get((c["_run"], c["curve"], c["offered_rate"], c["rep"], c.get("day")))
         if not d:
             continue
-        g = groups.setdefault((c["curve"], c["engine"], c["target"], c["offered_rate"], c.get("rate_pct")), {p: [] for p in PCTS})
+        gk = (c["curve"], c["engine"], c["target"], c["offered_rate"], c.get("rate_pct")) + ((c.get("day"),) if by_day else ())
+        g = groups.setdefault(gk, {p: [] for p in PCTS})
         for p in PCTS:
             a, b = pct(c, p), pct(d, p)
             if a is not None and b is not None:
                 g[p].append(a - b)
     rows = []
-    for (curve, engine, target, rate, rpct), g in sorted(groups.items(), key=lambda x: (x[0][0], x[0][2], x[0][3])):
+    for gk, g in sorted(groups.items(), key=lambda x: (x[0][0], x[0][2], x[0][3], x[0][5:])):
+        curve, engine, target, rate, rpct = gk[:5]
         row = {"curve": curve, "engine": engine, "target": target, "offered_rate": rate, "rate_pct": rpct, "n": len(g["p50"])}
+        if by_day:
+            row["day"] = gk[5]
         for p in PCTS:
             m, lo, hi = mean_ci(g[p])
             row[f"added_{p}_ms"], row[f"added_{p}_lo"], row[f"added_{p}_hi"] = m, lo, hi
@@ -719,6 +729,22 @@ def main(argv=None) -> int:
     os.makedirs(out, exist_ok=True)
     used, invalid = select(cells)
     drows = deltas(used)
+    days = sorted({c.get("day") for c in used if c.get("day") is not None})
+    between = []
+    if len(days) > 1:
+        per_day = deltas(used, by_day=True)
+        idx = {(r["curve"], r["target"], r["offered_rate"], r["day"]): r for r in per_day}
+        for (curve, target, rate, day), r in sorted(idx.items(), key=lambda x: (str(x[0][0]), str(x[0][1]), x[0][2], x[0][3])):
+            if day != days[0] or not all((curve, target, rate, d) in idx for d in days[1:]):
+                continue
+            row = {"curve": curve, "target": target, "offered_rate": rate}
+            for d in days:
+                x = idx[(curve, target, rate, d)]
+                for p in ("p50", "p99"):
+                    row[f"day{d}_added_{p}_ms"], row[f"day{d}_n"] = x[f"added_{p}_ms"], x["n"]
+            for p in ("p50", "p99"):
+                row[f"between_day_diff_{p}_ms"] = row[f"day{days[-1]}_added_{p}_ms"] - row[f"day{days[0]}_added_{p}_ms"]
+            between.append(row)
     sat = {}
     fits = cpu_fits(used, sat)
     traffic = traffic_rows(cells)
@@ -752,6 +778,8 @@ def main(argv=None) -> int:
     size_pts, size_fits = size_rows(drows, sizes)
     btable, bfits = bytes_rows(used, drows, dirs)
     write_csv(os.path.join(out, "traffic_directions.csv"), dirs, smoke)
+    if between:
+        write_csv(os.path.join(out, "between_days.csv"), between, smoke)
     write_csv(os.path.join(out, "size_curve.csv"), size_pts, smoke)
     write_csv(os.path.join(out, "size_fit.csv"), size_fits, smoke)
     write_csv(os.path.join(out, "large_results.csv"), btable, smoke)
@@ -790,6 +818,14 @@ def main(argv=None) -> int:
         note = "; ".join(sorted({r[f'{p}_note'] for p in PCTS if r[f'{p}_note']}))
         md.append(f"| {r['curve']} | {r['target']} | {fmt(r['offered_rate'], 0)} | {fmt(r['rate_pct'], 0)} | {r['n']} | "
                   + " | ".join(cells_) + f" | {note} |")
+    if between:
+        md += ["", f"## Between days (days {', '.join(str(d) for d in days)}; the pooled rows above use every day)", "",
+               "| Curve | Target | Rate/s | " + " | ".join(f"day {d} added p50 / p99 ms (n)" for d in days) + " | difference p50 / p99 ms |",
+               "| --- | --- | --- | " + " | ".join("---" for _ in days) + " | --- |"]
+        for b in between:
+            md.append(f"| {b['curve']} | {b['target']} | {fmt(b['offered_rate'], 0)} | "
+                      + " | ".join(f"{fmt(b[f'day{d}_added_p50_ms'])} / {fmt(b[f'day{d}_added_p99_ms'])} ({b[f'day{d}_n']})" for d in days)
+                      + f" | {fmt(b['between_day_diff_p50_ms'])} / {fmt(b['between_day_diff_p99_ms'])} |")
     md += ["", "## Every cell", "", "| Cell | Status | Achieved/s | p50 ms | p99 ms | p99.9 ms | max ms | proxy vCPU | max aggregate Mbps |",
            "| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for r in flat:

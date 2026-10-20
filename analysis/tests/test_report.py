@@ -98,6 +98,19 @@ class Report(unittest.TestCase):
         self.assertAlmostEqual(r["result_bytes_per_request"], 1250.0)
         self.assertAlmostEqual(r["target_total_mbps"], 0.2016)
 
+    def test_day2_curves_pool_with_day1_and_report_between_days(self):
+        d1 = run_dir("published", [cell("direct", r, 1.0) for r in (1, 2, 3)] +
+                     [cell("vericto-enforce", r, 1.3) for r in (1, 2, 3)])
+        day2 = [dict(cell(t, r, p), curve="c-day2", day=2) for t, p in (("direct", 1.0), ("vericto-enforce", 1.4)) for r in (1, 2, 3)]
+        d2 = run_dir("published", day2)
+        self.assertEqual(R.main([d1, d2, "--publishable", "--out", os.path.join(d1, "rep")]), 0)
+        s = json.load(open(os.path.join(d1, "rep", "summary.json")))
+        self.assertEqual([r["n"] for r in s["deltas"]], [6])
+        with open(os.path.join(d1, "rep", "between_days.csv")) as f:
+            rows = [l for l in f if not l.startswith("#")]
+        self.assertIn("between_day_diff_p50_ms", rows[0])
+        self.assertAlmostEqual(float(rows[1].split(",")[rows[0].split(",").index("between_day_diff_p50_ms")]), 0.1, places=6)
+
 
 if __name__ == "__main__":
     unittest.main()

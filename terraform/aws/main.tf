@@ -13,6 +13,7 @@ locals {
   auto_hours   = { quick = 3, c7i = 14, day2 = 24, published = 132 }
   max_hours    = var.max_hours > 0 ? var.max_hours : lookup(local.auto_hours, var.suite, 30)
   max_minutes  = local.max_hours * 60
+  day          = var.day > 0 ? var.day : (var.suite == "day2" ? 2 : 1)
   harness_key  = "${var.run_id}/harness/harness.zip"
   ssh_key_name = "/vericto-bench/${var.run_id}/sut-ssh-key"
 
@@ -462,6 +463,7 @@ locals {
     auto_shutdown        = var.auto_shutdown ? "1" : "0"
     proxy_image_override = var.proxy_image_override
     harness_commit       = var.harness_commit
+    day                  = local.day
   }
 }
 
