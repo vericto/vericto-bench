@@ -106,10 +106,15 @@ class Runner:
 
     def tool(self, image: str, args: list[str], name: str, pass_env: list[str] | None = None, env: dict | None = None,
              check: bool = True, entrypoint: str | None = None, timeout: float | None = None,
-             input: bytes | None = None) -> subprocess.CompletedProcess:
+             input: bytes | None = None, as_runner: bool = False) -> subprocess.CompletedProcess:
         h = self.topo.loadgen
         cmd = h.docker_cmd() + ["run", "--rm", "-i" if input else "--init", "--name", name, "--label",
                                 f"{T.LABEL}={self.run_id}", "--network", h.network] + self.topo.data_mount()
+        if as_runner and self.topo.kind != "compose":
+            # Files this container writes must be readable (and removable) by the
+            # runner, which runs as an unprivileged user on EC2 (bench), e.g. the
+            # run's 0600 TLS key. Compose: the runner is root in its container.
+            cmd += ["--user", f"{os.getuid()}:{os.getgid()}"]
         if h.cpuset("CPU_LOADGEN"):
             cmd += ["--cpuset-cpus", h.cpuset("CPU_LOADGEN")]
         for k in pass_env or []:
@@ -146,7 +151,8 @@ class Runner:
         self.write_manifest(stage="setup")
         log(f"run {self.run_id}: suite {self.suite.name} (profile {self.suite.profile}), topology {self.topo.kind}")
         names = "localhost,127.0.0.1," + ",".join(TG.DB_NAME.values()) + f",{self.topo.sut.address or 'vb'}"
-        self.tool(self.images.tools, ["vbench", "certs", "-out", f"{self.data}/certs", "-names", names], "vb-certs")
+        self.tool(self.images.tools, ["vbench", "certs", "-out", f"{self.data}/certs", "-names", names], "vb-certs",
+                  as_runner=True)
         self.certs = {n: open(os.path.join(self.out, "certs", n), "rb").read() for n in ("ca.crt", "server.crt", "server.key")}
         tuning = TG.db_tuning(self.suite.profile, self.suite.database)
         self.db = {}
