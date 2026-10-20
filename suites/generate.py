@@ -226,6 +226,17 @@ def main():
                             "# 0 the suite refuses to run. Run with: terraform apply -var suite=day2 (records day 2).",
                             {"name": "published-day2", "profile": "published", **{**base, "order_seed": 2026111902}}, data,
                             day2_curves()),
+        "core-h2.toml": render("BENCH-2026-11 day 1, core cut (owner decision 2026-10-20): the PG two-task curve.\n"
+                               "# Runs after head-pg-w1-05 and head-my-w3-05 of published.toml on the same hosts, at\n"
+                               "# day 1's S_0.5 (DAY1_S), so 30% and 90% are the 1x0.5 curve's absolute rates and\n"
+                               "# 120-220% show whether two tasks of 0.5 vCPU scale (staging P3: PG with two tasks\n"
+                               "# saturated below one task, cause unexplained).",
+                               {"name": "core-h2", "profile": "published", **{**base, "order_seed": 2026112001}}, data,
+                               [curve(_comment="P-2tasks core: 2 x 0.5 vCPU vericto-enforce vs direct, PG W1 extended, TLS",
+                                      id="h2-pg-w1-2x05", engine="pg", tool="pgbench", workload="select-only", mode="extended",
+                                      tls=True, size="2x0.5", targets=["direct", "vericto-enforce"],
+                                      rates_pct=[30, 60, 90, 120, 150, 180, 220], saturation_qps=DAY1_S["head-pg-w1-05"],
+                                      conns=128)]),
         "c7i.toml": render("Tier P cross-check on c7i.2xlarge (x86, SMT): saturation and the headline PG curve.",
                            {"name": "published-c7i", "profile": "published", **{**base, "order_seed": 2026111903}}, data,
                            [sat_curves(["0.5"])[0], head_curves("0.5")[0]]),
