@@ -37,6 +37,7 @@ rates_pct = [10, 30, 50, 70, 80, 90, 100]
 saturation_from = ""
 conns = 64
 saturation_qps = 6032.566666666667
+reps = 1
 
 # P-head-my: HEADLINE MySQL curve, W3 oltp_read_only (vbench replay, text protocol), TLS, 0.5 vCPU
 [[curve]]
@@ -51,3 +52,4 @@ targets = ["direct", "haproxy-tcp", "vericto-enforce"]
 rates_pct = [10, 30, 50, 70, 80, 90, 100]
 saturation_from = ""
 saturation_qps = 356.59166666666664
+reps = 1

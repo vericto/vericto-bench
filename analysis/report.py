@@ -774,8 +774,17 @@ def main(argv=None) -> int:
                 x = idx[(curve, target, rate, d)]
                 for p in ("p50", "p99"):
                     row[f"day{d}_added_{p}_ms"], row[f"day{d}_n"] = x[f"added_{p}_ms"], x["n"]
+            first = idx[(curve, target, rate, days[0])]
+            flags = []
             for p in ("p50", "p99"):
                 row[f"between_day_diff_{p}_ms"] = row[f"day{days[-1]}_added_{p}_ms"] - row[f"day{days[0]}_added_{p}_ms"]
+                lo, hi = first[f"added_{p}_lo"], first[f"added_{p}_hi"]
+                row[f"day{days[0]}_added_{p}_lo"], row[f"day{days[0]}_added_{p}_hi"] = lo, hi
+                for d in days[1:]:
+                    v = row[f"day{d}_added_{p}_ms"]
+                    if lo is not None and v is not None and not (lo <= v <= hi):
+                        flags.append(f"day {d} {p} outside day {days[0]}'s 95% interval")
+            row["flag"] = "; ".join(flags)
             between.append(row)
     sat = {}
     fits = cpu_fits(used, sat)
@@ -855,12 +864,17 @@ def main(argv=None) -> int:
                   + " | ".join(cells_) + f" | {note} |")
     if between:
         md += ["", f"## Between days (days {', '.join(str(d) for d in days)}; the pooled rows above use every day)", "",
-               "| Curve | Target | Rate/s | " + " | ".join(f"day {d} added p50 / p99 ms (n)" for d in days) + " | difference p50 / p99 ms |",
-               "| --- | --- | --- | " + " | ".join("---" for _ in days) + " | --- |"]
+               f"Day {days[0]} intervals are Student t 95% over its repetitions; a later day's value outside them is flagged.", "",
+               "| Curve | Target | Rate/s | " + " | ".join(f"day {d} added p50 / p99 ms (n)" for d in days)
+               + f" | day {days[0]} p50 [95%] | day {days[0]} p99 [95%] | difference p50 / p99 ms | flag |",
+               "| --- | --- | --- | " + " | ".join("---" for _ in days) + " | --- | --- | --- | --- |"]
         for b in between:
+            d0 = days[0]
             md.append(f"| {b['curve']} | {b['target']} | {fmt(b['offered_rate'], 0)} | "
                       + " | ".join(f"{fmt(b[f'day{d}_added_p50_ms'])} / {fmt(b[f'day{d}_added_p99_ms'])} ({b[f'day{d}_n']})" for d in days)
-                      + f" | {fmt(b['between_day_diff_p50_ms'])} / {fmt(b['between_day_diff_p99_ms'])} |")
+                      + f" | [{fmt(b[f'day{d0}_added_p50_lo'])}, {fmt(b[f'day{d0}_added_p50_hi'])}]"
+                      + f" | [{fmt(b[f'day{d0}_added_p99_lo'])}, {fmt(b[f'day{d0}_added_p99_hi'])}]"
+                      + f" | {fmt(b['between_day_diff_p50_ms'])} / {fmt(b['between_day_diff_p99_ms'])} | {b['flag'] or 'within'} |")
     md += ["", "## Every cell", "", "| Cell | Status | Achieved/s | p50 ms | p99 ms | p99.9 ms | max ms | proxy vCPU | max aggregate Mbps |",
            "| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for r in flat:

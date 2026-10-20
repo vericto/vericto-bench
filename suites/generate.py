@@ -111,7 +111,9 @@ def day2_curves():
     out = []
     for c in head_curves("0.5", suffix="-day2"):
         base = c["id"][: -len("-day2")]
-        out.append(dict(c, saturation_from="", saturation_qps=DAY1_S.get(base, 0)))
+        # Owner decision 2026-10-20: day 2 runs 1 repetition (day-to-day and
+        # host-to-host stability against day 1's intervals), about 4.6 hours.
+        out.append(dict(c, saturation_from="", saturation_qps=DAY1_S.get(base, 0), reps=1))
     return out
 
 

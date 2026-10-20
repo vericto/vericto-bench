@@ -110,6 +110,7 @@ class Report(unittest.TestCase):
             rows = [l for l in f if not l.startswith("#")]
         self.assertIn("between_day_diff_p50_ms", rows[0])
         self.assertAlmostEqual(float(rows[1].split(",")[rows[0].split(",").index("between_day_diff_p50_ms")]), 0.1, places=6)
+        self.assertIn("outside", rows[1])  # day 1 has no spread (identical reps): day 2's +0.1 is outside it
 
 
 if __name__ == "__main__":
