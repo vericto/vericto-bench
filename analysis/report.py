@@ -587,6 +587,38 @@ def charts(out: str, used: list[dict], drows: list[dict], fits: list[dict], smok
     return files
 
 
+def scaling_rows(cells: list[dict], drows: list[dict]) -> list[dict]:
+    """P-2tasks: 1 x 0.5, 1 x 1 and 2 x 0.5 vCPU of vericto-enforce at the same
+    absolute rates (h2-<engine>-<workload>-<size>). Per size and rate: cells ok /
+    saturated, achieved rate, added p50 / p99 (paired), and each task's vCPU,
+    so an uneven split between the two tasks shows (staging P3 saw PG with two
+    tasks saturate below one task, cause unexplained)."""
+    import re
+    d_by = {(r["curve"], r["offered_rate"]): r for r in drows if r["target"] == "vericto-enforce"}
+    groups: dict[tuple, list[dict]] = {}
+    for c in cells:
+        m = re.match(r"h2-(pg|mysql)-(w1|w3)-(05|1|2x05)$", str(c.get("curve")))
+        if not m or c.get("target") != "vericto-enforce" or c.get("status") in (None, "not_run") or c.get("invalid_reasons"):
+            continue
+        groups.setdefault((m.group(1), m.group(3), c.get("offered_rate")), []).append(c)
+    rows = []
+    for (eng, size, rate), cs in sorted(groups.items(), key=lambda x: (x[0][0], x[0][2], {"05": 0, "1": 1, "2x05": 2}[x[0][1]])):
+        def vc(c, k):
+            return (((c.get("cpu") or {}).get("containers") or {}).get(k) or {}).get("vcpu")
+        t1 = [v for v in (vc(c, "target") for c in cs) if v is not None]
+        t2 = [v for v in (vc(c, "target2") for c in cs) if v is not None]
+        curve = f"h2-{eng}-{'w1' if eng == 'pg' else 'w3'}-{size}"
+        d = d_by.get((curve, rate)) or {}
+        thr = [((c.get("cpu") or {}).get("containers") or {}).get("target", {}).get("throttled_ms", 0) for c in cs]
+        rows.append({"engine": eng, "size": {"05": "1x0.5", "1": "1x1", "2x05": "2x0.5"}[size], "offered_rate": rate, "cells": len(cs),
+                     "saturated": sum(1 for c in cs if c.get("status") == "saturated"),
+                     "achieved_rate": statistics.mean(c.get("achieved_rate") or 0 for c in cs),
+                     "added_p50_ms": d.get("added_p50_ms"), "added_p99_ms": d.get("added_p99_ms"), "n_paired": d.get("n"),
+                     "task1_vcpu": statistics.mean(t1) if t1 else None, "task2_vcpu": statistics.mean(t2) if t2 else None,
+                     "task1_throttled_ms": statistics.mean(thr) if thr else None})
+    return rows
+
+
 def charts_extra(out: str, smoke: bool, dirs: list[dict], size_pts: list[dict], btable: list[dict]) -> list[str]:
     """Size curve, bytes/s per direction, large results plain against masked."""
     try:
@@ -777,6 +809,9 @@ def main(argv=None) -> int:
     sizes = statement_bytes(a.runs)
     size_pts, size_fits = size_rows(drows, sizes)
     btable, bfits = bytes_rows(used, drows, dirs)
+    scaling = scaling_rows(cells, drows)
+    if scaling:
+        write_csv(os.path.join(out, "scaling.csv"), scaling, smoke)
     write_csv(os.path.join(out, "traffic_directions.csv"), dirs, smoke)
     if between:
         write_csv(os.path.join(out, "between_days.csv"), between, smoke)
@@ -866,6 +901,16 @@ def main(argv=None) -> int:
                       f"{fmt(f.get('p50_ms_per_kb'), 4)} [{fmt(f.get('p50_ms_per_kb_lo'), 4)}, {fmt(f.get('p50_ms_per_kb_hi'), 4)}] | "
                       f"{fmt(f.get('p99_ms_per_kb'), 4)} [{fmt(f.get('p99_ms_per_kb_lo'), 4)}, {fmt(f.get('p99_ms_per_kb_hi'), 4)}] | "
                       f"{fmt(f.get('p50_kb_at_1ms'), 1)} | {fmt(f.get('first_measured_kb_with_added_p50_over_1ms'), 1)} |")
+        md.append("")
+    if scaling:
+        md += ["## Horizontal scaling (P-2tasks): 1 x 0.5, 1 x 1 and 2 x 0.5 vCPU at the same absolute rates", "",
+               "Saturated cells end a curve (never latency). With two tasks the client spreads its connections over both "
+               "ports; task 1 / task 2 vCPU show whether the load split evenly.", "",
+               "| Engine | Proxy | Rate/s | cells (saturated) | achieved/s | added p50 ms | added p99 ms | task 1 vCPU | task 2 vCPU | task 1 throttled ms |",
+               "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+        for r in scaling:
+            md.append(f"| {r['engine']} | {r['size']} | {fmt(r['offered_rate'], 0)} | {r['cells']} ({r['saturated']}) | {fmt(r['achieved_rate'], 0)} | "
+                      f"{fmt(r['added_p50_ms'])} | {fmt(r['added_p99_ms'])} | {fmt(r['task1_vcpu'])} | {fmt(r['task2_vcpu'])} | {fmt(r['task1_throttled_ms'], 0)} |")
         md.append("")
     if btable:
         md += ["## Large results (W8): plain against one masked column, vericto-enforce at 0.5 vCPU", "",
