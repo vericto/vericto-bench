@@ -227,7 +227,7 @@ def main():
                             {"name": "published-day2", "profile": "published", **{**base, "order_seed": 2026111902}}, data,
                             day2_curves()),
         "core-h2.toml": render("BENCH-2026-11 day 1, core cut (owner decision 2026-10-20): the PG two-task curve.\n"
-                               "# Runs after head-pg-w1-05 and head-my-w3-05 of published.toml on the same hosts, at\n"
+                               "# Runs on its own stack after head-pg-w1-05 and head-my-w3-05 of published.toml, at\n"
                                "# day 1's S_0.5 (DAY1_S), so 30% and 90% are the 1x0.5 curve's absolute rates and\n"
                                "# 120-220% show whether two tasks of 0.5 vCPU scale (staging P3: PG with two tasks\n"
                                "# saturated below one task, cause unexplained). Its own SUT host, so it also runs 1 x 0.5 at\n"
