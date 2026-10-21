@@ -1,15 +1,15 @@
 # BENCH-2026-11: results (EC2, Tier P, vericto-proxy 4.14.2)
 
-**Internal until the owner's review. No figure here is published.** Status: day 1 + day 2 complete (2026-10-21); every run stack destroyed; only the archive bucket remains. Results page:
-[Proxy benchmark BENCH-2026-11: day 1 results (EC2, proxy 4.14.2)](<internal-report>)
-(Confluence, VTO). Design: [BENCH-2026-11](<internal-report>).
+Status: day 1 + day 2 complete (2026-10-21); every run stack destroyed. The public write-up is the
+benchmark page on vericto.com; this directory holds the per-run manifests, cell results and reports
+it is built from.
 
 System under test: vericto-proxy 4.14.2
 (`docker.io/vericto/vericto-proxy@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b`,
 same digest on GHCR; engine v4.3.0, 42 built-in rules, default policy), `RUST_LOG=info`,
 enforce mode with telemetry to the local control-plane stand-in, TLS on both legs,
 0.5 vCPU (one Graviton3 core, 50% CFS quota) and 2 x 0.5 vCPU. SUT c7g.2xlarge and load
-generator c7g.xlarge in one cluster placement group, us-east-1a, account <aws-account-id>.
+generator c7g.xlarge in one cluster placement group, us-east-1a.
 
 ## Runs
 
@@ -28,10 +28,9 @@ log, the run's own report, and `SHA256SUMS` of the raw archive.
 ## Raw data
 
 Too big for git (pgbench per-transaction logs, HdrHistogram interval logs, 1-s counter
-samples, proxy and database logs): kept in S3 in the archive bucket
-`<private-archive-bucket>` (private, versioned, SSE, TLS only,
-not force-destroyed, `ExpiresOn` 2027-01-31 as a review date; `terraform/archive`), one
-prefix per run id with the tarballs and their `SHA256SUMS`:
+samples, proxy and database logs): kept by Vericto in a private, versioned S3 archive
+(`terraform/archive` creates one like it), one prefix per run id with the tarballs and
+their `SHA256SUMS`. Available on request:
 
 | Prefix | Archive | Bytes |
 | --- | --- | --- |
@@ -40,7 +39,7 @@ prefix per run id with the tarballs and their `SHA256SUMS`:
 | `bench-2026-11-p2-core-h2-2/` | results + logs tarballs | 1,581,960,714 + 23,044 |
 | `bench-2026-11-p2-day2/` | results + logs tarballs | 303,522,960 + 22,721 |
 
-    aws s3 cp s3://<private-archive-bucket>/<prefix>/ . --recursive
+    # after receiving a prefix's files:
     shasum -a 256 -c SHA256SUMS
 
 ## Re-create a run
