@@ -237,10 +237,13 @@ def cpu_fits(used: list[dict], saturation: dict[str, float]) -> list[dict]:
         v = sum(x["vcpu"] for k, x in cont.items() if k.startswith("target"))
         qps = c.get("statements_per_s") or c.get("achieved_rate") or 0
         if v > 0 and qps > 0:
-            pts.setdefault((c["curve"], c["engine"], c["target"], c.get("size")), []).append((qps / 1000.0, v))
+            pts.setdefault((c["curve"], c["engine"], c["target"], c.get("size")), []).append((qps / 1000.0, v, c.get("offered_rate")))
     rows = []
     for (curve, engine, target, size), p in sorted(pts.items()):
-        f = ols([x for x, _ in p], [y for _, y in p])
+        # A slope needs a spread of rates: at least 3 distinct offered rates.
+        if len({r for _, _, r in p}) < 3:
+            continue
+        f = ols([x for x, _, _ in p], [y for _, y, _ in p])
         row = {"curve": curve, "engine": engine, "target": target, "size": size, **f}
         if "slope" in f:
             row["usd_per_month_per_1000qps_at_100pct"] = f["slope"] * FARGATE_ARM_VCPU_HOUR * 730
