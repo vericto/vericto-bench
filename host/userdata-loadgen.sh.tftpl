@@ -22,6 +22,7 @@ BUCKET=${bucket}
 REGION=${region}
 AUTO_SHUTDOWN=${auto_shutdown}
 PROXY_IMAGE_OVERRIDE=${proxy_image_override}
+HARNESS_COMMIT=${harness_commit}
 ENV
 
 RC=1
@@ -88,10 +89,13 @@ fi
 
 mkdir -p /var/lib/vericto-bench/results/${run_id}
 chown bench:bench /var/lib/vericto-bench/results/${run_id}
+# Partial results and the runner log to S3 every 10 minutes (finish.sh stops it).
+nohup /opt/vericto-bench/host/progress-sync.sh > /var/log/vericto-bench/progress-sync.log 2>&1 &
 set +e
-sudo -u bench -H env RUN_ID=${run_id} LIBRARY_MIRROR=public.ecr.aws/docker/library PROXY_FROM_MIRROR=1 python3.11 /opt/vericto-bench/runner/run.py \
+sudo -u bench -H env RUN_ID=${run_id} HARNESS_COMMIT=${harness_commit} LIBRARY_MIRROR=public.ecr.aws/docker/library PROXY_FROM_MIRROR=1 python3.11 /opt/vericto-bench/runner/run.py \
   --suite /opt/vericto-bench/suites/${suite}.toml \
   --topology ${topology} \
+  --day ${day} \
   "$${SUT_ARGS[@]}" \
   --out /var/lib/vericto-bench/results/${run_id} --report \
   > /var/log/vericto-bench/runner.log 2>&1

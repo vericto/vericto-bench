@@ -12,3 +12,6 @@ terraform/aws/.build/
 *.tfplan
 __pycache__/
 *.pyc
+terraform/archive/.terraform/
+terraform/archive/.terraform.lock.hcl
+!/results/bench-2026-11/

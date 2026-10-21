@@ -121,6 +121,69 @@ warmup_s = 30
 duration_s = 120
 reps = 1
 
+# P-modes: W2 tpcb-like saturation (write-bound) for its own rates
+[[curve]]
+id = "sat-pg-w2"
+engine = "pg"
+tool = "pgbench"
+workload = "tpcb-like"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+loop = "closed"
+concurrency = [1, 2, 4, 8, 16, 32, 64, 128]
+warmup_s = 30
+duration_s = 120
+reps = 1
+
+# P-orm: W4 ORM mix (pg) saturation, then 3 rates
+[[curve]]
+id = "sat-pg-w4"
+engine = "pg"
+tool = "vbench"
+workload = "orm"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+loop = "closed"
+concurrency = [1, 2, 4, 8, 16, 32, 64, 128]
+warmup_s = 30
+duration_s = 120
+reps = 1
+
+# P-orm: W4 ORM mix (mysql) saturation, then 3 rates
+[[curve]]
+id = "sat-my-w4"
+engine = "mysql"
+tool = "vbench"
+workload = "orm"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+loop = "closed"
+concurrency = [1, 2, 4, 8, 16, 32, 64, 128]
+warmup_s = 30
+duration_s = 120
+reps = 1
+
+# Generator validation: the database paused 1 s once a minute; p99.9/max must show ~1 s and ~1% of requests above 500 ms
+[[curve]]
+id = "validate-generator-pg"
+engine = "pg"
+tool = "vbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct"]
+rates = [1000]
+pause_every_s = 60
+pause_s = 1
+reps = 2
+
 # P-head-pg: HEADLINE PG curve, W1 pgbench select-only, extended protocol, TLS, 0.5 vCPU
 [[curve]]
 id = "head-pg-w1-05"
@@ -161,6 +224,7 @@ targets = ["direct", "haproxy-tcp", "pgbouncer-session", "vericto-offline", "ver
 rates_pct = [30, 70]
 saturation_from = "sat-pg-w1-05"
 conns = 64
+reps = 2
 
 [[curve]]
 id = "decomp-my-w3"
@@ -173,276 +237,7 @@ size = "0.5"
 targets = ["direct", "haproxy-tcp", "proxysql", "vericto-offline", "vericto-enforce", "vericto-observe"]
 rates_pct = [30, 70]
 saturation_from = "sat-my-w3-05"
-
-# P-modes: W1 simple
-[[curve]]
-id = "modes-pg-w1-simple"
-engine = "pg"
-tool = "pgbench"
-workload = "select-only"
-mode = "simple"
-tls = true
-size = "0.5"
-targets = ["direct", "haproxy-tcp", "vericto-enforce"]
-rates_pct = [30, 70]
-saturation_from = "sat-pg-w1-05"
-conns = 64
-
-# P-modes: W1 prepared
-[[curve]]
-id = "modes-pg-w1-prepared"
-engine = "pg"
-tool = "pgbench"
-workload = "select-only"
-mode = "prepared"
-tls = true
-size = "0.5"
-targets = ["direct", "haproxy-tcp", "vericto-enforce"]
-rates_pct = [30, 70]
-saturation_from = "sat-pg-w1-05"
-conns = 64
-
-# P-modes: W2 tpcb-like saturation (write-bound) for its own rates
-[[curve]]
-id = "sat-pg-w2"
-engine = "pg"
-tool = "pgbench"
-workload = "tpcb-like"
-mode = "extended"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-loop = "closed"
-concurrency = [1, 2, 4, 8, 16, 32, 64, 128]
-warmup_s = 30
-duration_s = 120
-reps = 1
-
-[[curve]]
-id = "modes-pg-w2-simple"
-engine = "pg"
-tool = "pgbench"
-workload = "tpcb-like"
-mode = "simple"
-tls = true
-size = "0.5"
-targets = ["direct", "haproxy-tcp", "vericto-enforce"]
-rates_pct = [30, 70]
-saturation_from = "sat-pg-w2"
-conns = 64
-
-[[curve]]
-id = "modes-pg-w2-extended"
-engine = "pg"
-tool = "pgbench"
-workload = "tpcb-like"
-mode = "extended"
-tls = true
-size = "0.5"
-targets = ["direct", "haproxy-tcp", "vericto-enforce"]
-rates_pct = [30, 70]
-saturation_from = "sat-pg-w2"
-conns = 64
-
-[[curve]]
-id = "modes-pg-w2-prepared"
-engine = "pg"
-tool = "pgbench"
-workload = "tpcb-like"
-mode = "prepared"
-tls = true
-size = "0.5"
-targets = ["direct", "haproxy-tcp", "vericto-enforce"]
-rates_pct = [30, 70]
-saturation_from = "sat-pg-w2"
-conns = 64
-
-# P-orm: W4 ORM mix (pg) saturation, then 3 rates
-[[curve]]
-id = "sat-pg-w4"
-engine = "pg"
-tool = "vbench"
-workload = "orm"
-mode = "extended"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-loop = "closed"
-concurrency = [1, 2, 4, 8, 16, 32, 64, 128]
-warmup_s = 30
-duration_s = 120
-reps = 1
-
-[[curve]]
-id = "orm-pg-w4"
-engine = "pg"
-tool = "vbench"
-workload = "orm"
-mode = "extended"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates_pct = [30, 50, 70]
-saturation_from = "sat-pg-w4"
-
-# P-orm: W4 ORM mix (mysql) saturation, then 3 rates
-[[curve]]
-id = "sat-my-w4"
-engine = "mysql"
-tool = "vbench"
-workload = "orm"
-mode = "text"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-loop = "closed"
-concurrency = [1, 2, 4, 8, 16, 32, 64, 128]
-warmup_s = 30
-duration_s = 120
-reps = 1
-
-[[curve]]
-id = "orm-mysql-w4"
-engine = "mysql"
-tool = "vbench"
-workload = "orm"
-mode = "text"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates_pct = [30, 50, 70]
-saturation_from = "sat-my-w4"
-
-# P-tls-off: headline targets at 30% and 70%, TLS off on both legs
-[[curve]]
-id = "tlsoff-pg-w1"
-engine = "pg"
-tool = "pgbench"
-workload = "select-only"
-mode = "extended"
-tls = false
-size = "0.5"
-targets = ["direct", "haproxy-tcp", "vericto-enforce"]
-rates_pct = [30, 70]
-saturation_from = "sat-pg-w1-05"
-conns = 64
-
-[[curve]]
-id = "tlsoff-my-w3"
-engine = "mysql"
-tool = "vbench"
-workload = "sysbench-ro"
-mode = "text"
-tls = false
-size = "0.5"
-targets = ["direct", "haproxy-tcp", "vericto-enforce"]
-rates_pct = [30, 70]
-saturation_from = "sat-my-w3-05"
-
-# P-head-pg: HEADLINE PG curve, W1 pgbench select-only, extended protocol, TLS, 1 vCPU
-[[curve]]
-id = "head-pg-w1-1"
-engine = "pg"
-tool = "pgbench"
-workload = "select-only"
-mode = "extended"
-tls = true
-size = "1"
-targets = ["direct", "haproxy-tcp", "vericto-enforce"]
-rates_pct = [10, 30, 50, 70, 80, 90, 100]
-saturation_from = "sat-pg-w1-1"
-conns = 64
-
-# P-head-my: HEADLINE MySQL curve, W3 oltp_read_only (vbench replay, text protocol), TLS, 1 vCPU
-[[curve]]
-id = "head-my-w3-1"
-engine = "mysql"
-tool = "vbench"
-workload = "sysbench-ro"
-mode = "text"
-tls = true
-size = "1"
-targets = ["direct", "haproxy-tcp", "vericto-enforce"]
-rates_pct = [10, 30, 50, 70, 80, 90, 100]
-saturation_from = "sat-my-w3-1"
-
-# P-2tasks: 0.5, same absolute rates (% of S at 0.5 vCPU)
-[[curve]]
-id = "h2-pg-w1-05"
-engine = "pg"
-tool = "pgbench"
-workload = "select-only"
-mode = "extended"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates_pct = [30, 60, 90, 120, 150, 180]
-saturation_from = "sat-pg-w1-05"
-conns = 128
-
-[[curve]]
-id = "h2-my-w3-05"
-engine = "mysql"
-tool = "vbench"
-workload = "sysbench-ro"
-mode = "text"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates_pct = [30, 60, 90, 120, 150, 180]
-saturation_from = "sat-my-w3-05"
-
-# P-2tasks: 1, same absolute rates (% of S at 0.5 vCPU)
-[[curve]]
-id = "h2-pg-w1-1"
-engine = "pg"
-tool = "pgbench"
-workload = "select-only"
-mode = "extended"
-tls = true
-size = "1"
-targets = ["direct", "vericto-enforce"]
-rates_pct = [30, 60, 90, 120, 150, 180]
-saturation_from = "sat-pg-w1-05"
-conns = 128
-
-[[curve]]
-id = "h2-my-w3-1"
-engine = "mysql"
-tool = "vbench"
-workload = "sysbench-ro"
-mode = "text"
-tls = true
-size = "1"
-targets = ["direct", "vericto-enforce"]
-rates_pct = [30, 60, 90, 120, 150, 180]
-saturation_from = "sat-my-w3-05"
-
-# P-2tasks: 2x0.5, same absolute rates (% of S at 0.5 vCPU)
-[[curve]]
-id = "h2-pg-w1-2x05"
-engine = "pg"
-tool = "pgbench"
-workload = "select-only"
-mode = "extended"
-tls = true
-size = "2x0.5"
-targets = ["direct", "vericto-enforce"]
-rates_pct = [30, 60, 90, 120, 150, 180]
-saturation_from = "sat-pg-w1-05"
-conns = 128
-
-[[curve]]
-id = "h2-my-w3-2x05"
-engine = "mysql"
-tool = "vbench"
-workload = "sysbench-ro"
-mode = "text"
-tls = true
-size = "2x0.5"
-targets = ["direct", "vericto-enforce"]
-rates_pct = [30, 60, 90, 120, 150, 180]
-saturation_from = "sat-my-w3-05"
+reps = 2
 
 # P-size: multi-row INSERT of 1 rows
 [[curve]]
@@ -458,6 +253,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-batch10-05"
@@ -472,6 +268,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-batch100-05"
@@ -486,6 +283,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-batch500-05"
@@ -500,6 +298,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-batch1000-05"
@@ -514,6 +313,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-batch2000-05"
@@ -528,6 +328,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 # P-size: multi-row INSERT of 1 rows
 [[curve]]
@@ -543,6 +344,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-batch10-1"
@@ -557,6 +359,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-batch100-1"
@@ -571,6 +374,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-batch500-1"
@@ -585,6 +389,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-batch1000-1"
@@ -599,6 +404,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-batch2000-1"
@@ -613,6 +419,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-inlist10-1"
@@ -627,6 +434,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-inlist100-1"
@@ -641,6 +449,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-inlist1000-1"
@@ -655,6 +464,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-pg-inlist10000-1"
@@ -669,6 +479,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 # P-size: multi-row INSERT of 1 rows
 [[curve]]
@@ -684,6 +495,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-batch10-05"
@@ -698,6 +510,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-batch100-05"
@@ -712,6 +525,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-batch500-05"
@@ -726,6 +540,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-batch1000-05"
@@ -740,6 +555,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-batch2000-05"
@@ -754,6 +570,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 # P-size: multi-row INSERT of 1 rows
 [[curve]]
@@ -769,6 +586,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-batch10-1"
@@ -783,6 +601,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-batch100-1"
@@ -797,6 +616,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-batch500-1"
@@ -811,6 +631,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-batch1000-1"
@@ -825,6 +646,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-batch2000-1"
@@ -839,6 +661,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-inlist10-1"
@@ -853,6 +676,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-inlist100-1"
@@ -867,6 +691,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-inlist1000-1"
@@ -881,6 +706,7 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "size-mysql-inlist10000-1"
@@ -895,6 +721,120 @@ rates = [10]
 conns = 1
 warmup_s = 10
 duration_s = 60
+reps = 2
+
+# P-bytes: large results, plain and masked
+[[curve]]
+id = "bytes-pg-payload-10k"
+engine = "pg"
+tool = "vbench"
+workload = "payload-10k"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates = [200, 500, 1000]
+warmup_s = 30
+duration_s = 120
+reps = 2
+
+[[curve]]
+id = "bytes-pg-payload-10k-masked"
+engine = "pg"
+tool = "vbench"
+workload = "payload-10k-masked"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates = [200, 500, 1000]
+warmup_s = 30
+duration_s = 120
+reps = 2
+
+[[curve]]
+id = "bytes-pg-payload-100k"
+engine = "pg"
+tool = "vbench"
+workload = "payload-100k"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates = [20, 50, 100]
+warmup_s = 30
+duration_s = 120
+reps = 2
+
+[[curve]]
+id = "bytes-pg-payload-100k-masked"
+engine = "pg"
+tool = "vbench"
+workload = "payload-100k-masked"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates = [20, 50, 100]
+warmup_s = 30
+duration_s = 120
+reps = 2
+
+[[curve]]
+id = "bytes-pg-payload-1m"
+engine = "pg"
+tool = "vbench"
+workload = "payload-1m"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates = [2, 5, 10]
+warmup_s = 30
+duration_s = 120
+reps = 2
+
+[[curve]]
+id = "bytes-pg-payload-1m-masked"
+engine = "pg"
+tool = "vbench"
+workload = "payload-1m-masked"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates = [2, 5, 10]
+warmup_s = 30
+duration_s = 120
+reps = 2
+
+[[curve]]
+id = "bytes-mysql-payload-100k"
+engine = "mysql"
+tool = "vbench"
+workload = "payload-100k"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates = [20, 50, 100]
+warmup_s = 30
+duration_s = 120
+reps = 2
+
+[[curve]]
+id = "bytes-mysql-payload-100k-masked"
+engine = "mysql"
+tool = "vbench"
+workload = "payload-100k-masked"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates = [20, 50, 100]
+warmup_s = 30
+duration_s = 120
+reps = 2
 
 # P-blocked: blocked statement vs the same with a WHERE
 [[curve]]
@@ -909,6 +849,7 @@ targets = ["direct", "vericto-enforce", "vericto-observe"]
 rates = [100]
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "blocked-pg-delete-where"
@@ -922,6 +863,7 @@ targets = ["direct", "vericto-enforce", "vericto-observe"]
 rates = [100]
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "blocked-pg-blocked-update"
@@ -935,6 +877,7 @@ targets = ["direct", "vericto-enforce", "vericto-observe"]
 rates = [100]
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "blocked-pg-update-where"
@@ -948,6 +891,7 @@ targets = ["direct", "vericto-enforce", "vericto-observe"]
 rates = [100]
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 # P-blocked: blocked statement vs the same with a WHERE
 [[curve]]
@@ -962,6 +906,7 @@ targets = ["direct", "vericto-enforce", "vericto-observe"]
 rates = [100]
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "blocked-mysql-delete-where"
@@ -975,6 +920,7 @@ targets = ["direct", "vericto-enforce", "vericto-observe"]
 rates = [100]
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "blocked-mysql-blocked-update"
@@ -988,6 +934,7 @@ targets = ["direct", "vericto-enforce", "vericto-observe"]
 rates = [100]
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "blocked-mysql-update-where"
@@ -1001,6 +948,7 @@ targets = ["direct", "vericto-enforce", "vericto-observe"]
 rates = [100]
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 # P-conn: connection setup
 [[curve]]
@@ -1016,6 +964,7 @@ targets = ["direct", "haproxy-tcp", "pgbouncer-session", "vericto-offline", "ver
 rates = [20]
 warmup_s = 10
 duration_s = 60
+reps = 2
 
 [[curve]]
 id = "conn-mysql-w7"
@@ -1030,122 +979,243 @@ targets = ["direct", "haproxy-tcp", "proxysql", "vericto-offline", "vericto-enfo
 rates = [20]
 warmup_s = 10
 duration_s = 60
+reps = 2
 
-# P-bytes: large results, plain and masked
+# P-tls-off: headline targets at 30% and 70%, TLS off on both legs
 [[curve]]
-id = "bytes-pg-payload-10k"
+id = "tlsoff-pg-w1"
 engine = "pg"
-tool = "vbench"
-workload = "payload-10k"
+tool = "pgbench"
+workload = "select-only"
 mode = "extended"
-tls = true
+tls = false
 size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates = [200, 500, 1000]
-warmup_s = 30
-duration_s = 120
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [30, 70]
+saturation_from = "sat-pg-w1-05"
+conns = 64
+reps = 2
 
 [[curve]]
-id = "bytes-pg-payload-10k-masked"
-engine = "pg"
-tool = "vbench"
-workload = "payload-10k-masked"
-mode = "extended"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates = [200, 500, 1000]
-warmup_s = 30
-duration_s = 120
-
-[[curve]]
-id = "bytes-pg-payload-100k"
-engine = "pg"
-tool = "vbench"
-workload = "payload-100k"
-mode = "extended"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates = [20, 50, 100]
-warmup_s = 30
-duration_s = 120
-
-[[curve]]
-id = "bytes-pg-payload-100k-masked"
-engine = "pg"
-tool = "vbench"
-workload = "payload-100k-masked"
-mode = "extended"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates = [20, 50, 100]
-warmup_s = 30
-duration_s = 120
-
-[[curve]]
-id = "bytes-pg-payload-1m"
-engine = "pg"
-tool = "vbench"
-workload = "payload-1m"
-mode = "extended"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates = [2, 5, 10]
-warmup_s = 30
-duration_s = 120
-
-[[curve]]
-id = "bytes-pg-payload-1m-masked"
-engine = "pg"
-tool = "vbench"
-workload = "payload-1m-masked"
-mode = "extended"
-tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates = [2, 5, 10]
-warmup_s = 30
-duration_s = 120
-
-[[curve]]
-id = "bytes-mysql-payload-100k"
+id = "tlsoff-my-w3"
 engine = "mysql"
 tool = "vbench"
-workload = "payload-100k"
+workload = "sysbench-ro"
+mode = "text"
+tls = false
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [30, 70]
+saturation_from = "sat-my-w3-05"
+reps = 2
+
+# P-modes: W1 simple
+[[curve]]
+id = "modes-pg-w1-simple"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "simple"
+tls = true
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [30, 70]
+saturation_from = "sat-pg-w1-05"
+conns = 64
+reps = 2
+
+# P-modes: W1 prepared
+[[curve]]
+id = "modes-pg-w1-prepared"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "prepared"
+tls = true
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [30, 70]
+saturation_from = "sat-pg-w1-05"
+conns = 64
+reps = 2
+
+[[curve]]
+id = "modes-pg-w2-simple"
+engine = "pg"
+tool = "pgbench"
+workload = "tpcb-like"
+mode = "simple"
+tls = true
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [30, 70]
+saturation_from = "sat-pg-w2"
+conns = 64
+reps = 2
+
+[[curve]]
+id = "modes-pg-w2-extended"
+engine = "pg"
+tool = "pgbench"
+workload = "tpcb-like"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [30, 70]
+saturation_from = "sat-pg-w2"
+conns = 64
+reps = 2
+
+[[curve]]
+id = "modes-pg-w2-prepared"
+engine = "pg"
+tool = "pgbench"
+workload = "tpcb-like"
+mode = "prepared"
+tls = true
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [30, 70]
+saturation_from = "sat-pg-w2"
+conns = 64
+reps = 2
+
+[[curve]]
+id = "orm-pg-w4"
+engine = "pg"
+tool = "vbench"
+workload = "orm"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [30, 50, 70]
+saturation_from = "sat-pg-w4"
+reps = 2
+
+[[curve]]
+id = "orm-mysql-w4"
+engine = "mysql"
+tool = "vbench"
+workload = "orm"
 mode = "text"
 tls = true
 size = "0.5"
 targets = ["direct", "vericto-enforce"]
-rates = [20, 50, 100]
-warmup_s = 30
-duration_s = 120
+rates_pct = [30, 50, 70]
+saturation_from = "sat-my-w4"
+reps = 2
 
+# P-head-pg: HEADLINE PG curve, W1 pgbench select-only, extended protocol, TLS, 1 vCPU
 [[curve]]
-id = "bytes-mysql-payload-100k-masked"
+id = "head-pg-w1-1"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "1"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [10, 30, 50, 70, 80, 90, 100]
+saturation_from = "sat-pg-w1-1"
+conns = 64
+reps = 2
+
+# P-head-my: HEADLINE MySQL curve, W3 oltp_read_only (vbench replay, text protocol), TLS, 1 vCPU
+[[curve]]
+id = "head-my-w3-1"
 engine = "mysql"
 tool = "vbench"
-workload = "payload-100k-masked"
+workload = "sysbench-ro"
 mode = "text"
 tls = true
-size = "0.5"
-targets = ["direct", "vericto-enforce"]
-rates = [20, 50, 100]
-warmup_s = 30
-duration_s = 120
+size = "1"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [10, 30, 50, 70, 80, 90, 100]
+saturation_from = "sat-my-w3-1"
+reps = 2
 
-# Generator validation: the database paused 1 s once a minute; p99.9/max must show ~1 s and ~1% of requests above 500 ms
+# P-2tasks: 0.5, same absolute rates (% of S at 0.5 vCPU)
 [[curve]]
-id = "validate-generator-pg"
+id = "h2-pg-w1-05"
 engine = "pg"
-tool = "vbench"
+tool = "pgbench"
 workload = "select-only"
 mode = "extended"
 tls = true
 size = "0.5"
-targets = ["direct"]
-rates = [1000]
-pause_every_s = 60
-pause_s = 1
+targets = ["direct", "vericto-enforce"]
+rates_pct = [30, 60, 90, 120, 150, 180]
+saturation_from = "sat-pg-w1-05"
+conns = 128
+reps = 2
+
+[[curve]]
+id = "h2-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [30, 60, 90, 120, 150, 180]
+saturation_from = "sat-my-w3-05"
+reps = 2
+
+# P-2tasks: 1, same absolute rates (% of S at 0.5 vCPU)
+[[curve]]
+id = "h2-pg-w1-1"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "1"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [30, 60, 90, 120, 150, 180]
+saturation_from = "sat-pg-w1-05"
+conns = 128
+reps = 2
+
+[[curve]]
+id = "h2-my-w3-1"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "1"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [30, 60, 90, 120, 150, 180]
+saturation_from = "sat-my-w3-05"
+reps = 2
+
+# P-2tasks: 2x0.5, same absolute rates (% of S at 0.5 vCPU)
+[[curve]]
+id = "h2-pg-w1-2x05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "2x0.5"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [30, 60, 90, 120, 150, 180]
+saturation_from = "sat-pg-w1-05"
+conns = 128
+reps = 2
+
+[[curve]]
+id = "h2-my-w3-2x05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "2x0.5"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [30, 60, 90, 120, 150, 180]
+saturation_from = "sat-my-w3-05"
+reps = 2

@@ -11,13 +11,14 @@
 # identifies the image whatever the registry.
 
 # --- System under test --------------------------------------------------------
-# The campaign measures the release that carries the P0 fixes (4.14.3: default
-# log level info, corrected size comment). Until that tag is published this
-# pins 4.14.1, which the smoke uses; runner/run.py refuses profile=published
-# unless the tag equals PUBLISHED_PROXY_VERSION.
-VERICTO_PROXY_IMAGE=docker.io/vericto/vericto-proxy:4.14.1@sha256:a8f1e02d72b041397a45c7c90be3ba6da7bb65fdeb3d956e8cee70dde24ef631
+# BENCH-2026-11 measures vericto-proxy 4.14.2 (owner decision 2026-10-19: the
+# latest release). 4.14.2 is documentation-only over 4.14.1 (same code, engine
+# v4.3.0, 42 built-in rules); the code's default log filter is still
+# info,vericto_proxy=debug, so the harness sets RUST_LOG=info explicitly.
+# runner/run.py refuses profile=published unless the tag equals PUBLISHED_PROXY_VERSION.
+VERICTO_PROXY_IMAGE=docker.io/vericto/vericto-proxy:4.14.2@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b
 VERICTO_PROXY_MIRROR=ghcr.io/vericto/vericto-proxy
-PUBLISHED_PROXY_VERSION=4.14.3
+PUBLISHED_PROXY_VERSION=4.14.2
 # The engine the proxy pins (vericto-proxy Cargo.toml): engine-eval and the stub's rules use the same tag.
 VERICTO_ENGINE_TAG=v4.3.0
 

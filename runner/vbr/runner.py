@@ -77,6 +77,8 @@ class Runner:
             tools=f"vericto-bench/tools:{tag}", pgbouncer=f"vericto-bench/pgbouncer:{tag}",
             proxysql=f"vericto-bench/proxysql:{tag}", sysbench=f"vericto-bench/sysbench:{tag}")
         self.proxy_ref = proxy_ref
+        self._resolve_images({"proxy": proxy_ref, "postgres": self.lock["POSTGRES_IMAGE"], "mysql": self.lock["MYSQL_IMAGE"],
+                              "haproxy": self.lock["HAPROXY_IMAGE"]})
         self.datasets = {"pgbench_scale": 100, "sysbench_tables": 8, "sysbench_rows": 1_000_000, "payload_rows": 10_000}
         self.datasets.update(self.suite.datasets)
         self.cells_path = os.path.join(self.out, "cells.jsonl")
@@ -87,6 +89,25 @@ class Runner:
             with open(args.caps) as f:
                 self.caps = json.load(f)
         self._check_profile()
+
+    def _resolve_images(self, origins: dict[str, str]):
+        """host/pull-images.sh falls back to the original registry when a mirror
+        fails; the digest is the same, the name is not. Use the mirror name where
+        every host has it, else the original name where every host has that."""
+        if self.topo.kind == "compose":
+            return
+        for field, raw in origins.items():
+            mirrored = getattr(self.images, field)
+            origin = pull_ref(raw)
+            if mirrored == origin:
+                continue
+
+            def everywhere(ref: str) -> bool:
+                return all(h.docker("image", "inspect", "-f", "{{.Id}}", ref, check=False).returncode == 0
+                           for h in self.topo.hosts())
+            if not everywhere(mirrored) and everywhere(origin):
+                log(f"image {field}: {mirrored} not on every host; using the same digest as {origin}")
+                setattr(self.images, field, origin)
 
     # ---- checks -------------------------------------------------------------------
 
@@ -106,10 +127,15 @@ class Runner:
 
     def tool(self, image: str, args: list[str], name: str, pass_env: list[str] | None = None, env: dict | None = None,
              check: bool = True, entrypoint: str | None = None, timeout: float | None = None,
-             input: bytes | None = None) -> subprocess.CompletedProcess:
+             input: bytes | None = None, as_runner: bool = False) -> subprocess.CompletedProcess:
         h = self.topo.loadgen
         cmd = h.docker_cmd() + ["run", "--rm", "-i" if input else "--init", "--name", name, "--label",
                                 f"{T.LABEL}={self.run_id}", "--network", h.network] + self.topo.data_mount()
+        if as_runner and self.topo.kind != "compose":
+            # Files this container writes must be readable (and removable) by the
+            # runner, which runs as an unprivileged user on EC2 (bench), e.g. the
+            # run's 0600 TLS key. Compose: the runner is root in its container.
+            cmd += ["--user", f"{os.getuid()}:{os.getgid()}"]
         if h.cpuset("CPU_LOADGEN"):
             cmd += ["--cpuset-cpus", h.cpuset("CPU_LOADGEN")]
         for k in pass_env or []:
@@ -146,7 +172,8 @@ class Runner:
         self.write_manifest(stage="setup")
         log(f"run {self.run_id}: suite {self.suite.name} (profile {self.suite.profile}), topology {self.topo.kind}")
         names = "localhost,127.0.0.1," + ",".join(TG.DB_NAME.values()) + f",{self.topo.sut.address or 'vb'}"
-        self.tool(self.images.tools, ["vbench", "certs", "-out", f"{self.data}/certs", "-names", names], "vb-certs")
+        self.tool(self.images.tools, ["vbench", "certs", "-out", f"{self.data}/certs", "-names", names], "vb-certs",
+                  as_runner=True)
         self.certs = {n: open(os.path.join(self.out, "certs", n), "rb").read() for n in ("ca.crt", "server.crt", "server.key")}
         tuning = TG.db_tuning(self.suite.profile, self.suite.database)
         self.db = {}
@@ -398,7 +425,8 @@ class Runner:
             rec.update({k: r.get(k) for k in ("status", "reason", "offered_rate", "achieved_rate", "statements_per_s",
                                                "scheduled", "completed", "incomplete", "unsent", "errors", "blocked",
                                                "latency", "latency_all", "service", "queue_wait", "gen_lag", "classes",
-                                               "measure_from", "end", "client", "invalid", "error_samples", "conns", "latency_scope")})
+                                               "measure_from", "end", "client", "invalid", "error_samples", "conns", "latency_scope",
+                                               "sent_total", "scheduled_total")})
             rec["intervals"] = f"cells/{cid}/load/intervals.jsonl"
             rec["hlog"] = f"cells/{cid}/load/latency.hlog"
         elif c.tool == "pgbench":
@@ -408,6 +436,9 @@ class Runner:
                 for i in ints:
                     f.write(json.dumps(i) + "\n")
             r["summary"] = TL.parse_pgbench_summary(output)
+            # The per-transaction logs stay in the raw data, compressed (one
+            # line per transaction: tens of MB per cell, hundreds of cells a day).
+            r["pgbench_logs"] = TL.gzip_logs(os.path.join(local, "pgbench", "tx"))
             if proc.returncode != 0 and r.get("status") == "ok":
                 r["status"], r["reason"] = "aborted", f"pgbench exit {proc.returncode}"
             if r["summary"].get("clients_aborted"):
@@ -497,7 +528,10 @@ class Runner:
             poisson = rec.get("tool") == "pgbench" or rec.get("arrival") == "poisson"
             steady = steady_state(os.path.join(self.out, rec["intervals"]), rec.get("offered_rate") or 0, poisson)
             rec["steady"] = steady
-            if steady.get("flag"):
+            # A saturated cell is the end of its curve by construction (design
+            # section 8: kept in the raw data, never a latency figure), so its
+            # unsteady rate is expected, not a reason to invalidate and rerun it.
+            if steady.get("flag") and rec.get("status") != "saturated":
                 inv.append("not steady: " + steady["flag"])
         if self.suite.profile == "smoke":
             rec["smoke"] = True
@@ -548,6 +582,8 @@ class Runner:
         if curve.loop == "closed" and best:
             self.saturation[curve.id] = statistics.mean(best.values())
             log(f"curve {curve.id}: S(vericto-enforce) = {self.saturation[curve.id]:.0f}/s")
+            # Recorded in full: day 2 runs the same absolute rates (suites/day2.toml).
+            self.manifest.setdefault("saturation", {})[curve.id] = self.saturation[curve.id]
 
     def engine_only(self):
         """Evaluation only (vantage point 1 of the blocked-statement cost, and
@@ -599,7 +635,12 @@ class Runner:
         if rec.get("status") == "aborted" or not rec.get("net"):
             raise T.SetupError(f"network pre-flight probe of {curve.id} failed: {rec.get('reason')}")
         bytes_ = (rec.get("net") or {}).get("bytes") or {}
-        reqs = rec.get("completed") or 0
+        # Bytes per REQUEST (the unit of the planned rates; a sysbench-ro request
+        # is a 16-statement transaction). The counters cover the whole probe
+        # (connection setup, warm-up, window), so divide by every request sent
+        # over it (vbench sent_total); pgbench reports only the window, which
+        # overstates bytes per request slightly (the safe side of the caps).
+        reqs = rec.get("sent_total") or rec.get("completed") or 0
         comps = json.load(open(os.path.join(self.out, "cells", probe.id + ".netprobe", "components.json")))
         plan = {"components": comps, "cells": [{"id": f"{curve.id}@{r:g}", "rate": r,
                                                 "probe": {"bytes": bytes_, "requests": reqs}} for r in rates]}

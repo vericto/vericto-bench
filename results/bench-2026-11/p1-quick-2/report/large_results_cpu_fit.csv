@@ -1,0 +1,2 @@
+engine,masked,n,unit
+pg,False,1,vCPU-seconds per MB of result relayed (slope of vCPU against MB/s)

@@ -1,0 +1,564 @@
+[05:08:38] run bench-2026-11-p2-day1: suite published-day1 (profile published), topology two-host
+[05:08:38] starting mysql database
+[05:08:38] starting pg database
+[05:08:48] seeding mysql/orm
+[05:08:52] seeding mysql/payload
+[05:08:53] seeding mysql/sysbench
+[05:10:30] seeding pg/orm
+[05:10:32] seeding pg/payload
+[05:10:33] seeding pg/pgbench
+[05:10:50] verdict pre-flight: every declared verdict matches engine-eval
+[05:10:50] curve sat-pg-w1-05: pgbench select-only extended tls=True size=0.5 targets=direct,haproxy-tcp,pgbouncer-session,vericto-offline,vericto-enforce,vericto-observe
+[05:10:50] cell sat-pg-w1-05.direct.c1.rep1
+[05:13:56]   -> ok  achieved 11140.0/s p50 0.087 p99 0.112 
+[05:13:56] cell sat-pg-w1-05.pgbouncer-session.c1.rep1
+[05:17:01]   -> ok  achieved 7705.2/s p50 0.128 p99 0.15 
+[05:17:01] cell sat-pg-w1-05.vericto-offline.c1.rep1
+[05:20:06]   -> ok  achieved 5851.3/s p50 0.167 p99 0.195 
+[05:20:06] cell sat-pg-w1-05.vericto-enforce.c1.rep1
+[05:23:16]   -> ok  achieved 5259.4/s p50 0.182 p99 0.217 
+[05:23:16] cell sat-pg-w1-05.vericto-observe.c1.rep1
+[05:26:26]   -> ok  achieved 5136.8/s p50 0.186 p99 0.226 
+[05:26:26] cell sat-pg-w1-05.haproxy-tcp.c1.rep1
+[05:29:32]   -> ok  achieved 8426.9/s p50 0.117 p99 0.136 
+[05:29:32] cell sat-pg-w1-05.direct.c2.rep1
+[05:32:43]   -> ok  achieved 22887.2/s p50 0.085 p99 0.109 
+[05:32:43] cell sat-pg-w1-05.pgbouncer-session.c2.rep1
+[05:35:52]   -> ok  achieved 15679.8/s p50 0.125 p99 0.151 
+[05:35:52] cell sat-pg-w1-05.vericto-offline.c2.rep1
+[05:38:57]   -> ok  achieved 6933.4/s p50 0.209 p99 0.259 
+[05:38:57] cell sat-pg-w1-05.vericto-enforce.c2.rep1
+[05:42:08]   -> ok  achieved 5503.5/s p50 0.216 p99 0.472 
+[05:42:08] cell sat-pg-w1-05.vericto-observe.c2.rep1
+[05:45:19]   -> ok  achieved 5590.0/s p50 0.229 p99 0.471 
+[05:45:19] cell sat-pg-w1-05.haproxy-tcp.c2.rep1
+[05:48:28]   -> ok  achieved 16586.5/s p50 0.118 p99 0.144 
+[05:48:28] cell sat-pg-w1-05.direct.c4.rep1
+[05:51:43]   -> ok  achieved 29606.1/s p50 0.107 p99 0.296 
+[05:51:43] cell sat-pg-w1-05.pgbouncer-session.c4.rep1
+[05:54:55]   -> ok  achieved 21815.9/s p50 0.166 p99 0.347 
+[05:54:55] cell sat-pg-w1-05.vericto-offline.c4.rep1
+[05:58:01]   -> ok  achieved 7206.6/s p50 0.302 p99 0.481 
+[05:58:01] cell sat-pg-w1-05.vericto-enforce.c4.rep1
+[06:01:11]   -> ok  achieved 5922.4/s p50 0.327 p99 3.007 
+[06:01:11] cell sat-pg-w1-05.vericto-observe.c4.rep1
+[06:04:22]   -> ok  achieved 5793.1/s p50 0.333 p99 2.995 
+[06:04:22] cell sat-pg-w1-05.haproxy-tcp.c4.rep1
+[06:07:35]   -> ok  achieved 23330.2/s p50 0.153 p99 0.344 
+[06:07:35] cell sat-pg-w1-05.direct.c8.rep1
+[06:10:52]   -> ok  achieved 31219.9/s p50 0.28 p99 0.477 
+[06:10:52] cell sat-pg-w1-05.pgbouncer-session.c8.rep1
+[06:14:05]   -> ok  achieved 23344.0/s p50 0.318 p99 0.556 
+[06:14:05] cell sat-pg-w1-05.vericto-offline.c8.rep1
+[06:17:11]   -> ok  achieved 7617.4/s p50 0.532 p99 50.328 
+[06:17:11] cell sat-pg-w1-05.vericto-enforce.c8.rep1
+[06:20:21]   -> ok  achieved 6032.6/s p50 0.617 p99 50.6 
+[06:20:21] cell sat-pg-w1-05.vericto-observe.c8.rep1
+[06:23:32]   -> ok  achieved 6004.7/s p50 0.619 p99 50.617 
+[06:23:32] cell sat-pg-w1-05.haproxy-tcp.c8.rep1
+[06:26:48]   -> ok  achieved 27230.8/s p50 0.316 p99 0.543 
+[06:26:48] cell sat-pg-w1-05.direct.c16.rep1
+[06:30:04]   -> ok  achieved 29947.9/s p50 0.507 p99 1.132 
+[06:30:04] cell sat-pg-w1-05.pgbouncer-session.c16.rep1
+[06:33:17]   -> ok  achieved 23773.9/s p50 0.566 p99 1.674 
+[06:33:17] cell sat-pg-w1-05.vericto-offline.c16.rep1
+[06:36:23]   -> ok  achieved 7414.5/s p50 1.117 p99 51.279 
+[06:36:23] cell sat-pg-w1-05.vericto-observe.c16.rep1
+[06:39:34]   -> ok  achieved 5716.2/s p50 1.335 p99 51.668 
+[06:39:34] cell sat-pg-w1-05.haproxy-tcp.c16.rep1
+[06:42:49]   -> ok  achieved 26503.0/s p50 0.574 p99 1.276 
+[06:42:49] curve sat-pg-w1-05: S(vericto-enforce) = 6033/s
+[06:42:49] curve sat-my-w3-05: vbench sysbench-ro text tls=True size=0.5 targets=direct,haproxy-tcp,proxysql,vericto-offline,vericto-enforce,vericto-observe
+[06:42:49] cell sat-my-w3-05.haproxy-tcp.c1.rep1
+[06:45:51]   -> ok  achieved 444.6/s p50 2.241 p99 2.433 
+[06:45:51] cell sat-my-w3-05.proxysql.c1.rep1
+[06:48:55]   -> ok  achieved 345.8/s p50 2.883 p99 3.095 
+[06:48:55] cell sat-my-w3-05.vericto-offline.c1.rep1
+[06:51:56]   -> ok  achieved 353.6/s p50 2.817 p99 3.029 
+[06:51:56] cell sat-my-w3-05.vericto-enforce.c1.rep1
+[06:55:04]   -> ok  achieved 290.8/s p50 3.333 p99 5.987 
+[06:55:04] cell sat-my-w3-05.vericto-observe.c1.rep1
+[06:58:12]   -> ok  achieved 295.9/s p50 3.273 p99 5.959 
+[06:58:12] cell sat-my-w3-05.direct.c1.rep1
+[07:01:13]   -> ok  achieved 570.7/s p50 1.74 p99 1.93 
+[07:01:13] cell sat-my-w3-05.haproxy-tcp.c2.rep1
+[07:01:49]   -> aborted network cap: network cap: intermediary above 400 Mbps (3 consecutive samples) achieved 0.0/s p50 0 p99 0 
+[07:01:49] cell sat-my-w3-05.proxysql.c2.rep1
+[07:02:27]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 0 p99 0 
+[07:02:27] cell sat-my-w3-05.vericto-offline.c2.rep1
+[07:03:03]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 0 p99 0 
+[07:03:03] cell sat-my-w3-05.vericto-enforce.c2.rep1
+[07:06:11]   -> ok  achieved 350.2/s p50 3.749 p99 36.223 
+[07:06:11] cell sat-my-w3-05.vericto-observe.c2.rep1
+[07:09:18]   -> ok  achieved 342.4/s p50 3.829 p99 36.543 
+[07:09:18] cell sat-my-w3-05.direct.c2.rep1
+[07:09:54]   -> aborted network cap: network cap: aggregate of 3 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 0 p99 0 
+[07:09:54] cell sat-my-w3-05.vericto-enforce.c4.rep1
+[07:13:02]   -> ok  achieved 356.6/s p50 5.587 p99 56.447 
+[07:13:02] cell sat-my-w3-05.vericto-observe.c4.rep1
+[07:16:10]   -> ok  achieved 357.9/s p50 5.563 p99 56.127 
+[07:16:10] cell sat-my-w3-05.vericto-observe.c8.rep1
+[07:19:18]   -> ok  achieved 375.6/s p50 10.095 p99 67.007 
+[07:19:18] cell sat-my-w3-05.vericto-observe.c16.rep1
+[07:22:27]   -> ok  achieved 358.2/s p50 25.951 p99 79.487 
+[07:22:27] curve sat-my-w3-05: S(vericto-enforce) = 357/s
+[07:22:27] curve sat-pg-w1-1: pgbench select-only extended tls=True size=1 targets=direct,haproxy-tcp,pgbouncer-session,vericto-offline,vericto-enforce,vericto-observe
+[07:22:27] cell sat-pg-w1-1.direct.c1.rep1
+[07:25:33]   -> ok  achieved 11542.5/s p50 0.085 p99 0.105 
+[07:25:33] cell sat-pg-w1-1.vericto-observe.c1.rep1
+[07:28:43]   -> ok  achieved 5323.9/s p50 0.18 p99 0.215 
+[07:28:43] cell sat-pg-w1-1.vericto-enforce.c1.rep1
+[07:31:54]   -> ok  achieved 5350.2/s p50 0.179 p99 0.215 
+[07:31:54] cell sat-pg-w1-1.haproxy-tcp.c1.rep1
+[07:34:59]   -> ok  achieved 8415.8/s p50 0.117 p99 0.135 
+[07:34:59] cell sat-pg-w1-1.vericto-offline.c1.rep1
+[07:38:03]   -> ok  achieved 5893.2/s p50 0.168 p99 0.19 
+[07:38:03] cell sat-pg-w1-1.pgbouncer-session.c1.rep1
+[07:41:09]   -> ok  achieved 7972.0/s p50 0.124 p99 0.143 
+[07:41:09] cell sat-pg-w1-1.direct.c2.rep1
+[07:44:20]   -> ok  achieved 22733.3/s p50 0.086 p99 0.108 
+[07:44:20] cell sat-pg-w1-1.vericto-observe.c2.rep1
+[07:47:32]   -> ok  achieved 8562.3/s p50 0.216 p99 0.33 
+[07:47:32] cell sat-pg-w1-1.vericto-enforce.c2.rep1
+[07:50:44]   -> ok  achieved 8479.0/s p50 0.232 p99 0.337 
+[07:50:44] cell sat-pg-w1-1.haproxy-tcp.c2.rep1
+[07:53:53]   -> ok  achieved 16476.0/s p50 0.119 p99 0.143 
+[07:53:53] cell sat-pg-w1-1.vericto-offline.c2.rep1
+[07:57:00]   -> ok  achieved 10054.2/s p50 0.207 p99 0.24 
+[07:57:00] cell sat-pg-w1-1.pgbouncer-session.c2.rep1
+[08:00:09]   -> ok  achieved 15405.0/s p50 0.128 p99 0.152 
+[08:00:09] cell sat-pg-w1-1.direct.c4.rep1
+[08:03:23]   -> ok  achieved 28956.3/s p50 0.119 p99 0.297 
+[08:03:23] cell sat-pg-w1-1.vericto-observe.c4.rep1
+[08:06:37]   -> ok  achieved 11242.2/s p50 0.327 p99 0.628 
+[08:06:37] cell sat-pg-w1-1.vericto-enforce.c4.rep1
+[08:09:50]   -> ok  achieved 11355.1/s p50 0.325 p99 0.621 
+[08:09:50] cell sat-pg-w1-1.haproxy-tcp.c4.rep1
+[08:13:04]   -> ok  achieved 23941.1/s p50 0.148 p99 0.341 
+[08:13:04] cell sat-pg-w1-1.vericto-offline.c4.rep1
+[08:16:12]   -> ok  achieved 13504.9/s p50 0.296 p99 0.445 
+[08:16:12] cell sat-pg-w1-1.pgbouncer-session.c4.rep1
+[08:19:25]   -> ok  achieved 22974.4/s p50 0.16 p99 0.339 
+[08:19:25] cell sat-pg-w1-1.direct.c8.rep1
+[08:22:41]   -> ok  achieved 31224.0/s p50 0.279 p99 0.476 
+[08:22:41] cell sat-pg-w1-1.vericto-observe.c8.rep1
+[08:25:55]   -> ok  achieved 11757.6/s p50 0.635 p99 1.277 
+[08:25:55] cell sat-pg-w1-1.vericto-enforce.c8.rep1
+[08:29:09]   -> ok  achieved 11874.2/s p50 0.63 p99 1.258 
+[08:29:09] cell sat-pg-w1-1.haproxy-tcp.c8.rep1
+[08:32:24]   -> ok  achieved 27138.8/s p50 0.318 p99 0.545 
+[08:32:24] cell sat-pg-w1-1.vericto-offline.c8.rep1
+[08:35:33]   -> ok  achieved 14789.0/s p50 0.546 p99 0.83 
+[08:35:33] cell sat-pg-w1-1.pgbouncer-session.c8.rep1
+[08:38:48]   -> ok  achieved 26907.8/s p50 0.319 p99 0.544 
+[08:38:48] cell sat-pg-w1-1.direct.c16.rep1
+[08:42:04]   -> ok  achieved 29938.7/s p50 0.504 p99 1.116 
+[08:42:04] cell sat-pg-w1-1.vericto-observe.c16.rep1
+[08:45:19]   -> ok  achieved 11951.5/s p50 1.28 p99 5.753 
+[08:45:19] cell sat-pg-w1-1.vericto-enforce.c16.rep1
+[08:48:33]   -> ok  achieved 11784.7/s p50 1.3 p99 5.807 
+[08:48:33] cell sat-pg-w1-1.haproxy-tcp.c16.rep1
+[08:51:48]   -> ok  achieved 26392.1/s p50 0.575 p99 1.287 
+[08:51:48] cell sat-pg-w1-1.vericto-offline.c16.rep1
+[08:54:58]   -> ok  achieved 14848.4/s p50 1.117 p99 1.499 
+[08:54:58] cell sat-pg-w1-1.pgbouncer-session.c16.rep1
+[08:58:13]   -> ok  achieved 26592.1/s p50 0.571 p99 1.271 
+[08:58:13] curve sat-pg-w1-1: S(vericto-enforce) = 11874/s
+[08:58:13] curve sat-my-w3-1: vbench sysbench-ro text tls=True size=1 targets=direct,haproxy-tcp,proxysql,vericto-offline,vericto-enforce,vericto-observe
+[08:58:13] cell sat-my-w3-1.vericto-enforce.c1.rep1
+[09:01:21]   -> ok  achieved 285.8/s p50 3.421 p99 6.091 
+[09:01:21] cell sat-my-w3-1.haproxy-tcp.c1.rep1
+[09:04:23]   -> ok  achieved 441.8/s p50 2.257 p99 2.455 
+[09:04:23] cell sat-my-w3-1.direct.c1.rep1
+[09:07:24]   -> ok  achieved 558.2/s p50 1.747 p99 2.069 
+[09:07:24] cell sat-my-w3-1.proxysql.c1.rep1
+[09:10:28]   -> ok  achieved 345.5/s p50 2.885 p99 3.107 
+[09:10:28] cell sat-my-w3-1.vericto-offline.c1.rep1
+[09:13:30]   -> ok  achieved 354.1/s p50 2.813 p99 3.029 
+[09:13:30] cell sat-my-w3-1.vericto-observe.c1.rep1
+[09:16:37]   -> ok  achieved 292.3/s p50 3.319 p99 5.967 
+[09:16:37] cell sat-my-w3-1.vericto-enforce.c2.rep1
+[09:17:20]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 0 p99 0 
+[09:17:20] cell sat-my-w3-1.haproxy-tcp.c2.rep1
+[09:17:56]   -> aborted network cap: network cap: intermediary above 400 Mbps (3 consecutive samples) achieved 0.0/s p50 0 p99 0 
+[09:17:56] cell sat-my-w3-1.direct.c2.rep1
+[09:18:32]   -> aborted network cap: network cap: aggregate of 3 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 0 p99 0 
+[09:18:32] cell sat-my-w3-1.proxysql.c2.rep1
+[09:19:10]   -> aborted network cap: network cap: intermediary above 400 Mbps (3 consecutive samples) achieved 0.0/s p50 0 p99 0 
+[09:19:10] cell sat-my-w3-1.vericto-offline.c2.rep1
+[09:19:46]   -> aborted network cap: network cap: intermediary above 400 Mbps (3 consecutive samples) achieved 0.0/s p50 0 p99 0 
+[09:19:46] cell sat-my-w3-1.vericto-observe.c2.rep1
+[09:20:28]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 0 p99 0 
+[09:20:28] curve sat-my-w3-1: S(vericto-enforce) = 286/s
+[09:20:28] curve sat-my-sysbench-ro: sysbench oltp_read_only  tls=False size=0.5 targets=direct,haproxy-tcp,proxysql,vericto-offline,vericto-enforce,vericto-observe
+[09:20:28] cell sat-my-sysbench-ro.proxysql.c1.rep1
+[09:21:06]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 None p99 None 
+[09:21:06] cell sat-my-sysbench-ro.vericto-offline.c1.rep1
+[09:21:44]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 None p99 None 
+[09:21:44] cell sat-my-sysbench-ro.vericto-enforce.c1.rep1
+[09:22:27]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 None p99 None 
+[09:22:27] cell sat-my-sysbench-ro.vericto-observe.c1.rep1
+[09:23:09]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 None p99 None 
+[09:23:09] cell sat-my-sysbench-ro.haproxy-tcp.c1.rep1
+[09:23:46]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 None p99 None 
+[09:23:46] cell sat-my-sysbench-ro.direct.c1.rep1
+[09:26:47]   -> ok  achieved 673.6/s p50 None p99 1.61 
+[09:26:47] cell sat-my-sysbench-ro.direct.c2.rep1
+[09:27:23]   -> aborted network cap: network cap: sut-nic above 400 Mbps (3 consecutive samples) achieved 0.0/s p50 None p99 None 
+[09:27:23] curve sat-my-sysbench-ro: S(vericto-enforce) = 0/s
+[09:27:23] curve sat-my-sysbench-rw: sysbench oltp_read_write  tls=False size=0.5 targets=direct,haproxy-tcp,vericto-enforce
+[09:27:23] cell sat-my-sysbench-rw.haproxy-tcp.c1.rep1
+[09:30:24]   -> ok  achieved 167.8/s p50 None p99 9.39 
+[09:30:24] cell sat-my-sysbench-rw.direct.c1.rep1
+[09:33:25]   -> ok  achieved 206.7/s p50 None p99 7.56 
+[09:33:25] cell sat-my-sysbench-rw.vericto-enforce.c1.rep1
+[09:36:33]   -> ok  achieved 182.7/s p50 None p99 7.3 
+[09:36:33] cell sat-my-sysbench-rw.haproxy-tcp.c2.rep1
+[09:39:35]   -> ok  achieved 335.9/s p50 None p99 12.52 
+[09:39:35] cell sat-my-sysbench-rw.direct.c2.rep1
+[09:42:36]   -> ok  achieved 359.9/s p50 None p99 8.58 
+[09:42:36] cell sat-my-sysbench-rw.vericto-enforce.c2.rep1
+[09:45:44]   -> ok  achieved 358.4/s p50 None p99 8.74 
+[09:45:44] cell sat-my-sysbench-rw.haproxy-tcp.c4.rep1
+[09:46:21]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 None p99 None 
+[09:46:21] cell sat-my-sysbench-rw.direct.c4.rep1
+[09:49:22]   -> ok  achieved 409.6/s p50 None p99 90.78 
+[09:49:22] cell sat-my-sysbench-rw.vericto-enforce.c4.rep1
+[09:50:05]   -> aborted network cap: network cap: aggregate of 4 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 None p99 None 
+[09:50:05] cell sat-my-sysbench-rw.direct.c8.rep1
+[09:50:41]   -> aborted network cap: network cap: aggregate of 3 components above 800 Mbps (3 consecutive samples) achieved 0.0/s p50 None p99 None 
+[09:50:41] curve sat-my-sysbench-rw: S(vericto-enforce) = 358/s
+[09:50:41] curve sat-pg-w2: pgbench tpcb-like extended tls=True size=0.5 targets=direct,vericto-enforce
+[09:50:41] cell sat-pg-w2.vericto-enforce.c1.rep1
+[09:53:49]   -> ok  achieved 433.4/s p50 2.282 p99 3.785 
+[09:53:49] cell sat-pg-w2.direct.c1.rep1
+[09:56:50]   -> ok  achieved 621.1/s p50 1.607 p99 1.831 
+[09:56:50] cell sat-pg-w2.vericto-enforce.c2.rep1
+[09:59:59]   -> ok  achieved 821.7/s p50 2.332 p99 4.752 
+[09:59:59] cell sat-pg-w2.direct.c2.rep1
+[10:03:00]   -> ok  achieved 1067.6/s p50 1.871 p99 2.16 
+[10:03:00] cell sat-pg-w2.vericto-enforce.c4.rep1
+[10:06:09]   -> ok  achieved 862.1/s p50 2.885 p99 37.92 
+[10:06:09] cell sat-pg-w2.direct.c4.rep1
+[10:09:11]   -> ok  achieved 2082.1/s p50 1.878 p99 2.976 
+[10:09:11] cell sat-pg-w2.vericto-enforce.c8.rep1
+[10:12:19]   -> ok  achieved 877.8/s p50 4.478 p99 54.448 
+[10:12:19] cell sat-pg-w2.direct.c8.rep1
+[10:15:22]   -> ok  achieved 2898.3/s p50 2.908 p99 5.014 
+[10:15:22] cell sat-pg-w2.direct.c16.rep1
+[10:18:26]   -> ok  achieved 4260.9/s p50 3.606 p99 6.353 
+[10:18:26] cell sat-pg-w2.direct.c32.rep1
+[10:21:30]   -> ok  achieved 4339.7/s p50 7.158 p99 13.593 
+[10:21:30] curve sat-pg-w2: S(vericto-enforce) = 878/s
+[10:21:30] curve sat-pg-w4: vbench orm extended tls=True size=0.5 targets=direct,vericto-enforce
+[10:21:30] cell sat-pg-w4.direct.c1.rep1
+[10:24:31]   -> ok  achieved 1302.7/s p50 0.16 p99 25.391 
+[10:24:31] cell sat-pg-w4.vericto-enforce.c1.rep1
+[10:27:39]   -> ok  achieved 1003.7/s p50 0.305 p99 30.047 
+[10:27:39] cell sat-pg-w4.direct.c2.rep1
+[10:30:40]   -> ok  achieved 1985.4/s p50 0.173 p99 34.111 
+[10:30:40] cell sat-pg-w4.vericto-enforce.c2.rep1
+[10:33:48]   -> ok  achieved 1393.5/s p50 0.329 p99 58.783 
+[10:33:48] cell sat-pg-w4.direct.c4.rep1
+[10:36:49]   -> ok  achieved 2115.1/s p50 0.215 p99 65.791 
+[10:36:49] cell sat-pg-w4.vericto-enforce.c4.rep1
+[10:39:58]   -> ok  achieved 1686.8/s p50 0.412 p99 75.135 
+[10:39:58] cell sat-pg-w4.direct.c8.rep1
+[10:42:59]   -> ok  achieved 1682.6/s p50 0.249 p99 162.431 
+[10:42:59] cell sat-pg-w4.vericto-enforce.c8.rep1
+[10:46:08]   -> ok  achieved 1533.6/s p50 0.491 p99 166.399 
+[10:46:08] curve sat-pg-w4: S(vericto-enforce) = 1687/s
+[10:46:08] curve sat-my-w4: vbench orm text tls=True size=0.5 targets=direct,vericto-enforce
+[10:46:08] cell sat-my-w4.vericto-enforce.c1.rep1
+[10:49:16]   -> ok  achieved 508.6/s p50 0.327 p99 50.303 
+[10:49:16] cell sat-my-w4.direct.c1.rep1
+[10:52:17]   -> ok  achieved 519.8/s p50 0.175 p99 53.439 
+[10:52:17] cell sat-my-w4.vericto-enforce.c2.rep1
+[10:55:25]   -> ok  achieved 806.4/s p50 0.346 p99 59.519 
+[10:55:25] cell sat-my-w4.direct.c2.rep1
+[10:58:26]   -> ok  achieved 835.4/s p50 0.187 p99 64.927 
+[10:58:26] cell sat-my-w4.vericto-enforce.c4.rep1
+[11:01:35]   -> ok  achieved 1130.1/s p50 0.384 p99 100.991 
+[11:01:35] cell sat-my-w4.direct.c4.rep1
+[11:04:36]   -> ok  achieved 1109.0/s p50 0.199 p99 113.535 
+[11:04:36] cell sat-my-w4.vericto-enforce.c8.rep1
+[11:07:45]   -> ok  achieved 1097.8/s p50 0.495 p99 264.703 
+[11:07:45] cell sat-my-w4.direct.c8.rep1
+[11:10:46]   -> ok  achieved 1031.9/s p50 0.271 p99 294.399 
+[11:10:46] curve sat-my-w4: S(vericto-enforce) = 1130/s
+[11:10:46] curve validate-generator-pg: vbench select-only extended tls=True size=0.5 targets=direct
+[11:10:46] cell validate-generator-pg.direct.r1000.rep1
+[11:17:18]   -> ok  achieved 1000.0/s p50 0.713 p99 482.303 
+[11:17:18] cell validate-generator-pg.direct.r1000.rep2
+[11:23:50]   -> ok  achieved 1000.0/s p50 0.705 p99 473.343 
+[11:23:50] curve head-pg-w1-05: pgbench select-only extended tls=True size=0.5 targets=direct,haproxy-tcp,vericto-enforce
+[11:23:50] cell head-pg-w1-05.vericto-enforce.r50.rep0.netprobe
+[11:24:39]   -> ok  achieved 49.9/s p50 0.558 p99 0.73 
+[11:24:40] network pre-flight head-pg-w1-05: every rate under 300 Mbps per component and 600 Mbps aggregate
+[11:24:40] cell head-pg-w1-05.haproxy-tcp.r603.3.rep1
+[11:31:12]   -> ok  achieved 602.4/s p50 0.35 p99 0.414 
+[11:31:12] cell head-pg-w1-05.vericto-enforce.r603.3.rep1
+[11:37:51]   -> ok  achieved 605.1/s p50 0.431 p99 0.55 
+[11:37:51] cell head-pg-w1-05.direct.r603.3.rep1
+[11:44:23]   -> ok  achieved 603.3/s p50 0.312 p99 0.366 
+[11:44:23] cell head-pg-w1-05.vericto-enforce.r4826.1.rep1
+[11:51:10]   -> ok  achieved 4828.0/s p50 0.489 p99 39.139 
+[11:51:10] cell head-pg-w1-05.direct.r4826.1.rep1
+[11:57:49]   -> ok  achieved 4822.3/s p50 0.287 p99 0.353 
+[11:57:49] cell head-pg-w1-05.haproxy-tcp.r4826.1.rep1
+[12:04:28]   -> ok  achieved 4825.7/s p50 0.321 p99 0.436 
+[12:04:28] cell head-pg-w1-05.direct.r4222.8.rep1
+[12:11:05]   -> ok  achieved 4227.9/s p50 0.286 p99 0.345 
+[12:11:05] cell head-pg-w1-05.haproxy-tcp.r4222.8.rep1
+[12:17:44]   -> ok  achieved 4217.9/s p50 0.319 p99 0.411 
+[12:17:44] cell head-pg-w1-05.vericto-enforce.r4222.8.rep1
+[12:24:28]   -> ok  achieved 4227.6/s p50 0.433 p99 4.237 
+[12:24:28] cell head-pg-w1-05.direct.r5429.3.rep1
+[12:31:08]   -> ok  achieved 5420.5/s p50 0.285 p99 0.36 
+[12:31:08] cell head-pg-w1-05.vericto-enforce.r5429.3.rep1
+[12:38:04]   -> saturated achieved rate below 99% of offered achieved 5134.9/s p50 14004.67 p99 37099.335 
+[12:38:04] cell head-pg-w1-05.haproxy-tcp.r5429.3.rep1
+[12:44:45]   -> ok  achieved 5424.5/s p50 0.316 p99 0.445 
+[12:44:45] cell head-pg-w1-05.haproxy-tcp.r1809.8.rep1
+[12:51:19]   -> ok  achieved 1809.8/s p50 0.329 p99 0.38 
+[12:51:19] cell head-pg-w1-05.direct.r1809.8.rep1
+[12:57:53]   -> ok  achieved 1807.5/s p50 0.297 p99 0.342 
+[12:57:53] cell head-pg-w1-05.vericto-enforce.r1809.8.rep1
+[13:04:34]   -> ok  achieved 1813.4/s p50 0.419 p99 1.711 
+[13:04:34] cell head-pg-w1-05.vericto-enforce.r3016.3.rep1
+[13:11:16]   -> ok  achieved 3015.3/s p50 0.415 p99 2.967 
+[13:11:16] cell head-pg-w1-05.haproxy-tcp.r3016.3.rep1
+[13:17:53]   -> ok  achieved 3011.9/s p50 0.323 p99 0.383 
+[13:17:53] cell head-pg-w1-05.direct.r3016.3.rep1
+[13:24:28]   -> ok  achieved 3012.9/s p50 0.29 p99 0.34 
+[13:24:28] cell head-pg-w1-05.haproxy-tcp.r6032.6.rep1
+[13:31:09]   -> ok  achieved 6034.2/s p50 0.317 p99 0.459 
+[13:31:09] cell head-pg-w1-05.vericto-enforce.r6032.6.rep1
+[13:38:03]   -> saturated achieved rate below 99% of offered achieved 4689.1/s p50 65034.41 p99 115646.95 
+[13:38:03] cell head-pg-w1-05.direct.r6032.6.rep1
+[13:44:43]   -> ok  achieved 6022.9/s p50 0.282 p99 0.365 
+[13:44:43] cell head-pg-w1-05.vericto-enforce.r4826.1.rep2
+[13:51:30]   -> ok  achieved 4813.9/s p50 0.499 p99 43.786 
+[13:51:30] cell head-pg-w1-05.direct.r4826.1.rep2
+[13:58:09]   -> ok  achieved 4826.7/s p50 0.287 p99 0.353 
+[13:58:09] cell head-pg-w1-05.haproxy-tcp.r4826.1.rep2
+[14:04:49]   -> ok  achieved 4829.8/s p50 0.32 p99 0.435 
+[14:04:49] cell head-pg-w1-05.direct.r1809.8.rep2
+[14:11:23]   -> ok  achieved 1806.7/s p50 0.297 p99 0.342 
+[14:11:23] cell head-pg-w1-05.haproxy-tcp.r1809.8.rep2
+[14:17:57]   -> ok  achieved 1811.9/s p50 0.33 p99 0.381 
+[14:17:57] cell head-pg-w1-05.vericto-enforce.r1809.8.rep2
+[14:24:38]   -> ok  achieved 1807.2/s p50 0.415 p99 1.661 
+[14:24:38] cell head-pg-w1-05.direct.r603.3.rep2
+[14:31:10]   -> ok  achieved 601.7/s p50 0.315 p99 0.372 
+[14:31:10] cell head-pg-w1-05.vericto-enforce.r603.3.rep2
+[14:37:49]   -> ok  achieved 604.0/s p50 0.432 p99 0.556 
+[14:37:49] cell head-pg-w1-05.haproxy-tcp.r603.3.rep2
+[14:44:22]   -> ok  achieved 602.4/s p50 0.349 p99 0.413 
+[14:44:22] cell head-pg-w1-05.haproxy-tcp.r3016.3.rep2
+[14:50:58]   -> ok  achieved 3015.9/s p50 0.324 p99 0.384 
+[14:50:58] cell head-pg-w1-05.direct.r3016.3.rep2
+[14:57:34]   -> ok  achieved 3009.6/s p50 0.291 p99 0.341 
+[14:57:34] cell head-pg-w1-05.vericto-enforce.r3016.3.rep2
+[15:04:17]   -> ok  achieved 3016.3/s p50 0.424 p99 3.179 
+[15:04:17] cell head-pg-w1-05.vericto-enforce.r4222.8.rep2
+[15:11:02]   -> ok  achieved 4222.6/s p50 0.427 p99 3.579 
+[15:11:02] cell head-pg-w1-05.haproxy-tcp.r4222.8.rep2
+[15:17:40]   -> ok  achieved 4219.7/s p50 0.321 p99 0.414 
+[15:17:40] cell head-pg-w1-05.direct.r4222.8.rep2
+[15:24:18]   -> ok  achieved 4219.7/s p50 0.288 p99 0.348 
+[15:24:18] cell head-pg-w1-05.haproxy-tcp.r5429.3.rep2
+[15:30:58]   -> ok  achieved 5433.1/s p50 0.32 p99 0.452 
+[15:30:58] cell head-pg-w1-05.vericto-enforce.r5429.3.rep2
+[15:37:54]   -> saturated achieved rate below 99% of offered achieved 5001.7/s p50 19155.271 p99 50270.591 
+[15:37:54] cell head-pg-w1-05.direct.r5429.3.rep2
+[15:44:34]   -> ok  achieved 5432.5/s p50 0.287 p99 0.363 
+[15:44:34] cell head-pg-w1-05.vericto-enforce.r6032.6.rep2
+[15:51:28]   -> saturated achieved rate below 99% of offered achieved 4608.9/s p50 69084.698 p99 121680.811 
+[15:51:28] cell head-pg-w1-05.direct.r6032.6.rep2
+[15:58:08]   -> ok  achieved 6026.6/s p50 0.284 p99 0.369 
+[15:58:08] cell head-pg-w1-05.haproxy-tcp.r6032.6.rep2
+[16:04:49]   -> ok  achieved 6028.5/s p50 0.321 p99 0.467 
+[16:04:49] cell head-pg-w1-05.direct.r603.3.rep3
+[16:11:21]   -> ok  achieved 602.9/s p50 0.315 p99 0.371 
+[16:11:21] cell head-pg-w1-05.haproxy-tcp.r603.3.rep3
+[16:17:54]   -> ok  achieved 604.4/s p50 0.35 p99 0.413 
+[16:17:54] cell head-pg-w1-05.vericto-enforce.r603.3.rep3
+[16:24:33]   -> ok  achieved 603.9/s p50 0.435 p99 0.56 
+[16:24:33] cell head-pg-w1-05.direct.r5429.3.rep3
+[16:31:12]   -> ok  achieved 5425.9/s p50 0.287 p99 0.362 
+[16:31:12] cell head-pg-w1-05.vericto-enforce.r5429.3.rep3
+[16:38:08]   -> saturated achieved rate below 99% of offered achieved 5015.5/s p50 19293.714 p99 48705.784 
+[16:38:08] cell head-pg-w1-05.haproxy-tcp.r5429.3.rep3
+[16:44:48]   -> ok  achieved 5424.1/s p50 0.317 p99 0.448 
+[16:44:48] cell head-pg-w1-05.haproxy-tcp.r4222.8.rep3
+[16:51:27]   -> ok  achieved 4219.6/s p50 0.32 p99 0.413 
+[16:51:27] cell head-pg-w1-05.direct.r4222.8.rep3
+[16:58:05]   -> ok  achieved 4218.7/s p50 0.288 p99 0.348 
+[16:58:05] cell head-pg-w1-05.vericto-enforce.r4222.8.rep3
+[17:04:49]   -> ok  achieved 4225.1/s p50 0.429 p99 3.649 
+[17:04:49] cell head-pg-w1-05.vericto-enforce.r3016.3.rep3
+[17:11:32]   -> ok  achieved 3013.2/s p50 0.417 p99 3.01 
+[17:11:32] cell head-pg-w1-05.haproxy-tcp.r3016.3.rep3
+[17:18:09]   -> ok  achieved 3014.3/s p50 0.324 p99 0.383 
+[17:18:09] cell head-pg-w1-05.direct.r3016.3.rep3
+[17:24:44]   -> ok  achieved 3011.4/s p50 0.291 p99 0.341 
+[17:24:44] cell head-pg-w1-05.haproxy-tcp.r1809.8.rep3
+[17:31:19]   -> ok  achieved 1806.4/s p50 0.33 p99 0.382 
+[17:31:19] cell head-pg-w1-05.vericto-enforce.r1809.8.rep3
+[17:38:00]   -> ok  achieved 1809.5/s p50 0.417 p99 1.685 
+[17:38:00] cell head-pg-w1-05.direct.r1809.8.rep3
+[17:44:34]   -> ok  achieved 1804.5/s p50 0.298 p99 0.344 
+[17:44:34] cell head-pg-w1-05.vericto-enforce.r4826.1.rep3
+[17:51:21]   -> ok  achieved 4821.5/s p50 0.542 p99 47.426 
+[17:51:21] cell head-pg-w1-05.direct.r4826.1.rep3
+[17:57:59]   -> ok  achieved 4820.1/s p50 0.287 p99 0.354 
+[17:57:59] cell head-pg-w1-05.haproxy-tcp.r4826.1.rep3
+[18:04:39]   -> ok  achieved 4825.0/s p50 0.321 p99 0.438 
+[18:04:39] cell head-pg-w1-05.direct.r6032.6.rep3
+[18:11:19]   -> ok  achieved 6026.1/s p50 0.284 p99 0.369 
+[18:11:19] cell head-pg-w1-05.haproxy-tcp.r6032.6.rep3
+[18:18:00]   -> ok  achieved 6029.2/s p50 0.317 p99 0.459 
+[18:18:00] cell head-pg-w1-05.vericto-enforce.r6032.6.rep3
+[18:24:54]   -> saturated achieved rate below 99% of offered achieved 4754.7/s p50 61376.294 p99 110744.033 
+[18:24:54] curve head-my-w3-05: vbench sysbench-ro text tls=True size=0.5 targets=direct,haproxy-tcp,vericto-enforce
+[18:24:54] cell head-my-w3-05.vericto-enforce.r35.7.rep0.netprobe
+[18:25:44]   -> ok  achieved 35.7/s p50 4.263 p99 4.943 
+[18:25:44] network pre-flight head-my-w3-05: every rate under 300 Mbps per component and 600 Mbps aggregate
+[18:25:44] cell head-my-w3-05.direct.r178.3.rep1
+[18:32:15]   -> ok  achieved 178.3/s p50 2.567 p99 3.183 
+[18:32:15] cell head-my-w3-05.haproxy-tcp.r178.3.rep1
+[18:38:47]   -> ok  achieved 178.3/s p50 3.079 p99 3.673 
+[18:38:47] cell head-my-w3-05.vericto-enforce.r178.3.rep1
+[18:45:25]   -> ok  achieved 178.3/s p50 4.127 p99 7.159 
+[18:45:25] cell head-my-w3-05.haproxy-tcp.r249.6.rep1
+[18:51:57]   -> ok  achieved 249.6/s p50 2.961 p99 3.583 
+[18:51:57] cell head-my-w3-05.vericto-enforce.r249.6.rep1
+[18:58:35]   -> ok  achieved 249.6/s p50 4.103 p99 7.519 
+[18:58:35] cell head-my-w3-05.direct.r249.6.rep1
+[19:05:06]   -> ok  achieved 249.6/s p50 2.537 p99 3.195 
+[19:05:06] cell head-my-w3-05.vericto-enforce.r35.7.rep1
+[19:11:44]   -> ok  achieved 35.7/s p50 4.439 p99 5.287 
+[19:11:44] cell head-my-w3-05.direct.r35.7.rep1
+[19:18:15]   -> ok  achieved 35.7/s p50 2.663 p99 3.263 
+[19:18:15] cell head-my-w3-05.haproxy-tcp.r35.7.rep1
+[19:24:46]   -> ok  achieved 35.7/s p50 3.131 p99 3.731 
+[19:24:46] cell head-my-w3-05.vericto-enforce.r285.3.rep1
+[19:31:25]   -> ok  achieved 285.3/s p50 3.705 p99 7.443 
+[19:31:25] cell head-my-w3-05.haproxy-tcp.r285.3.rep1
+[19:37:57]   -> ok  achieved 285.3/s p50 2.999 p99 3.611 
+[19:37:57] cell head-my-w3-05.direct.r285.3.rep1
+[19:44:28]   -> ok  achieved 285.3/s p50 2.481 p99 3.097 
+[19:44:28] cell head-my-w3-05.direct.r320.9.rep1
+[19:50:59]   -> ok  achieved 320.9/s p50 2.501 p99 3.125 
+[19:50:59] cell head-my-w3-05.vericto-enforce.r320.9.rep1
+[19:57:37]   -> ok  achieved 320.9/s p50 5.455 p99 45.759 INVALID not steady: p50 drifts 56% from the first to the last third
+[19:57:37] cell head-my-w3-05.haproxy-tcp.r320.9.rep1
+[20:04:09]   -> ok  achieved 320.9/s p50 2.939 p99 3.613 
+[20:04:09] cell head-my-w3-05.haproxy-tcp.r107.rep1
+[20:10:40]   -> ok  achieved 107.0/s p50 3.061 p99 3.673 
+[20:10:40] cell head-my-w3-05.direct.r107.rep1
+[20:17:11]   -> ok  achieved 107.0/s p50 2.581 p99 3.173 
+[20:17:11] cell head-my-w3-05.vericto-enforce.r107.rep1
+[20:23:49]   -> ok  achieved 107.0/s p50 4.135 p99 6.799 
+[20:23:49] cell head-my-w3-05.direct.r356.6.rep1
+[20:30:20]   -> ok  achieved 356.6/s p50 2.461 p99 3.135 
+[20:30:20] cell head-my-w3-05.haproxy-tcp.r356.6.rep1
+[20:36:52]   -> ok  achieved 356.6/s p50 2.829 p99 3.625 
+[20:36:52] cell head-my-w3-05.vericto-enforce.r356.6.rep1
+[20:42:10]   -> saturated queue above max-queue achieved 249.1/s p50 6336.511 p99 10387.455 
+[20:42:10] cell head-my-w3-05.haproxy-tcp.r320.9.rep2
+[20:48:42]   -> ok  achieved 320.9/s p50 2.925 p99 3.615 
+[20:48:42] cell head-my-w3-05.vericto-enforce.r320.9.rep2
+[20:55:20]   -> ok  achieved 320.9/s p50 4.143 p99 38.591 
+[20:55:20] cell head-my-w3-05.direct.r320.9.rep2
+[21:01:51]   -> ok  achieved 320.9/s p50 2.533 p99 3.139 
+[21:01:51] cell head-my-w3-05.vericto-enforce.r249.6.rep2
+[21:08:29]   -> ok  achieved 249.6/s p50 4.099 p99 7.527 
+[21:08:29] cell head-my-w3-05.direct.r249.6.rep2
+[21:15:00]   -> ok  achieved 249.6/s p50 2.519 p99 3.171 
+[21:15:00] cell head-my-w3-05.haproxy-tcp.r249.6.rep2
+[21:21:32]   -> ok  achieved 249.6/s p50 2.963 p99 3.559 
+[21:21:32] cell head-my-w3-05.vericto-enforce.r285.3.rep2
+[21:28:10]   -> ok  achieved 285.3/s p50 3.665 p99 7.347 
+[21:28:10] cell head-my-w3-05.haproxy-tcp.r285.3.rep2
+[21:34:42]   -> ok  achieved 285.3/s p50 2.985 p99 3.603 
+[21:34:42] cell head-my-w3-05.direct.r285.3.rep2
+[21:41:13]   -> ok  achieved 285.3/s p50 2.481 p99 3.121 
+[21:41:13] cell head-my-w3-05.direct.r35.7.rep2
+[21:47:44]   -> ok  achieved 35.7/s p50 2.659 p99 3.259 
+[21:47:44] cell head-my-w3-05.vericto-enforce.r35.7.rep2
+[21:54:22]   -> ok  achieved 35.7/s p50 4.395 p99 5.239 
+[21:54:22] cell head-my-w3-05.haproxy-tcp.r35.7.rep2
+[22:00:53]   -> ok  achieved 35.7/s p50 3.149 p99 3.737 
+[22:00:53] cell head-my-w3-05.haproxy-tcp.r178.3.rep2
+[22:07:25]   -> ok  achieved 178.3/s p50 3.023 p99 3.563 
+[22:07:25] cell head-my-w3-05.direct.r178.3.rep2
+[22:13:56]   -> ok  achieved 178.3/s p50 2.527 p99 3.125 
+[22:13:56] cell head-my-w3-05.vericto-enforce.r178.3.rep2
+[22:20:34]   -> ok  achieved 178.3/s p50 4.143 p99 7.211 
+[22:20:34] cell head-my-w3-05.direct.r107.rep2
+[22:27:05]   -> ok  achieved 107.0/s p50 2.571 p99 3.189 
+[22:27:05] cell head-my-w3-05.haproxy-tcp.r107.rep2
+[22:33:37]   -> ok  achieved 107.0/s p50 3.061 p99 3.669 
+[22:33:37] cell head-my-w3-05.vericto-enforce.r107.rep2
+[22:40:15]   -> ok  achieved 107.0/s p50 4.147 p99 6.783 
+[22:40:15] cell head-my-w3-05.haproxy-tcp.r356.6.rep2
+[22:46:47]   -> ok  achieved 356.6/s p50 2.821 p99 3.531 
+[22:46:47] cell head-my-w3-05.vericto-enforce.r356.6.rep2
+[22:53:32]   -> saturated achieved rate below 99% of offered achieved 349.1/s p50 3489.791 p99 6455.295 
+[22:53:32] cell head-my-w3-05.direct.r356.6.rep2
+[23:00:03]   -> ok  achieved 356.6/s p50 2.457 p99 3.157 
+[23:00:03] cell head-my-w3-05.vericto-enforce.r320.9.rep3
+[23:06:41]   -> ok  achieved 320.9/s p50 4.435 p99 43.775 INVALID not steady: p50 drifts 37% from the first to the last third
+[23:06:41] cell head-my-w3-05.direct.r320.9.rep3
+[23:13:12]   -> ok  achieved 320.9/s p50 2.481 p99 3.091 
+[23:13:12] cell head-my-w3-05.haproxy-tcp.r320.9.rep3
+[23:19:43]   -> ok  achieved 320.9/s p50 2.901 p99 3.581 
+[23:19:43] cell head-my-w3-05.vericto-enforce.r249.6.rep3
+[23:26:21]   -> ok  achieved 249.6/s p50 4.045 p99 7.375 
+[23:26:21] cell head-my-w3-05.haproxy-tcp.r249.6.rep3
+[23:32:53]   -> ok  achieved 249.6/s p50 2.947 p99 3.547 
+[23:32:53] cell head-my-w3-05.direct.r249.6.rep3
+[23:39:24]   -> ok  achieved 249.6/s p50 2.487 p99 3.121 
+[23:39:24] cell head-my-w3-05.direct.r107.rep3
+[23:45:55]   -> ok  achieved 107.0/s p50 2.565 p99 3.163 
+[23:45:55] cell head-my-w3-05.vericto-enforce.r107.rep3
+[23:52:33]   -> ok  achieved 107.0/s p50 4.163 p99 6.779 
+[23:52:33] cell head-my-w3-05.haproxy-tcp.r107.rep3
+[23:59:05]   -> ok  achieved 107.0/s p50 3.073 p99 3.669 
+[23:59:05] cell head-my-w3-05.haproxy-tcp.r35.7.rep3
+[00:05:36]   -> ok  achieved 35.7/s p50 3.143 p99 3.735 
+[00:05:36] cell head-my-w3-05.direct.r35.7.rep3
+[00:12:07]   -> ok  achieved 35.7/s p50 2.667 p99 3.277 
+[00:12:07] cell head-my-w3-05.vericto-enforce.r35.7.rep3
+[00:18:45]   -> ok  achieved 35.7/s p50 4.351 p99 5.163 
+[00:18:45] cell head-my-w3-05.direct.r178.3.rep3
+[00:25:16]   -> ok  achieved 178.3/s p50 2.545 p99 3.167 
+[00:25:16] cell head-my-w3-05.haproxy-tcp.r178.3.rep3
+[00:31:48]   -> ok  achieved 178.3/s p50 3.071 p99 3.643 
+[00:31:48] cell head-my-w3-05.vericto-enforce.r178.3.rep3
+[00:38:26]   -> ok  achieved 178.3/s p50 4.147 p99 7.107 
+[00:38:26] cell head-my-w3-05.haproxy-tcp.r285.3.rep3
+[00:44:58]   -> ok  achieved 285.3/s p50 2.969 p99 3.587 
+[00:44:58] cell head-my-w3-05.vericto-enforce.r285.3.rep3
+[00:51:36]   -> ok  achieved 285.3/s p50 3.643 p99 7.335 
+[00:51:36] cell head-my-w3-05.direct.r285.3.rep3
+[00:58:07]   -> ok  achieved 285.3/s p50 2.501 p99 3.167 
+[00:58:07] cell head-my-w3-05.vericto-enforce.r356.6.rep3
+[01:04:11]   -> saturated queue above max-queue achieved 303.5/s p50 5001.215 p99 10371.071 
+[01:04:11] cell head-my-w3-05.direct.r356.6.rep3
+[01:10:42]   -> ok  achieved 356.6/s p50 2.437 p99 3.139 
+[01:10:42] cell head-my-w3-05.haproxy-tcp.r356.6.rep3
+[01:17:13]   -> ok  achieved 356.6/s p50 2.823 p99 3.547 
+[01:17:13] cell head-my-w3-05.vericto-enforce.r320.9.rep1.rerun
+[01:23:52]   -> ok  achieved 320.9/s p50 4.259 p99 40.319 
+[01:23:52] cell head-my-w3-05.vericto-enforce.r320.9.rep3.rerun
+[01:30:30]   -> ok  achieved 320.9/s p50 3.923 p99 29.071 
+[01:30:30] curve decomp-pg-w1: pgbench select-only extended tls=True size=0.5 targets=direct,haproxy-tcp,pgbouncer-session,vericto-offline,vericto-enforce,vericto-observe
+[01:30:30] cell decomp-pg-w1.vericto-enforce.r50.rep0.netprobe
+[01:31:20]   -> ok  achieved 47.3/s p50 0.555 p99 0.745 
+[01:31:20] network pre-flight decomp-pg-w1: every rate under 300 Mbps per component and 600 Mbps aggregate
+[01:31:20] cell decomp-pg-w1.direct.r4222.8.rep1
+[01:37:58]   -> ok  achieved 4216.9/s p50 0.287 p99 0.345 
+[01:37:58] cell decomp-pg-w1.vericto-observe.r4222.8.rep1

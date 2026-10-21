@@ -8,7 +8,7 @@ run's manifest records the harness commit.
 
 ## 1. System under test
 
-- **vericto-proxy 4.14.3** (engine v4.3.0, **42 built-in rules**, default policy:
+- **vericto-proxy 4.14.2** (documentation-only over 4.14.1; engine v4.3.0, **42 built-in rules**, default policy:
   critical and high block, medium flag, low and informational monitor, parse
   errors allowed and reported), pulled by digest. `RUST_LOG=info` is set
   explicitly. Memory telemetry buffer, gzip, batches of 500.

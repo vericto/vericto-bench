@@ -170,6 +170,24 @@ def parse_pgbench(log_prefix: str, warmup: float, duration: float, interval: flo
     return res, intervals
 
 
+def gzip_logs(log_prefix: str) -> dict:
+    """Compress pgbench's per-transaction logs in place (after parsing):
+    `<prefix>.<pid>[.<thread>]` becomes `<prefix>.<pid>[.<thread>].gz`."""
+    import gzip
+    import shutil
+    n = raw = packed = 0
+    for path in sorted(glob.glob(log_prefix + ".*")):
+        if path.endswith(".gz"):
+            continue
+        with open(path, "rb") as src, gzip.open(path + ".gz", "wb", compresslevel=6) as dst:
+            shutil.copyfileobj(src, dst, 1 << 20)
+        raw += os.path.getsize(path)
+        packed += os.path.getsize(path + ".gz")
+        os.remove(path)
+        n += 1
+    return {"files": n, "bytes": raw, "gzip_bytes": packed}
+
+
 def parse_pgbench_summary(text: str) -> dict:
     out = {}
     for pat, key in [(r"number of failed transactions: (\d+)", "failed"), (r"tps = ([0-9.]+)", "tps"),

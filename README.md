@@ -12,9 +12,10 @@ behind every figure.
 License: Apache-2.0 (see [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md)).
 The harness never vendors proxy source: it pulls the proxy image by digest.
 
-> **Status (2026-10-19): harness built and tested (phase P0). No campaign has run
-> yet, so this repository contains no published figure.** The design is
-> BENCH-2026-11; the methodology is in [METHODOLOGY.md](METHODOLOGY.md).
+> **Status (2026-10-21): first campaign (BENCH-2026-11) run on EC2, day 1 + day 2 of the
+> publishable core; internal until the owner's review, so no figure here is published yet.**
+> Results, checksums and reports: [results/bench-2026-11/](results/bench-2026-11/README.md).
+> The design is BENCH-2026-11; the methodology is in [METHODOLOGY.md](METHODOLOGY.md).
 
 ## What is measured
 
@@ -133,9 +134,14 @@ guard that shuts the hosts down). The suite runs unattended from user-data; the
 results (raw data, report, manifest with every digest) land in an S3 bucket of
 the same stack. Details and per-hour prices: [terraform/aws/README.md](terraform/aws/README.md).
 
-The campaign (design section 10): `suite=published` (day 1, the full matrix:
-1,455 cells, at most 118 machine-hours by the planner, less in practice because
-closed-loop step-ups stop at the knee), `suite=day2` (headline curves on a fresh
+The campaign (design section 10): `suite=published` (day 1; the full matrix is
+1,455 cells and at most 118 machine-hours by the planner; BENCH-2026-11's day 1
+runs it trimmed to the owner's budget of about USD 45: the c7i cross-check is
+not run and every non-headline open-loop curve has 2 repetitions instead of 3,
+the headline curves keep 3, which gives 1,116 cells and at most 89.8 planner
+hours, about 70 in practice because closed-loop step-ups stop at the knee and the
+network pre-flight drops rates above the traffic targets; see
+`suites/generate.py`), `suite=day2` (headline curves on a fresh
 SUT at day 1's rates), `suite=c7i` with `-var sut_instance_type=c7i.2xlarge`.
 At list prices about USD 0.48 per hour for the two hosts and the NAT gateway:
 about USD 55 to 65 for the whole Tier P campaign.
@@ -169,10 +175,13 @@ versions.lock                   every component pinned by digest or checksum
   without changing the client, so it relays the end-to-end TLS session and pays
   no cryptography there. The TLS-off cells give its clean hop cost; the report
   labels it. PgBouncer, ProxySQL and the proxy pay both TLS legs.
-- **The campaign measures vericto-proxy 4.14.3** (decision 8: the log-level and
-  size-comment fixes ship before the run). `versions.lock` pins 4.14.1 until
-  4.14.3 is published, and the runner refuses `profile=published` until the
-  pinned tag is 4.14.3.
+- **The campaign measures vericto-proxy 4.14.2** (owner decision 2026-10-19,
+  the latest release; it supersedes the earlier plan to wait for a 4.14.3 with
+  the log-level and size-comment fixes). 4.14.2 is documentation-only over
+  4.14.1: same code, engine v4.3.0, 42 built-in rules. Its code default log
+  filter is still `info,vericto_proxy=debug`, so the harness sets
+  `RUST_LOG=info` explicitly. `versions.lock` pins it by digest, and the runner
+  refuses `profile=published` for any other tag.
 - **Poisson noise in the steady-state rule**: pgbench `-R` draws Poisson
   arrivals, so a 1% bound on the per-part rate is replaced by three standard
   deviations of a Poisson count when that is larger (it never is at the

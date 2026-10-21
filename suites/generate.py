@@ -81,6 +81,52 @@ def head_curves(size, rates=CURVE_RATES, reps=None, suffix=""):
     return [pg, my]
 
 
+# Budget trim of day 1 (owner rule, 2026-10-19: P1 + P2 under about USD 45 of
+# AWS spend, about USD 0.51/h for both hosts and the NAT gateway). In the owner's
+# order: (1) the c7i cross-check is not run; (2) every non-headline open-loop
+# curve runs NONHEAD_REPS interleaved repetitions instead of 3; (3) the two
+# headline curves keep 3. Closed-loop saturation curves already run 1.
+NONHEAD_REPS = 2
+# Run order (pre-registered with the suite): saturation first (it sets S), the
+# generator validation next (a pre-flight, design section 8), then the curves
+# the day-1 report needs most, so a stop by the runtime guard loses the least.
+ORDER = ["sat-", "validate-", "head-pg-w1-05", "head-my-w3-05", "decomp-", "size-", "bytes-", "blocked-", "conn-",
+         "tlsoff-", "modes-", "orm-", "head-pg-w1-1", "head-my-w3-1", "h2-"]
+
+
+def _rank(cid):
+    for i, pre in enumerate(ORDER):
+        if cid == pre or cid.startswith(pre):
+            return i
+    return len(ORDER)
+
+
+# Day 1's S (closed-loop maximum of vericto-enforce at 0.5 vCPU, TLS) from run
+# bench-2026-11-p2-day1 (cells.jsonl: sat-pg-w1-05 c8, sat-my-w3-05 c4), so day 2
+# runs the headline curves at exactly day 1's absolute rates.
+DAY1_S = {"head-pg-w1-05": 6032.566666666667, "head-my-w3-05": 356.59166666666664}
+
+
+def day2_curves():
+    out = []
+    for c in head_curves("0.5", suffix="-day2"):
+        base = c["id"][: -len("-day2")]
+        # Owner decision 2026-10-20: day 2 runs 1 repetition (day-to-day and
+        # host-to-host stability against day 1's intervals), about 4.6 hours.
+        out.append(dict(c, saturation_from="", saturation_qps=DAY1_S.get(base, 0), reps=1))
+    return out
+
+
+def published_trimmed():
+    cs = published()
+    for c in cs:
+        if c.get("loop", "open") == "open" and not c["id"].startswith(("head-pg-w1-05", "head-my-w3-05")):
+            c["reps"] = NONHEAD_REPS
+    # sat-pg-w2 / sat-pg-w4 / sat-my-w4 are closed loop and set the rates of
+    # their own curves: keep them with the saturation block.
+    return sorted(cs, key=lambda c: _rank(c["id"]))  # stable: the design order within a block
+
+
 def published():
     cs = sat_curves(["0.5", "1"])
     cs.append(curve(_comment="sysbench oltp_read_only and read_write, closed loop (standard throughput figures, prepared "
@@ -176,12 +222,28 @@ def main():
     ee = "[engine_eval]\nsizes = [\"0.5\", \"1\"]\niters = 20000\nbudget_s = 20\nmin_iters = 1000\n"
     files = {
         "published.toml": render("Tier P published campaign, day 1 (c7g.2xlarge SUT + c7g.xlarge load generator, two-host).",
-                                 {"name": "published-day1", "profile": "published", **base}, data, published(), ee),
+                                 {"name": "published-day1", "profile": "published", **base}, data, published_trimmed(), ee),
         "day2.toml": render("Tier P day 2: the headline curves again on a freshly launched SUT, at day 1's absolute rates.\n"
-                            "# Before running: set saturation_qps of both curves to day 1's S (manifest.json of the day-1 run,\n"
-                            "# 'curve ... S(vericto-enforce)' in runner.log). The suite refuses to run until then.",
+                            "# saturation_qps is day 1's S (suites/generate.py DAY1_S, from run bench-2026-11-p2-day1); with\n"
+                            "# 0 the suite refuses to run. Run with: terraform apply -var suite=day2 (records day 2).",
                             {"name": "published-day2", "profile": "published", **{**base, "order_seed": 2026111902}}, data,
-                            [dict(c, saturation_from="", saturation_qps=0) for c in head_curves("0.5", suffix="-day2")]),
+                            day2_curves()),
+        "core-h2.toml": render("BENCH-2026-11 day 1, core cut (owner decision 2026-10-20): the PG two-task curve.\n"
+                               "# Runs on its own stack after head-pg-w1-05 and head-my-w3-05 of published.toml, at\n"
+                               "# day 1's S_0.5 (DAY1_S), so 30% and 90% are the 1x0.5 curve's absolute rates and\n"
+                               "# 120-220% show whether two tasks of 0.5 vCPU scale (staging P3: PG with two tasks\n"
+                               "# saturated below one task, cause unexplained). Its own SUT host, so it also runs 1 x 0.5 at\n"
+                               "# 30, 90 and 120% for a same-host comparison. Runs after head-my-w3-05 (combined traffic caps).",
+                               {"name": "core-h2", "profile": "published", **{**base, "order_seed": 2026112001}}, data,
+                               [curve(_comment="P-2tasks core: 2 x 0.5 vCPU vericto-enforce vs direct, PG W1 extended, TLS",
+                                      id="h2-pg-w1-2x05", engine="pg", tool="pgbench", workload="select-only", mode="extended",
+                                      tls=True, size="2x0.5", targets=["direct", "vericto-enforce"],
+                                      rates_pct=[30, 60, 90, 120, 150, 180, 220], saturation_qps=DAY1_S["head-pg-w1-05"],
+                                      conns=128),
+                                curve(_comment="Same host, 1 x 0.5 vCPU, the same absolute rates up to past one task's saturation",
+                                      id="h2-pg-w1-05", engine="pg", tool="pgbench", workload="select-only", mode="extended",
+                                      tls=True, size="0.5", targets=["direct", "vericto-enforce"],
+                                      rates_pct=[30, 90, 120], saturation_qps=DAY1_S["head-pg-w1-05"], conns=128)]),
         "c7i.toml": render("Tier P cross-check on c7i.2xlarge (x86, SMT): saturation and the headline PG curve.",
                            {"name": "published-c7i", "profile": "published", **{**base, "order_seed": 2026111903}}, data,
                            [sat_curves(["0.5"])[0], head_curves("0.5")[0]]),

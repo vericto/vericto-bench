@@ -46,3 +46,8 @@ output "max_hours" {
 output "region" {
   value = var.region
 }
+
+output "day" {
+  description = "Campaign day recorded in the run's cells."
+  value       = local.day
+}
