@@ -5,7 +5,7 @@
 # is destroyed after every run, bucket included; its results tarballs are copied
 # here first when they are too big for git (the repository then commits the
 # manifest and SHA256SUMS). Private, encrypted, TLS only, versioned, never
-# force-destroyed. ExpiresOn says when the owner should decide to publish the
+# force-destroyed. ExpiresOn says when its maintainers should decide to publish the
 # data (release assets) or delete it.
 #
 #   cd terraform/archive && terraform init && terraform apply -var expires_on=2027-01-31

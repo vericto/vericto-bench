@@ -32,7 +32,7 @@ def main() -> int:
     ap.add_argument("--day", type=int, default=1, help="campaign day (1, or 2 for the fresh-instance repeat)")
     ap.add_argument("--image-tag", default="local", help="tag of the vericto-bench/* images built by `make images`")
     ap.add_argument("--report", action="store_true", help="run the report generator (vericto-bench/analysis image) at the end")
-    ap.add_argument("--caps", default="", help="JSON caps file (default: the owner's 400/300 and 800/600 Mbps)")
+    ap.add_argument("--caps", default="", help="JSON caps file (default: the project's 400/300 and 800/600 Mbps)")
     ap.add_argument("--plan", action="store_true", help="print the cells and machine hours of the suite and exit")
     a = ap.parse_args()
     if a.plan:

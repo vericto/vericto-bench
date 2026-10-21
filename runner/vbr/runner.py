@@ -502,7 +502,7 @@ class Runner:
             rec["warnings"].append(f"database not idle after cool-down ({active} active sessions)")
 
     def _validity(self, rec: dict):
-        """Pre-registered validity rules (design section 8). Outliers are never
+        """Pre-registered validity rules (METHODOLOGY.md section 7). Outliers are never
         removed; a repetition is invalid only for one of these reasons."""
         inv = rec["invalid_reasons"]
         done = rec.get("completed") or 0
@@ -528,8 +528,8 @@ class Runner:
             poisson = rec.get("tool") == "pgbench" or rec.get("arrival") == "poisson"
             steady = steady_state(os.path.join(self.out, rec["intervals"]), rec.get("offered_rate") or 0, poisson)
             rec["steady"] = steady
-            # A saturated cell is the end of its curve by construction (design
-            # section 8: kept in the raw data, never a latency figure), so its
+            # A saturated cell is the end of its curve by construction (METHODOLOGY.md
+            # section 5: kept in the raw data, never a latency figure), so its
             # unsteady rate is expected, not a reason to invalidate and rerun it.
             if steady.get("flag") and rec.get("status") != "saturated":
                 inv.append("not steady: " + steady["flag"])
@@ -620,7 +620,7 @@ class Runner:
     def net_preflight(self, curve: S.Curve, cells: list):
         """10-s probe at a low rate through the curve's heaviest target, then the
         expected traffic of every rate: refuse the curve if a component would
-        pass 300 Mbps or the aggregate 600 Mbps (owner rule: reduce the rates,
+        pass 300 Mbps or the aggregate 600 Mbps (project rule: reduce the rates,
         never the margin)."""
         heavy = "vericto-enforce" if "vericto-enforce" in curve.targets else curve.targets[-1]
         rates = sorted({c.rate for c in cells})
@@ -662,7 +662,7 @@ class Runner:
         if p.returncode == 0:
             log(f"network pre-flight {curve.id}: every rate under 300 Mbps per component and 600 Mbps aggregate")
             return math.inf
-        # Owner rule: reduce the rates, never the margin. The rates that do not
+        # Project rule: reduce the rates, never the margin. The rates that do not
         # fit are not run, and the curve is drawn as stopped at the cap.
         log(f"network pre-flight {curve.id}: rates above {limit:.0f}/s would pass a design target; they are not run")
         return limit
@@ -780,7 +780,7 @@ def _ts(s) -> float | None:
 
 
 def steady_state(intervals_path: str, offered: float, poisson: bool = False) -> dict:
-    """Design section 8: the window split in parts; flagged if the achieved rate
+    """METHODOLOGY.md section 7: the window split in parts; flagged if the achieved rate
     varies by more than 1% (coefficient of variation across parts) or the p50
     of the last third differs from the first third by more than 10%."""
     try:

@@ -4,8 +4,8 @@
 // Package netcap enforces the benchmark's network traffic caps.
 //
 // The benchmark measures the proxy, never the network: total traffic must stay
-// far below the ~1 Gbps at which AWS may throttle or block. The rules (owner
-// decision, BENCH-2026-11 §8a):
+// far below the ~1 Gbps at which AWS may throttle or block. The rules (a project
+// rule, METHODOLOGY.md section 9):
 //
 //   - per component (a host, a task, or one process's ports), both directions,
 //     every hop: hard cap 400 Mbps, design target 300 Mbps;
@@ -45,7 +45,7 @@ type Caps struct {
 	Stale time.Duration `json:"stale_ns"`
 }
 
-// Default returns the owner's caps with the Tier P breach rule.
+// Default returns the project's caps with the Tier P breach rule.
 func Default() Caps {
 	return Caps{ComponentHard: 400, ComponentTarget: 300, AggregateHard: 800, AggregateTarget: 600,
 		Consecutive: 3, Stale: 5 * time.Second}
@@ -80,9 +80,9 @@ type Sample struct {
 type Components map[string][]string
 
 // Check refuses a component with no counters. A counter may belong to several
-// components: that is the owner's rule (the same bytes are counted at every
-// interface they cross, e.g. the proxy's upstream hop is counted at the proxy
-// and at the database).
+// components on purpose: the same bytes are counted at every interface they
+// cross (a project rule), e.g. the proxy's upstream hop is counted at the proxy
+// and at the database.
 func (c Components) Check() error {
 	if len(c) == 0 {
 		return fmt.Errorf("no components")
@@ -316,7 +316,7 @@ type PlannedCell struct {
 	FixedMbps map[string]float64 `json:"fixed_mbps,omitempty"`
 }
 
-// Framing is the safety factor on probe-measured bytes (the design's ~5%).
+// Framing is the safety factor on probe-measured bytes (~5%, METHODOLOGY.md section 9).
 const Framing = 1.05
 
 // Expected returns the expected Mbps per component and in aggregate.

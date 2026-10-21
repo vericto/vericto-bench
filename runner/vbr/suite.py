@@ -5,7 +5,7 @@
 A suite is pre-registered: the cells, rates, order seed and validity rules are
 fixed in the file before the run, and copied into the run's manifest.
 
-Order (design section 8): within each repetition, every target of a curve runs
+Order (METHODOLOGY.md section 6): within each repetition, every target of a curve runs
 at a given rate before the next rate; the target order comes from a balanced
 Latin square (Williams design) whose rows are chosen per (repetition, rate), and
 the rates are shuffled with the seed, except the saturating rates (>= 100% of
@@ -142,7 +142,7 @@ def load(path: str) -> Suite:
         else:
             raise SuiteError(f"{cid}: loop must be open or closed")
         if tool == "sysbench" and loop == "open":
-            raise SuiteError(f"{cid}: sysbench --rate excludes queue time; use it closed loop only (design section 8)")
+            raise SuiteError(f"{cid}: sysbench --rate excludes queue time; use it closed loop only (METHODOLOGY.md section 5)")
         if tool == "sysbench" and cur.tls:
             raise SuiteError(f"{cid}: sysbench 1.0.20 only does verified TLS with fixed file names (cacert.pem, "
                              "client-cert.pem, client-key.pem in its working directory), which the intermediaries' "

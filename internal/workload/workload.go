@@ -74,7 +74,7 @@ type Params struct {
 	PayloadRowsTotal int // rows in vbench.payload / payload_m
 }
 
-// DefaultParams are the Tier P dataset sizes (design §5).
+// DefaultParams are the Tier P dataset sizes (METHODOLOGY.md section 4).
 func DefaultParams() Params {
 	return Params{PgbenchScale: 100, SysbenchTables: 8, SysbenchRows: 1_000_000, SysbenchRange: 100, SysbenchPoints: 10, PayloadRowsTotal: 10_000}
 }

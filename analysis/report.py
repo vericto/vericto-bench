@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Vericto S.A.S.
 # SPDX-License-Identifier: Apache-2.0
-"""vericto-bench report generator (pre-registered analysis, design section 8).
+"""vericto-bench report generator (pre-registered analysis, METHODOLOGY.md section 8).
 
     python3 analysis/report.py RUN_DIR [RUN_DIR ...] [--out DIR] [--publishable]
 
@@ -37,7 +37,7 @@ import statistics
 import sys
 
 SMOKE = "SMOKE RUN: NOT FOR PUBLISHED NUMBERS"
-FARGATE_ARM_VCPU_HOUR = 0.03238  # USD, us-east-1 list price (design section 8)
+FARGATE_ARM_VCPU_HOUR = 0.03238  # USD, us-east-1 list price (METHODOLOGY.md section 8)
 # Fixed hue per target (validated categorical palette, slots 1-6, light mode);
 # colour follows the target, never its rank. Markers are the secondary encoding.
 TARGET_STYLE = {
@@ -330,8 +330,8 @@ DB_PORT = {"pg": 5432, "mysql": 3306}
 
 
 def direction_rows(cells: list[dict]) -> list[dict]:
-    """Bytes/s per direction in every measured cell (design section 8a,
-    "what is reported instead of high traffic"): client to target, target to
+    """Bytes/s per direction in every measured cell (METHODOLOGY.md section 9,
+    what is reported instead of high traffic): client to target, target to
     client, target to database, database to target, telemetry egress, and the
     NICs; plus bytes per request. Intermediary listen ports from the cell's
     components.json."""
@@ -594,8 +594,8 @@ def scaling_rows(cells: list[dict], drows: list[dict]) -> list[dict]:
     """P-2tasks: 1 x 0.5, 1 x 1 and 2 x 0.5 vCPU of vericto-enforce at the same
     absolute rates (h2-<engine>-<workload>-<size>). Per size and rate: cells ok /
     saturated, achieved rate, added p50 / p99 (paired), and each task's vCPU,
-    so an uneven split between the two tasks shows (staging P3 saw PG with two
-    tasks saturate below one task, cause unexplained)."""
+    so an uneven split between the two tasks shows (an earlier Fargate measurement
+    saw PG with two tasks saturate below one task, cause unexplained)."""
     import re
     d_by = {(r["curve"], r["offered_rate"]): r for r in drows if r["target"] == "vericto-enforce"}
     groups: dict[tuple, list[dict]] = {}
@@ -893,7 +893,7 @@ def main(argv=None) -> int:
             if "slope" in f:
                 md.append(f"| {f['curve']} | {f['target']} | {f['size']} | {f['n']} | {fmt(f['slope'], 4)} [{fmt(f['slope_lo'], 4)}, "
                           f"{fmt(f['slope_hi'], 4)}] | {fmt(f['intercept'], 4)} | {fmt(f.get('usd_per_month_per_1000qps_at_70pct'), 2)} |")
-    md += ["", "## Network traffic (owner caps: 400 Mbps per component, 800 Mbps aggregate)", "",
+    md += ["", "## Network traffic (caps: 400 Mbps per component, 800 Mbps aggregate)", "",
            f"Cells aborted by a cap: {len(summary['aborted_by_cap'])}. Per-cell maxima are in traffic.csv; "
            "bytes/s per direction over each measured window in traffic_directions.csv.", ""]
     hd = [d for d in dirs if d["loop"] == "open" and d["target"] == "vericto-enforce"]

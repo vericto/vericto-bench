@@ -123,7 +123,7 @@ class Components(unittest.TestCase):
     def test_two_host_counts_every_interface(self):
         c = M.components(self.T("two-host"), "pg", "vericto-enforce", [6432])
         self.assertEqual(set(c), {"database", "intermediary", "loadgen-nic", "sut-nic"})
-        # the upstream hop is counted at the proxy and at the database (owner rule)
+        # the upstream hop is counted at the proxy and at the database (project rule)
         self.assertIn("sut:nft:db5432_lo_in", c["intermediary"])
         self.assertIn("sut:nft:db5432_lo_in", c["database"])
         self.assertIn("sut:nft:cp9090_in", c["intermediary"])

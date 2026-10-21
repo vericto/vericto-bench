@@ -1,11 +1,9 @@
 # Lint and unit tests. Nothing here builds images, pulls databases or touches
 # AWS: the benchmark itself never runs in CI.
 #
-# Runner: GitHub-hosted (ubuntu-latest) by default. While the repository is
-# private, the repository variable CI_RUNS_ON points every job at Vericto's
-# self-hosted spot runners (["self-hosted","linux","x64","vericto-spot"]), as in
-# the other private repositories. Delete that variable when the repository goes
-# public: a self-hosted runner must never run pull requests from forks.
+# Runner: GitHub-hosted (ubuntu-latest). The repository variable CI_RUNS_ON
+# (a JSON list of runner labels) can override it, but a public repository must
+# never point it at self-hosted runners: they would run pull requests from forks.
 name: CI
 
 on:
@@ -61,8 +59,8 @@ jobs:
       - name: bash -n and shellcheck
         run: |
           for f in host/*.sh terraform/aws/*.sh compose/*.sh; do bash -n "$f"; done
-          # Pinned image instead of a runner package: the self-hosted runners do
-          # not ship shellcheck, and this keeps the version the same everywhere.
+          # Pinned image instead of a runner package: not every runner ships
+          # shellcheck, and this keeps the version the same everywhere.
           docker run --rm -v "$PWD:/mnt" -w /mnt \
             koalaman/shellcheck:v0.10.0@sha256:2097951f02e735b613f4a34de20c40f937a6c8f18ecb170612c88c34517221fb \
             -S warning host/*.sh terraform/aws/*.sh compose/*.sh

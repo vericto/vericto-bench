@@ -20,7 +20,7 @@ import (
 
 // certs writes a throwaway CA and one server certificate (ECDSA P-256) for the
 // TLS cells: every server of the benchmark presents it, clients encrypt without
-// verifying (sslmode=require / skip-verify), as the design specifies. The key
+// verifying (sslmode=require / skip-verify; METHODOLOGY.md section 1). The key
 // is generated per run and never leaves the run's hosts.
 func certs(dir, names string) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {

@@ -23,6 +23,10 @@ run's manifest records the harness commit.
 - Sizes: **0.5 vCPU** = one dedicated core with a 50% CFS quota (as a Fargate
   task of 0.5 vCPU); **1 vCPU** = one whole core, no quota; **2 x 0.5** = two
   tasks on two cores, the client spreading its connections over both.
+- TLS cells: a throwaway CA and one server certificate (ECDSA P-256) are
+  generated per run and never leave the run's hosts; every server presents it
+  and clients encrypt without verifying it (`sslmode=require` / skip-verify), so
+  the figures include the cost of encryption, not of certificate checks.
 
 ## 2. Baselines
 
@@ -67,7 +71,7 @@ group in one AZ, in their own VPC (README, "Topology"):
 | W1 | pgbench select-only (`-S`) | pgbench 17.6 `-R`, `-M simple|extended|prepared` | **headline PG: extended** |
 | W2 | pgbench tpcb-like | pgbench, three modes | write-bound |
 | W3 | sysbench oltp_read_only (10 point selects, 4 ranges, in a transaction) | vbench replay, text protocol, open loop; sysbench 1.0.20 closed loop for throughput | **headline MySQL** |
-| W4 | ORM mix: 13 classes, about 80% allowed, 17% flagged, 3% blocked | vbench, PG extended, MySQL text | continuity with the 2026-10 staging sessions |
+| W4 | ORM mix: 13 classes, about 80% allowed, 17% flagged, 3% blocked | vbench, PG extended, MySQL text | unchanged from Vericto's earlier (2026-10) Fargate measurements, for continuity |
 | W5 | multi-row INSERT of 1-2,000 rows; `IN` list of 10-10,000 ids, 10/s on one connection | vbench | the ms/KB slope |
 | W6 | DELETE/UPDATE without WHERE (blocked) vs with WHERE, on an always-empty table | vbench | cost of a block |
 | W7 | new connection + TLS + authentication + one PK lookup | vbench `-conn newconn` | allowed on a local database only |
@@ -121,7 +125,8 @@ checksums recorded (pgbench `-i -s 100`; sysbench 8 x 1,000,000 rows,
   in an order from a seeded balanced Latin square (Williams design); rates are
   shuffled with the seed, the saturating ones last. The seed is in the manifest.
 - 3 repetitions per day; the headline curves again on a second day on a freshly
-  launched SUT at day 1's rates (`suites/day2.toml`).
+  launched SUT at day 1's rates (`suites/day2.toml`). What BENCH-2026-11 actually
+  ran (fewer repetitions for some curves, one on day 2) is in section 11.
 
 ## 7. Validity rules (no outlier removal)
 
@@ -157,18 +162,47 @@ once, and kept in the raw data:
 
 ## 9. Network traffic caps
 
-See the README: 400 Mbps per component and 800 Mbps aggregate (hard, abort);
-300 and 600 Mbps design targets (warning; the pre-flight refuses plans above
-them); the same bytes counted at every interface they cross. Curves that would
-need more traffic to saturate stop at the cap and say so; throughput at large
-result sizes is therefore not measured, and the per-MB cost is published so a
-reader can extrapolate. Network limits of AWS or of the proxy are deliberately
-not measured.
+The benchmark measures the proxy, never the network. Total traffic must stay
+far below the ~1 Gbps at which AWS may throttle or block an instance, so that no
+figure is shaped by a network limit. This is a project rule, enforced by
+`internal/netcap` and `hostmon`, and contributions that loosen it are not merged:
+
+| Scope | Hard cap (abort) | Design target (warning; the pre-flight refuses plans above it) |
+| --- | --- | --- |
+| Each component (a host's interface, an intermediary's both hops plus telemetry, the database's port) | 400 Mbps | 300 Mbps |
+| Aggregate of every component running at the same time | 800 Mbps | 600 Mbps |
+
+- **Counting.** The same bytes are counted at every interface they cross: a
+  byte relayed by the proxy counts at the load generator's NIC, at the SUT's
+  NIC, twice at the proxy (in and out) and at the database. Components share
+  counters on purpose.
+- **Guard.** Interface counters, nftables counters per port and direction, and
+  cgroup CPU are sampled once a second on every host. Three consecutive
+  one-second samples above a hard cap abort the cell (recorded as
+  `aborted: network cap`), and no higher rate of that curve is run.
+- **Pre-flight.** Before every open-loop curve, a 10-s probe measures bytes per
+  request at each component; with a 5% allowance for protocol framing, the
+  expected traffic of every planned rate is checked against the design targets.
+  Rates that would pass one are not run, and the curve is drawn as stopped at
+  the cap: **the rates are reduced, never the margin.**
+- **Harness traffic counts too.** The progress and final uploads of the results
+  to S3 are capped at 8 MB/s and kept on the OS core (BENCH-2026-11's day 1
+  showed one-second bursts of about 850 Mbps on the load generator's NIC while
+  an uncapped upload ran).
+- **What is reported instead of high traffic.** Curves that would need more
+  traffic to saturate stop at the cap and say so; throughput at large result
+  sizes is therefore not measured. Every cell reports bytes per second per
+  direction (client to target, target to client, target to database, database
+  to target, telemetry egress, the NICs) and bytes per request, and the per-MB
+  cost is published so a reader can extrapolate. Network limits of AWS or of the
+  proxy are deliberately not measured, and no iperf or bandwidth test of any
+  kind is part of the harness.
 
 ## 10. Limitations
 
-- Loopback between an intermediary and its database is not a network; staging
-  measurements (Fargate behind an NLB, Aurora) show the in-VPC case.
+- Loopback between an intermediary and its database is not a network;
+  Vericto's earlier Fargate measurements (behind an NLB, with Aurora) cover the
+  in-VPC case, and they are not part of this repository.
 - The stub is not the API: the proxy's telemetry work is measured in full, the
   backend's is not.
 - Built-in ruleset only; custom rules and agent-access allowlists add cost that
@@ -180,3 +214,49 @@ not measured.
 - Graviton3 and Sapphire Rapids only.
 - Cells are 5 minutes; memory growth over hours is not covered.
 - Statements are legitimate SQL; adversarial input belongs to fuzzing.
+
+## 11. BENCH-2026-11: the campaign matrix and what was run
+
+The full pre-registered matrix is `suites/published.toml` (day 1), written by
+`suites/generate.py`: 1,455 cells and at most 118 machine-hours by the planner
+(`python3 runner/run.py --suite suites/published.toml --plan`), plus
+`suites/day2.toml` and the `suites/c7i.toml` cross-check. BENCH-2026-11 ran a
+subset of it:
+
+- **Proxy version.** We chose vericto-proxy 4.14.2 on 2026-10-19, the latest
+  release, instead of waiting for a 4.14.3 with the log-level and size-comment
+  fixes. 4.14.2 is documentation-only over 4.14.1; its default log filter is
+  still `info,vericto_proxy=debug`, so the harness sets `RUST_LOG=info`.
+- **Budget trim of day 1** (2026-10-19). The budget for this campaign was about
+  USD 45 of AWS spend for the dry run and the campaign (about USD 0.51 per hour for both
+  hosts and the NAT gateway). In order: (1) the c7i cross-check is not run;
+  (2) every non-headline open-loop curve runs 2 interleaved repetitions instead
+  of 3; (3) the two headline curves keep 3. That gives 1,116 cells and at most
+  89.8 planner hours, about 70 in practice, because closed-loop step-ups stop at
+  the knee and the network pre-flight drops rates above the traffic targets.
+  Saturated cells are not rerun.
+- **Run order.** Saturation first (it sets S), the generator validation next,
+  then the two headline curves, then the rest of the matrix, so that a stop by
+  the runtime guard loses the least.
+- **Day-1 core cut** (2026-10-20). Day 1 was stopped after the MySQL headline
+  curve (`head-my-w3-05`). It holds every closed-loop saturation curve, the
+  generator validation and both headline curves with 3 repetitions; 2 cells of
+  `decomp-pg-w1` that had completed are kept as extra data. The PostgreSQL
+  two-task curve (`suites/core-h2.toml`) ran on its own stack instead: 2 x 0.5
+  vCPU against `direct` at 30 to 220% of day 1's S at 0.5 vCPU, and 1 x 0.5 at
+  30, 90 and 120% on the same host for a like-for-like comparison, 3
+  repetitions. It started after `head-my-w3-05`, so that both stacks stayed
+  under one aggregate traffic cap.
+- **Day 2 at one repetition** (2026-10-20). Day 2 runs the two headline curves
+  once on a freshly launched stack at day 1's absolute rates (about 4.6 hours).
+  The headline rows pool day 1 and day 2 (n = 4, not the 6 of section 8), and
+  the report's between-days table flags every day-2 value outside day 1's 95%
+  interval.
+- **Not run in this campaign:** the size sweep, large results and masking, the
+  full decomposition, 1 vCPU, PgBouncer and ProxySQL, TLS off, the protocol
+  modes, the ORM mix, blocked statements, connection setup and the c7i
+  cross-check. They are `suites/published.toml` minus what ran, for a follow-up
+  campaign.
+
+The runs, their harness commits and the combined report are in
+[results/bench-2026-11/](results/bench-2026-11/README.md).

@@ -6,7 +6,7 @@ One `hostmon sample` per host streams cumulative counters once a second; this
 module pipes every stream into one `hostmon guard`, which applies the caps
 (per component 400 Mbps hard / 300 target, aggregate 800 hard / 600 target)
 and writes the stop file on a breach. The same bytes are counted at every
-interface they cross (owner rule), so components share counters on purpose.
+interface they cross (project rule), so components share counters on purpose.
 """
 from __future__ import annotations
 

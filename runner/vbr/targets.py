@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Vericto S.A.S.
 # SPDX-License-Identifier: Apache-2.0
-"""Databases, the control-plane stub and every target of design section 6.
+"""Databases, the control-plane stub and every target of METHODOLOGY.md sections 1 and 2.
 
 Port plan (identical in every topology; on the SUT with host networking):
 
@@ -18,8 +18,8 @@ pure TCP hop: neither protocol can be TLS-terminated by a TCP proxy without
 changing the client (PostgreSQL negotiates TLS in-protocol with SSLRequest,
 MySQL upgrades mid-handshake), so in TLS cells HAProxy relays the end-to-end
 TLS session and pays no cryptography. The TLS-off cells give its clean hop cost;
-the report labels HAProxy accordingly (deviation from design section 6, which
-asked for termination on both sides).
+the report labels HAProxy accordingly (the original plan asked for termination
+on both sides; see the README, "Design choices and changes").
 """
 from __future__ import annotations
 

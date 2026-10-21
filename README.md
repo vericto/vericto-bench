@@ -12,10 +12,52 @@ behind every figure.
 License: Apache-2.0 (see [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md)).
 The harness never vendors proxy source: it pulls the proxy image by digest.
 
-> **Status (2026-10-21): first campaign (BENCH-2026-11) run on EC2, day 1 + day 2 of the
-> publishable core; internal until the owner's review, so no figure here is published yet.**
-> Results, checksums and reports: [results/bench-2026-11/](results/bench-2026-11/README.md).
-> The design is BENCH-2026-11; the methodology is in [METHODOLOGY.md](METHODOLOGY.md).
+> **Status (2026-10-21): the first campaign, BENCH-2026-11, is complete (day 1 and
+> day 2 of the publishable core, on EC2) and its results are published.**
+> Write-up: [vericto.com/benchmarks/proxy-latency](https://vericto.com/benchmarks/proxy-latency).
+> Manifests, cell results, reports, charts, archive checksums and the harness commit
+> of every run: [results/bench-2026-11/](results/bench-2026-11/README.md).
+> The methodology is in [METHODOLOGY.md](METHODOLOGY.md); what this campaign ran of
+> the full matrix is in its [section 11](METHODOLOGY.md#11-bench-2026-11-the-campaign-matrix-and-what-was-run).
+
+## Results at a glance (BENCH-2026-11)
+
+Conditions: vericto-proxy 4.14.2 (engine v4.3.0, 42 built-in rules, default
+policy) as `vericto-enforce`, with telemetry to the local control-plane
+stand-in; 0.5 vCPU (one Graviton3 core, 50% CFS quota); TLS on both legs; SUT
+c7g.2xlarge and load generator c7g.xlarge in one cluster placement group,
+us-east-1a. Added latency is the target minus `direct` at the same offered rate,
+paired within each repetition, open loop and measured from the intended send
+time: mean and Student t 95% interval over n = 4 repetitions (3 on day 1, 1 on
+day 2). S, the closed-loop saturation rate of `vericto-enforce` at 0.5 vCPU, is
+6,033/s for PostgreSQL and 357/s for MySQL. All figures are from
+[results/bench-2026-11/report/](results/bench-2026-11/report/report.md).
+
+| Headline workload | Offered rate (% of S) | Added p50 ms [95%] | Added p99 ms [95%] | Added p99.9 ms [95%] |
+| --- | --- | --- | --- | --- |
+| PostgreSQL W1: pgbench select-only, extended protocol | 603/s (10%) | 0.119 [0.117, 0.121] | 0.187 [0.182, 0.191] | 2.709 [2.665, 2.753] |
+| | 1,810/s (30%) | 0.119 [0.116, 0.122] | 1.312 [1.209, 1.415] | 3.413 [3.219, 3.608] |
+| | 4,223/s (70%) | 0.145 [0.135, 0.156] | 3.634 [2.941, 4.327] | 17.021 [11.847, 22.194] |
+| MySQL W3: sysbench oltp_read_only (rates in transactions/s; 10 point selects and 4 ranges per transaction) | 36/s (10%) | 1.724 [1.660, 1.789] | 1.958 [1.865, 2.051] | 4.192 [4.043, 4.342] |
+| | 178/s (50%) | 1.598 [1.557, 1.639] | 4.028 [3.896, 4.160] | 5.645 [4.707, 6.583] |
+| | 250/s (70%) | 1.570 [1.554, 1.585] | 4.357 [4.197, 4.517] | 11.024 [9.418, 12.630] |
+
+- **The TCP hop alone** (HAProxy with the same CPU budget, same rates) adds
+  0.032 to 0.038 ms at p50 on PostgreSQL and 0.350 to 0.508 ms on MySQL.
+- **Near saturation the tail grows**: added p99 is 43.097 ms on PostgreSQL at 80%
+  of S and 32.875 ms on MySQL at 90% of S (n = 3 each).
+- **CPU cost** (linear fit over open-loop cells below 80% of S): 0.1066 vCPU per
+  1,000 QPS [0.1039, 0.1093] on PostgreSQL and 0.0975 [0.0959, 0.0992] on MySQL,
+  that is USD 3.60 and 3.29 per month per 1,000 QPS at 70% utilisation at the
+  Fargate ARM64 list price.
+- **Two tasks of 0.5 vCPU** (PostgreSQL W1, same host, 3 repetitions): at
+  5,429/s (90% of S), where one task saturates (4,732/s achieved), two tasks add
+  0.124 ms at p50 and 2.524 ms at p99; they sustain 9,049/s (150%) and saturate at
+  10,859/s (180%).
+- The generator validation passed in both of its cells. 8 repetitions were
+  invalid under the pre-registered rules and 19 cells were aborted by a traffic
+  cap; both are listed in the report and kept in the raw data. Every rate, the
+  between-days comparison, saturation curves and charts are in the full report.
 
 ## What is measured
 
@@ -29,7 +71,7 @@ The harness never vendors proxy source: it pulls the proxy image by digest.
 | Blocked statements | A block against the same statement forwarded, end to end, in the proxy (the stub's per-event latency) and in the engine alone |
 | Large results | 10 KB, 100 KB and 1 MB results, plain and with a masked column, at reduced rates: CPU-seconds and added latency per MB |
 
-**Headline workloads** (decision 6): **pgbench select-only, extended protocol**
+**Headline workloads**: **pgbench select-only, extended protocol**
 for PostgreSQL (W1; the unnamed statement is re-parsed and evaluated on every
 execution, the conservative case for an ORM) and **sysbench oltp_read_only** for
 MySQL (W3; replayed open loop by vbench over the text protocol, because
@@ -39,15 +81,15 @@ comparable workloads; both at **0.5 vCPU, TLS on both legs**, curves from 10% to
 modes, the ORM mix, 1 vCPU, two tasks, TLS off, sizes, large results) is
 published alongside, not instead.
 
-**Publication scope** (decision 7): headline figures come **only from the EC2
-campaign (Tier P)**. Staging measurements (Fargate and Aurora inside one VPC) are
-context with that label, and telemetry-ingest results are internal (the staging
-sessions use this repository's vbench through Vericto's internal scripts). Every figure
+**Publication scope**: headline figures come **only from the EC2
+campaign (Tier P)**. Vericto's measurements in its own AWS environment (Fargate
+and Aurora inside one VPC) are context with that label, and telemetry-ingest
+results are not published from this repository. Every figure
 is published with its conditions (proxy and engine version, 42 built-in rules,
 default policy, statement shape and size, rate, protocol mode, instance type,
 vCPU budget, TLS, the direct baseline next to it, and the traffic of its cell).
 
-## Topology: two hosts (decision 3)
+## Topology: two hosts
 
 The published numbers come from **two instances in one cluster placement group**:
 
@@ -62,8 +104,8 @@ read critically:
 - **The generator does not share the SUT's memory bandwidth, L3 cache or
   interrupt load.** On one host the generator's cost lands on the same chip as the
   proxy, and that is the first objection a reader raises against loopback
-  numbers. The design's own limitation ("co-location") disappears instead of
-  being quantified.
+  numbers. The usual limitation of a single-host benchmark ("co-location")
+  disappears instead of being quantified.
 - **The comparison stays fair.** The client reaches the direct database and every
   intermediary over the same network hop; each intermediary reaches the database
   over loopback on the SUT. The paired delta is therefore the intermediary's own
@@ -83,7 +125,7 @@ read critically:
 cheaper reproduction; its manifest says so and it is not the published topology.
 The laptop smoke (below) is a third, unpublishable topology.
 
-## Network traffic caps (owner rule, design section 8a)
+## Network traffic caps (a project rule)
 
 The benchmark measures the proxy, never the network. Total traffic of the whole
 benchmark must never reach 1 Gbps:
@@ -103,7 +145,8 @@ stopped) after three consecutive one-second samples above a hard cap, records
 every open-loop curve, a 10-s probe measures bytes per request at each component
 and `hostmon preflight` refuses the curve if any planned rate would pass a design
 target, printing the highest rate that fits: rates are reduced, never the margin.
-No iperf or bandwidth test of any kind is part of the harness.
+No iperf or bandwidth test of any kind is part of the harness. Why the caps
+exist and what is reported instead of high traffic: [METHODOLOGY.md, section 9](METHODOLOGY.md#9-network-traffic-caps).
 
 ## Quick start: laptop smoke (NOT FOR PUBLISHED NUMBERS)
 
@@ -134,15 +177,16 @@ guard that shuts the hosts down). The suite runs unattended from user-data; the
 results (raw data, report, manifest with every digest) land in an S3 bucket of
 the same stack. Details and per-hour prices: [terraform/aws/README.md](terraform/aws/README.md).
 
-The campaign (design section 10): `suite=published` (day 1; the full matrix is
-1,455 cells and at most 118 machine-hours by the planner; BENCH-2026-11's day 1
-runs it trimmed to the owner's budget of about USD 45: the c7i cross-check is
-not run and every non-headline open-loop curve has 2 repetitions instead of 3,
-the headline curves keep 3, which gives 1,116 cells and at most 89.8 planner
-hours, about 70 in practice because closed-loop step-ups stop at the knee and the
-network pre-flight drops rates above the traffic targets; see
-`suites/generate.py`), `suite=day2` (headline curves on a fresh
-SUT at day 1's rates), `suite=c7i` with `-var sut_instance_type=c7i.2xlarge`.
+The campaign ([METHODOLOGY.md, section 11](METHODOLOGY.md#11-bench-2026-11-the-campaign-matrix-and-what-was-run)):
+`suite=published` (day 1; the full matrix is 1,455 cells and at most 118
+machine-hours by the planner; BENCH-2026-11's day 1 ran it trimmed to the budget
+for this campaign, about USD 45: the c7i cross-check is not run and every
+non-headline open-loop curve has 2 repetitions instead of 3, the headline curves
+keep 3, which gives 1,116 cells and at most 89.8 planner hours, about 70 in
+practice because closed-loop step-ups stop at the knee and the network
+pre-flight drops rates above the traffic targets; see `suites/generate.py`),
+`suite=core-h2` (the PostgreSQL two-task curve on its own stack), `suite=day2`
+(headline curves on a fresh SUT at day 1's rates), `suite=c7i` with `-var sut_instance_type=c7i.2xlarge`.
 At list prices about USD 0.48 per hour for the two hosts and the NAT gateway:
 about USD 55 to 65 for the whole Tier P campaign.
 `python3 runner/run.py --suite suites/published.toml --plan` prints the cells and
@@ -165,19 +209,19 @@ compose/                        laptop smoke
 versions.lock                   every component pinned by digest or checksum
 ```
 
-## Deviations from the design, and why
+## Design choices and changes, and why
 
-- **Two hosts** instead of one (decision 3; reasons above).
+- **Two hosts** instead of one (reasons above).
 - **Private subnet with a NAT gateway** instead of a public subnet with egress
-  only (owner instruction); access is SSM only in both.
+  only (we chose to give no instance a public IP); access is SSM only in both.
 - **HAProxy is a pure TCP hop in TLS cells**: a TCP proxy cannot terminate
   PostgreSQL's in-protocol TLS negotiation or MySQL's mid-handshake upgrade
   without changing the client, so it relays the end-to-end TLS session and pays
   no cryptography there. The TLS-off cells give its clean hop cost; the report
   labels it. PgBouncer, ProxySQL and the proxy pay both TLS legs.
-- **The campaign measures vericto-proxy 4.14.2** (owner decision 2026-10-19,
-  the latest release; it supersedes the earlier plan to wait for a 4.14.3 with
-  the log-level and size-comment fixes). 4.14.2 is documentation-only over
+- **The campaign measures vericto-proxy 4.14.2** (we chose it on 2026-10-19 as
+  the latest release, instead of waiting for a 4.14.3 with the log-level and
+  size-comment fixes). 4.14.2 is documentation-only over
   4.14.1: same code, engine v4.3.0, 42 built-in rules. Its code default log
   filter is still `info,vericto_proxy=debug`, so the harness sets
   `RUST_LOG=info` explicitly. `versions.lock` pins it by digest, and the runner

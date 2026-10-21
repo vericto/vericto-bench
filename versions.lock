@@ -11,7 +11,7 @@
 # identifies the image whatever the registry.
 
 # --- System under test --------------------------------------------------------
-# BENCH-2026-11 measures vericto-proxy 4.14.2 (owner decision 2026-10-19: the
+# BENCH-2026-11 measures vericto-proxy 4.14.2 (chosen on 2026-10-19 as the
 # latest release). 4.14.2 is documentation-only over 4.14.1 (same code, engine
 # v4.3.0, 42 built-in rules); the code's default log filter is still
 # info,vericto_proxy=debug, so the harness sets RUST_LOG=info explicitly.

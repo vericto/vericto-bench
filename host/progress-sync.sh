@@ -15,7 +15,7 @@ set -uo pipefail
 RESULTS_DIR="/var/lib/vericto-bench/results/$RUN_ID"
 DEST="s3://$BUCKET/$RUN_ID/partial"
 EVERY="${PROGRESS_SYNC_S:-600}"
-# Owner rule: no traffic near 1 Gbps, harness overhead included. Day 1 showed
+# Project rule (METHODOLOGY.md section 9): no traffic near 1 Gbps, harness overhead included. Day 1 showed
 # 1-s bursts of ~850 Mbps on the load generator's NIC while this sync uploaded
 # (S3 gateway endpoint): cap the CLI at 8 MB/s (64 Mbps) and keep it on the OS core,
 # off the load generator's cores.
