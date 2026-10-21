@@ -894,7 +894,7 @@ def main(argv=None) -> int:
            "bytes/s per direction over each measured window in traffic_directions.csv.", ""]
     hd = [d for d in dirs if d["loop"] == "open" and d["target"] == "vericto-enforce"]
     if hd:
-        md += ["Bytes per direction at vericto-enforce, highest valid rate of each open-loop curve (Mbps, window mean):", "",
+        md += ["Bytes per direction at vericto-enforce, highest offered rate of each open-loop curve (saturated cells included; Mbps, window mean):", "",
                "| Curve | Rate/s | client to proxy | proxy to client | proxy to DB | DB to proxy | telemetry out | proxy total | result bytes per request |",
                "| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
         for curve in sorted({d["curve"] for d in hd}):
