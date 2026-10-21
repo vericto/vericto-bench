@@ -598,7 +598,8 @@ def scaling_rows(cells: list[dict], drows: list[dict]) -> list[dict]:
     groups: dict[tuple, list[dict]] = {}
     for c in cells:
         m = re.match(r"h2-(pg|mysql)-(w1|w3)-(05|1|2x05)$", str(c.get("curve")))
-        if not m or c.get("target") != "vericto-enforce" or c.get("status") in (None, "not_run") or c.get("invalid_reasons"):
+        if not m or c.get("target") != "vericto-enforce" or c.get("status") in (None, "not_run") or c.get("invalid_reasons") \
+                or str(c.get("cell", "")).endswith(".netprobe"):
             continue
         groups.setdefault((m.group(1), m.group(3), c.get("offered_rate")), []).append(c)
     rows = []
