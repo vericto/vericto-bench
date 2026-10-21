@@ -1,0 +1,137 @@
+[02:10:50] run bench-2026-11-p2-core-h2-2: suite core-h2 (profile published), topology two-host
+[02:10:50] starting pg database
+[02:10:53] seeding pg/orm
+[02:10:55] seeding pg/pgbench
+[02:11:11] curve h2-pg-w1-2x05: pgbench select-only extended tls=True size=2x0.5 targets=direct,vericto-enforce
+[02:11:11] cell h2-pg-w1-2x05.vericto-enforce.r50.rep0.netprobe
+[02:12:02]   -> ok  achieved 49.8/s p50 0.578 p99 1.266 
+[02:12:02] network pre-flight h2-pg-w1-2x05: every rate under 300 Mbps per component and 600 Mbps aggregate
+[02:12:02] cell h2-pg-w1-2x05.direct.r1809.8.rep1
+[02:18:36]   -> ok  achieved 1805.5/s p50 0.309 p99 0.359 
+[02:18:36] cell h2-pg-w1-2x05.vericto-enforce.r1809.8.rep1
+[02:25:18]   -> ok  achieved 1806.7/s p50 0.43 p99 0.614 
+[02:25:18] cell h2-pg-w1-2x05.vericto-enforce.r5429.3.rep1
+[02:32:06]   -> ok  achieved 5433.4/s p50 0.42 p99 2.83 
+[02:32:06] cell h2-pg-w1-2x05.direct.r5429.3.rep1
+[02:38:46]   -> ok  achieved 5413.8/s p50 0.297 p99 0.376 
+[02:38:46] cell h2-pg-w1-2x05.direct.r3619.5.rep1
+[02:45:23]   -> ok  achieved 3607.0/s p50 0.301 p99 0.357 
+[02:45:23] cell h2-pg-w1-2x05.vericto-enforce.r3619.5.rep1
+[02:52:08]   -> ok  achieved 3609.6/s p50 0.42 p99 1.717 
+[02:52:08] cell h2-pg-w1-2x05.vericto-enforce.r7239.1.rep1
+[02:58:58]   -> ok  achieved 7234.4/s p50 0.431 p99 3.423 
+[02:58:58] cell h2-pg-w1-2x05.direct.r7239.1.rep1
+[03:05:41]   -> ok  achieved 7239.8/s p50 0.296 p99 0.413 
+[03:05:41] cell h2-pg-w1-2x05.direct.r9048.9.rep1
+[03:12:27]   -> ok  achieved 9042.5/s p50 0.294 p99 0.44 
+[03:12:27] cell h2-pg-w1-2x05.vericto-enforce.r9048.9.rep1
+[03:19:21]   -> ok  achieved 9040.1/s p50 0.47 p99 14.342 
+[03:19:21] cell h2-pg-w1-2x05.vericto-enforce.r10858.6.rep1
+[03:26:31]   -> ok  achieved 10821.2/s p50 113.347 p99 2265.211 INVALID not steady: rate varies 2.4% across parts
+[03:26:31] cell h2-pg-w1-2x05.direct.r10858.6.rep1
+[03:33:20]   -> ok  achieved 10853.1/s p50 0.292 p99 0.47 
+[03:33:20] cell h2-pg-w1-2x05.direct.r13271.6.rep1
+[03:40:12]   -> ok  achieved 13263.4/s p50 0.291 p99 0.529 
+[03:40:12] cell h2-pg-w1-2x05.vericto-enforce.r13271.6.rep1
+[03:47:25]   -> saturated achieved rate below 99% of offered achieved 9656.3/s p50 80033.541 p99 135822.2 
+[03:47:25] cell h2-pg-w1-2x05.vericto-enforce.r1809.8.rep2
+[03:54:07]   -> ok  achieved 1808.7/s p50 0.426 p99 0.598 
+[03:54:07] cell h2-pg-w1-2x05.direct.r1809.8.rep2
+[04:00:41]   -> ok  achieved 1805.6/s p50 0.307 p99 0.352 
+[04:00:41] cell h2-pg-w1-2x05.direct.r3619.5.rep2
+[04:07:18]   -> ok  achieved 3613.0/s p50 0.3 p99 0.355 
+[04:07:18] cell h2-pg-w1-2x05.vericto-enforce.r3619.5.rep2
+[04:14:03]   -> ok  achieved 3609.3/s p50 0.418 p99 1.741 
+[04:14:03] cell h2-pg-w1-2x05.vericto-enforce.r5429.3.rep2
+[04:20:51]   -> ok  achieved 5421.1/s p50 0.421 p99 2.976 
+[04:20:51] cell h2-pg-w1-2x05.direct.r5429.3.rep2
+[04:27:30]   -> ok  achieved 5429.9/s p50 0.298 p99 0.376 
+[04:27:30] cell h2-pg-w1-2x05.direct.r7239.1.rep2
+[04:34:13]   -> ok  achieved 7224.0/s p50 0.296 p99 0.412 
+[04:34:13] cell h2-pg-w1-2x05.vericto-enforce.r7239.1.rep2
+[04:41:03]   -> ok  achieved 7230.4/s p50 0.433 p99 3.465 
+[04:41:03] cell h2-pg-w1-2x05.vericto-enforce.r9048.9.rep2
+[04:47:57]   -> ok  achieved 9035.7/s p50 0.447 p99 4.009 
+[04:47:57] cell h2-pg-w1-2x05.direct.r9048.9.rep2
+[04:54:42]   -> ok  achieved 9032.4/s p50 0.292 p99 0.437 
+[04:54:42] cell h2-pg-w1-2x05.direct.r10858.6.rep2
+[05:01:30]   -> ok  achieved 10842.0/s p50 0.291 p99 0.465 
+[05:01:30] cell h2-pg-w1-2x05.vericto-enforce.r10858.6.rep2
+[05:08:47]   -> ok  achieved 10752.2/s p50 1509.3 p99 9484.418 INVALID not steady: rate varies 10.2% across parts
+[05:08:47] cell h2-pg-w1-2x05.vericto-enforce.r13271.6.rep2
+[05:15:57]   -> saturated achieved rate below 99% of offered achieved 9023.2/s p50 94331.502 p99 152545.921 
+[05:15:57] cell h2-pg-w1-2x05.direct.r13271.6.rep2
+[05:22:49]   -> ok  achieved 13261.7/s p50 0.291 p99 0.52 
+[05:22:49] cell h2-pg-w1-2x05.direct.r1809.8.rep3
+[05:29:24]   -> ok  achieved 1800.7/s p50 0.308 p99 0.354 
+[05:29:24] cell h2-pg-w1-2x05.vericto-enforce.r1809.8.rep3
+[05:36:06]   -> ok  achieved 1807.1/s p50 0.426 p99 0.597 
+[05:36:06] cell h2-pg-w1-2x05.vericto-enforce.r3619.5.rep3
+[05:42:51]   -> ok  achieved 3614.2/s p50 0.421 p99 1.641 
+[05:42:51] cell h2-pg-w1-2x05.direct.r3619.5.rep3
+[05:49:28]   -> ok  achieved 3613.0/s p50 0.3 p99 0.354 
+[05:49:28] cell h2-pg-w1-2x05.direct.r5429.3.rep3
+[05:56:08]   -> ok  achieved 5424.0/s p50 0.296 p99 0.373 
+[05:56:08] cell h2-pg-w1-2x05.vericto-enforce.r5429.3.rep3
+[06:02:55]   -> ok  achieved 5418.8/s p50 0.422 p99 2.892 
+[06:02:55] cell h2-pg-w1-2x05.vericto-enforce.r7239.1.rep3
+[06:09:46]   -> ok  achieved 7228.4/s p50 0.436 p99 3.546 
+[06:09:46] cell h2-pg-w1-2x05.direct.r7239.1.rep3
+[06:16:28]   -> ok  achieved 7224.4/s p50 0.296 p99 0.412 
+[06:16:28] cell h2-pg-w1-2x05.direct.r9048.9.rep3
+[06:23:14]   -> ok  achieved 9036.7/s p50 0.296 p99 0.448 
+[06:23:14] cell h2-pg-w1-2x05.vericto-enforce.r9048.9.rep3
+[06:30:07]   -> ok  achieved 9043.8/s p50 0.462 p99 4.26 
+[06:30:07] cell h2-pg-w1-2x05.vericto-enforce.r10858.6.rep3
+[06:37:21]   -> saturated achieved rate below 99% of offered achieved 10119.7/s p50 18732.479 p99 43379.521 
+[06:37:21] cell h2-pg-w1-2x05.direct.r10858.6.rep3
+[06:44:09]   -> ok  achieved 10837.9/s p50 0.297 p99 0.482 
+[06:44:09] cell h2-pg-w1-2x05.direct.r13271.6.rep3
+[06:51:02]   -> ok  achieved 13256.1/s p50 0.296 p99 0.541 
+[06:51:02] cell h2-pg-w1-2x05.vericto-enforce.r13271.6.rep3
+[06:58:14]   -> saturated achieved rate below 99% of offered achieved 9342.7/s p50 88501.817 p99 143565.055 
+[06:58:14] cell h2-pg-w1-2x05.vericto-enforce.r10858.6.rep1.rerun
+[07:05:32]   -> saturated achieved rate below 99% of offered achieved 10587.8/s p50 4954.06 p99 21132.426 
+[07:05:32] cell h2-pg-w1-2x05.vericto-enforce.r10858.6.rep2.rerun
+[07:12:50]   -> saturated achieved rate below 99% of offered achieved 10622.1/s p50 4335.919 p99 16907.557 
+[07:12:50] curve h2-pg-w1-05: pgbench select-only extended tls=True size=0.5 targets=direct,vericto-enforce
+[07:12:50] cell h2-pg-w1-05.vericto-enforce.r50.rep0.netprobe
+[07:13:39]   -> ok  achieved 50.2/s p50 0.578 p99 1.244 
+[07:13:40] network pre-flight h2-pg-w1-05: every rate under 300 Mbps per component and 600 Mbps aggregate
+[07:13:40] cell h2-pg-w1-05.direct.r5429.3.rep1
+[07:20:19]   -> ok  achieved 5419.0/s p50 0.299 p99 0.378 
+[07:20:19] cell h2-pg-w1-05.vericto-enforce.r5429.3.rep1
+[07:27:13]   -> saturated achieved rate below 99% of offered achieved 4725.0/s p50 37748.052 p99 74053.474 
+[07:27:13] cell h2-pg-w1-05.vericto-enforce.r1809.8.rep1
+[07:33:55]   -> ok  achieved 1806.1/s p50 0.434 p99 1.711 
+[07:33:55] cell h2-pg-w1-05.direct.r1809.8.rep1
+[07:40:29]   -> ok  achieved 1809.0/s p50 0.312 p99 0.362 
+[07:40:29] cell h2-pg-w1-05.direct.r7239.1.rep1
+[07:47:11]   -> ok  achieved 7225.7/s p50 0.301 p99 0.423 
+[07:47:11] cell h2-pg-w1-05.vericto-enforce.r7239.1.rep1
+[07:54:02]   -> saturated achieved rate below 99% of offered achieved 2994.0/s p50 176860.514 p99 240360.735 
+[07:54:02] cell h2-pg-w1-05.vericto-enforce.r1809.8.rep2
+[08:00:43]   -> ok  achieved 1807.1/s p50 0.437 p99 1.767 
+[08:00:43] cell h2-pg-w1-05.direct.r1809.8.rep2
+[08:07:17]   -> ok  achieved 1803.5/s p50 0.312 p99 0.36 
+[08:07:17] cell h2-pg-w1-05.direct.r5429.3.rep2
+[08:13:57]   -> ok  achieved 5421.8/s p50 0.301 p99 0.382 
+[08:13:57] cell h2-pg-w1-05.vericto-enforce.r5429.3.rep2
+[08:20:51]   -> saturated achieved rate below 99% of offered achieved 4687.1/s p50 40359.961 p99 77149.661 
+[08:20:51] cell h2-pg-w1-05.vericto-enforce.r7239.1.rep2
+[08:27:41]   -> saturated achieved rate below 99% of offered achieved 2603.2/s p50 191636.526 p99 252675.351 
+[08:27:41] cell h2-pg-w1-05.direct.r7239.1.rep2
+[08:34:23]   -> ok  achieved 7223.7/s p50 0.3 p99 0.42 
+[08:34:23] cell h2-pg-w1-05.direct.r5429.3.rep3
+[08:41:03]   -> ok  achieved 5430.8/s p50 0.303 p99 0.387 
+[08:41:03] cell h2-pg-w1-05.vericto-enforce.r5429.3.rep3
+[08:47:58]   -> saturated achieved rate below 99% of offered achieved 4783.3/s p50 35114.422 p99 69619.576 
+[08:47:58] cell h2-pg-w1-05.vericto-enforce.r1809.8.rep3
+[08:54:39]   -> ok  achieved 1809.1/s p50 0.436 p99 1.918 
+[08:54:39] cell h2-pg-w1-05.direct.r1809.8.rep3
+[09:01:13]   -> ok  achieved 1807.2/s p50 0.311 p99 0.359 
+[09:01:13] cell h2-pg-w1-05.direct.r7239.1.rep3
+[09:07:56]   -> ok  achieved 7224.3/s p50 0.298 p99 0.418 
+[09:07:56] cell h2-pg-w1-05.vericto-enforce.r7239.1.rep3
+[09:14:46]   -> saturated achieved rate below 99% of offered achieved 3112.0/s p50 170894.829 p99 235618.756 
+[09:15:51] report: /data/bench-2026-11-p2-core-h2-2/report/report.md (6 delta rows, 6 charts)

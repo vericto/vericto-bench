@@ -1,0 +1,105 @@
+[11:52:16] run bench-2026-11-p2-day2: suite published-day2 (profile published), topology two-host
+[11:52:16] starting mysql database
+[11:52:17] starting pg database
+[11:52:29] seeding mysql/orm
+[11:52:32] seeding mysql/sysbench
+[11:54:13] seeding pg/orm
+[11:54:15] seeding pg/pgbench
+[11:54:31] verdict pre-flight: every declared verdict matches engine-eval
+[11:54:32] curve head-pg-w1-05-day2: pgbench select-only extended tls=True size=0.5 targets=direct,haproxy-tcp,vericto-enforce
+[11:54:32] cell head-pg-w1-05-day2.vericto-enforce.r50.rep0.netprobe
+[11:55:21]   -> ok  achieved 45.7/s p50 0.578 p99 0.753 
+[11:55:22] network pre-flight head-pg-w1-05-day2: every rate under 300 Mbps per component and 600 Mbps aggregate
+[11:55:22] cell head-pg-w1-05-day2.haproxy-tcp.r4826.1.rep1
+[12:02:01]   -> ok  achieved 4826.0/s p50 0.329 p99 0.448 
+[12:02:01] cell head-pg-w1-05-day2.vericto-enforce.r4826.1.rep1
+[12:08:49]   -> ok  achieved 4826.8/s p50 10.214 p99 104.357 INVALID not steady: p50 drifts 2649% from the first to the last third
+[12:08:49] cell head-pg-w1-05-day2.direct.r4826.1.rep1
+[12:15:28]   -> ok  achieved 4817.6/s p50 0.296 p99 0.365 
+[12:15:28] cell head-pg-w1-05-day2.vericto-enforce.r603.3.rep1
+[12:22:07]   -> ok  achieved 600.9/s p50 0.442 p99 0.563 
+[12:22:07] cell head-pg-w1-05-day2.direct.r603.3.rep1
+[12:28:39]   -> ok  achieved 602.0/s p50 0.322 p99 0.374 
+[12:28:39] cell head-pg-w1-05-day2.haproxy-tcp.r603.3.rep1
+[12:35:12]   -> ok  achieved 603.8/s p50 0.366 p99 0.43 
+[12:35:12] cell head-pg-w1-05-day2.direct.r1809.8.rep1
+[12:41:45]   -> ok  achieved 1808.7/s p50 0.309 p99 0.354 
+[12:41:45] cell head-pg-w1-05-day2.haproxy-tcp.r1809.8.rep1
+[12:48:20]   -> ok  achieved 1807.1/s p50 0.339 p99 0.389 
+[12:48:20] cell head-pg-w1-05-day2.vericto-enforce.r1809.8.rep1
+[12:55:01]   -> ok  achieved 1808.1/s p50 0.426 p99 1.574 
+[12:55:01] cell head-pg-w1-05-day2.direct.r4222.8.rep1
+[13:01:38]   -> ok  achieved 4213.8/s p50 0.297 p99 0.358 
+[13:01:38] cell head-pg-w1-05-day2.vericto-enforce.r4222.8.rep1
+[13:08:23]   -> ok  achieved 4218.5/s p50 0.451 p99 4.471 
+[13:08:23] cell head-pg-w1-05-day2.haproxy-tcp.r4222.8.rep1
+[13:15:01]   -> ok  achieved 4226.0/s p50 0.336 p99 0.444 
+[13:15:01] cell head-pg-w1-05-day2.haproxy-tcp.r3016.3.rep1
+[13:21:37]   -> ok  achieved 3016.5/s p50 0.34 p99 0.404 
+[13:21:37] cell head-pg-w1-05-day2.direct.r3016.3.rep1
+[13:28:13]   -> ok  achieved 3015.2/s p50 0.306 p99 0.356 
+[13:28:13] cell head-pg-w1-05-day2.vericto-enforce.r3016.3.rep1
+[13:34:56]   -> ok  achieved 3016.0/s p50 0.439 p99 3.299 
+[13:34:56] cell head-pg-w1-05-day2.vericto-enforce.r5429.3.rep1
+[13:41:51]   -> saturated achieved rate below 99% of offered achieved 4875.1/s p50 26810.477 p99 61252.601 
+[13:41:51] cell head-pg-w1-05-day2.haproxy-tcp.r5429.3.rep1
+[13:48:31]   -> ok  achieved 5429.9/s p50 0.333 p99 0.477 
+[13:48:31] cell head-pg-w1-05-day2.direct.r5429.3.rep1
+[13:55:11]   -> ok  achieved 5426.1/s p50 0.296 p99 0.376 
+[13:55:11] cell head-pg-w1-05-day2.haproxy-tcp.r6032.6.rep1
+[14:01:51]   -> ok  achieved 6036.9/s p50 0.333 p99 0.489 
+[14:01:51] cell head-pg-w1-05-day2.vericto-enforce.r6032.6.rep1
+[14:08:45]   -> saturated achieved rate below 99% of offered achieved 4462.7/s p50 76162.685 p99 132573.024 
+[14:08:45] cell head-pg-w1-05-day2.direct.r6032.6.rep1
+[14:15:25]   -> ok  achieved 6027.6/s p50 0.297 p99 0.393 
+[14:15:25] cell head-pg-w1-05-day2.vericto-enforce.r4826.1.rep1.rerun
+[14:22:14]   -> ok  achieved 4828.7/s p50 4.633 p99 74.549 INVALID not steady: p50 drifts 144% from the first to the last third
+[14:22:14] curve head-my-w3-05-day2: vbench sysbench-ro text tls=True size=0.5 targets=direct,haproxy-tcp,vericto-enforce
+[14:22:14] cell head-my-w3-05-day2.vericto-enforce.r35.7.rep0.netprobe
+[14:23:04]   -> ok  achieved 35.7/s p50 4.519 p99 5.187 
+[14:23:04] network pre-flight head-my-w3-05-day2: every rate under 300 Mbps per component and 600 Mbps aggregate
+[14:23:04] cell head-my-w3-05-day2.vericto-enforce.r178.3.rep1
+[14:29:42]   -> ok  achieved 178.3/s p50 4.255 p99 7.327 
+[14:29:42] cell head-my-w3-05-day2.haproxy-tcp.r178.3.rep1
+[14:36:14]   -> ok  achieved 178.3/s p50 3.139 p99 3.729 
+[14:36:14] cell head-my-w3-05-day2.direct.r178.3.rep1
+[14:42:45]   -> ok  achieved 178.3/s p50 2.641 p99 3.217 
+[14:42:45] cell head-my-w3-05-day2.haproxy-tcp.r285.3.rep1
+[14:49:17]   -> ok  achieved 285.3/s p50 3.053 p99 3.695 
+[14:49:17] cell head-my-w3-05-day2.direct.r285.3.rep1
+[14:55:48]   -> ok  achieved 285.3/s p50 2.575 p99 3.177 
+[14:55:48] cell head-my-w3-05-day2.vericto-enforce.r285.3.rep1
+[15:02:26]   -> ok  achieved 285.3/s p50 3.935 p99 7.547 
+[15:02:26] cell head-my-w3-05-day2.direct.r320.9.rep1
+[15:08:57]   -> ok  achieved 320.9/s p50 2.639 p99 3.277 
+[15:08:57] cell head-my-w3-05-day2.vericto-enforce.r320.9.rep1
+[15:15:35]   -> ok  achieved 320.9/s p50 9.151 p99 51.263 INVALID not steady: p50 drifts 18% from the first to the last third
+[15:15:35] cell head-my-w3-05-day2.haproxy-tcp.r320.9.rep1
+[15:22:07]   -> ok  achieved 320.9/s p50 3.051 p99 3.721 
+[15:22:07] cell head-my-w3-05-day2.direct.r107.rep1
+[15:28:38]   -> ok  achieved 107.0/s p50 2.705 p99 3.263 
+[15:28:38] cell head-my-w3-05-day2.haproxy-tcp.r107.rep1
+[15:35:09]   -> ok  achieved 107.0/s p50 3.181 p99 3.777 
+[15:35:09] cell head-my-w3-05-day2.vericto-enforce.r107.rep1
+[15:41:47]   -> ok  achieved 107.0/s p50 4.311 p99 6.971 
+[15:41:47] cell head-my-w3-05-day2.vericto-enforce.r249.6.rep1
+[15:48:25]   -> ok  achieved 249.6/s p50 4.139 p99 7.651 
+[15:48:25] cell head-my-w3-05-day2.direct.r249.6.rep1
+[15:54:56]   -> ok  achieved 249.6/s p50 2.565 p99 3.157 
+[15:54:56] cell head-my-w3-05-day2.haproxy-tcp.r249.6.rep1
+[16:01:28]   -> ok  achieved 249.6/s p50 3.097 p99 3.713 
+[16:01:28] cell head-my-w3-05-day2.haproxy-tcp.r35.7.rep1
+[16:08:00]   -> ok  achieved 35.7/s p50 3.347 p99 3.935 
+[16:08:00] cell head-my-w3-05-day2.vericto-enforce.r35.7.rep1
+[16:14:38]   -> ok  achieved 35.7/s p50 4.507 p99 5.331 
+[16:14:38] cell head-my-w3-05-day2.direct.r35.7.rep1
+[16:21:09]   -> ok  achieved 35.7/s p50 2.805 p99 3.389 
+[16:21:09] cell head-my-w3-05-day2.vericto-enforce.r356.6.rep1
+[16:27:55]   -> saturated achieved rate below 99% of offered achieved 346.7/s p50 6893.567 p99 8454.143 
+[16:27:55] cell head-my-w3-05-day2.haproxy-tcp.r356.6.rep1
+[16:34:27]   -> ok  achieved 356.6/s p50 2.845 p99 3.803 
+[16:34:27] cell head-my-w3-05-day2.direct.r356.6.rep1
+[16:40:58]   -> ok  achieved 356.6/s p50 2.565 p99 3.243 
+[16:40:58] cell head-my-w3-05-day2.vericto-enforce.r320.9.rep1.rerun
+[16:47:36]   -> ok  achieved 320.9/s p50 8.287 p99 52.159 INVALID not steady: p50 drifts 172% from the first to the last third
+[16:48:04] report: /data/bench-2026-11-p2-day2/report/report.md (23 delta rows, 8 charts)

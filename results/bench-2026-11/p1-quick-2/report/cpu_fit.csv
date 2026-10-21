@@ -1,0 +1,5 @@
+curve,engine,target,size,n
+bytes-pg-payload-100k,pg,vericto-enforce,0.5,1
+head-my-w3-05,mysql,vericto-enforce,0.5,2
+head-pg-w1-05,pg,vericto-enforce,0.5,2
+size-pg-batch1000-1,pg,vericto-enforce,1,1
