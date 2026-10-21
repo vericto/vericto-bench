@@ -12,9 +12,10 @@ behind every figure.
 License: Apache-2.0 (see [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md)).
 The harness never vendors proxy source: it pulls the proxy image by digest.
 
-> **Status (2026-10-19): harness built and tested (phase P0). No campaign has run
-> yet, so this repository contains no published figure.** The design is
-> BENCH-2026-11; the methodology is in [METHODOLOGY.md](METHODOLOGY.md).
+> **Status (2026-10-21): first campaign (BENCH-2026-11) run on EC2, day 1 + day 2 of the
+> publishable core; internal until the owner's review, so no figure here is published yet.**
+> Results, checksums and reports: [results/bench-2026-11/](results/bench-2026-11/README.md).
+> The design is BENCH-2026-11; the methodology is in [METHODOLOGY.md](METHODOLOGY.md).
 
 ## What is measured
 
