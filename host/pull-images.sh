@@ -48,14 +48,27 @@ rewrite() {
   case "${name##*/}" in *:*) name="${name%:*}" ;; esac
   echo "$name@$digest"
 }
+pull() {  # 5 attempts with growing backoff (about 5 minutes in all)
+  local img="$1" attempt
+  for attempt in 1 2 3 4 5; do
+    docker pull -q "$img" >/dev/null && return 0
+    [ "$attempt" = 5 ] || sleep $((attempt * 15))
+  done
+  return 1
+}
 for raw in "${images[@]}"; do
   img="$(rewrite "$raw")"
   echo "pull $img"
-  for attempt in 1 2 3; do
-    docker pull -q "$img" >/dev/null && break
-    [ "$attempt" = 3 ] && { echo "pull failed: $img" >&2; exit 4; }
-    sleep $((attempt * 10))
-  done
+  if pull "$img"; then continue; fi
+  # The mirror failed (BENCH-2026-11 core-h2: GHCR timed out from a NAT'd host):
+  # the original registry serves the same digest, which is what counts.
+  orig="$(PROXY_FROM_MIRROR=0 LIBRARY_MIRROR='' rewrite "$raw")"
+  if [ "$orig" != "$img" ]; then
+    echo "mirror failed for $img; pulling the same digest from $orig"
+    # runner/vbr/runner.py uses whichever of the two references is on the hosts.
+    if pull "$orig"; then continue; fi
+  fi
+  echo "pull failed: $img" >&2; exit 4
 done
 
 # Images built from this checkout (pgbouncer, sysbench, vbench, cpstub, engine-eval).

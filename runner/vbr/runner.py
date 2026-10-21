@@ -77,6 +77,8 @@ class Runner:
             tools=f"vericto-bench/tools:{tag}", pgbouncer=f"vericto-bench/pgbouncer:{tag}",
             proxysql=f"vericto-bench/proxysql:{tag}", sysbench=f"vericto-bench/sysbench:{tag}")
         self.proxy_ref = proxy_ref
+        self._resolve_images({"proxy": proxy_ref, "postgres": self.lock["POSTGRES_IMAGE"], "mysql": self.lock["MYSQL_IMAGE"],
+                              "haproxy": self.lock["HAPROXY_IMAGE"]})
         self.datasets = {"pgbench_scale": 100, "sysbench_tables": 8, "sysbench_rows": 1_000_000, "payload_rows": 10_000}
         self.datasets.update(self.suite.datasets)
         self.cells_path = os.path.join(self.out, "cells.jsonl")
@@ -87,6 +89,25 @@ class Runner:
             with open(args.caps) as f:
                 self.caps = json.load(f)
         self._check_profile()
+
+    def _resolve_images(self, origins: dict[str, str]):
+        """host/pull-images.sh falls back to the original registry when a mirror
+        fails; the digest is the same, the name is not. Use the mirror name where
+        every host has it, else the original name where every host has that."""
+        if self.topo.kind == "compose":
+            return
+        for field, raw in origins.items():
+            mirrored = getattr(self.images, field)
+            origin = pull_ref(raw)
+            if mirrored == origin:
+                continue
+
+            def everywhere(ref: str) -> bool:
+                return all(h.docker("image", "inspect", "-f", "{{.Id}}", ref, check=False).returncode == 0
+                           for h in self.topo.hosts())
+            if not everywhere(mirrored) and everywhere(origin):
+                log(f"image {field}: {mirrored} not on every host; using the same digest as {origin}")
+                setattr(self.images, field, origin)
 
     # ---- checks -------------------------------------------------------------------
 

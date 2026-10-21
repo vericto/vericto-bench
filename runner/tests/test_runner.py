@@ -20,9 +20,9 @@ class Suites(unittest.TestCase):
     def test_every_committed_suite_loads(self):
         for f in sorted(os.listdir(os.path.join(REPO, "suites"))):
             if f == "day2.toml":
-                # refuses to load until day 1's S values are filled in, by design
-                with self.assertRaises(S.SuiteError):
-                    S.load(os.path.join(REPO, "suites", f))
+                # armed with day 1's S (suites/generate.py DAY1_S): every curve has it
+                s = S.load(os.path.join(REPO, "suites", f))
+                self.assertTrue(all(c.saturation_qps > 0 for c in s.curves), f)
             elif f.endswith(".toml"):
                 s = S.load(os.path.join(REPO, "suites", f))
                 self.assertTrue(s.curves, f)
