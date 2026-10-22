@@ -39,8 +39,8 @@ func eventArgs(r *rand.Rand) []any {
 
 // Mix is the W4 ORM mix: what an ORM-backed web application sends. Weights
 // are per execution (a transaction is one execution of five statements).
-// About 80% allowed, 17% flagged, 3% blocked (engine v4.3.0, 42 rules). Unchanged from the 2026-10
-// staging sessions (vericto-regression bench/proxy-latency) for continuity.
+// About 80% allowed, 17% flagged, 3% blocked (engine v4.3.0, 42 rules). Unchanged from Vericto's
+// earlier (2026-10) Fargate measurements, for continuity.
 func Mix() []Op {
 	return []Op{
 		{Name: "pk_lookup", Weight: 30, Verdict: Allow,

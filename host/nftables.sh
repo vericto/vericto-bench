@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2026 Vericto S.A.S.
 #
-# Byte counters per direction per hop on the bench ports (design §8a). They only
+# Byte counters per direction per hop on the bench ports (METHODOLOGY.md section 9). They only
 # count; no rule drops or changes a packet.
 #
 #   host/nftables.sh apply    # (re)create table inet vbench with zeroed counters

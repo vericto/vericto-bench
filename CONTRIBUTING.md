@@ -20,7 +20,8 @@ respectful, constructive, and technically precise.
   needs a unit test in `internal/openloop`.
 - **The control-plane stub and the traffic caps** (`cmd/cpstub`, `cmd/hostmon`,
   `internal/netcap`). The caps (400/300 Mbps per component, 800/600 aggregate)
-  are an owner rule: a change that loosens them will not be merged.
+  are a project rule ([METHODOLOGY.md, section 9](METHODOLOGY.md#9-network-traffic-caps)):
+  a change that loosens them will not be merged.
 - **Baselines and targets** (`runner/vbr/targets.py`), **suites** (`suites/`),
   **analysis** (`analysis/report.py`), **provisioning** (`terraform/aws`, `host/`).
 
@@ -50,7 +51,8 @@ SPDX-License-Identifier: Apache-2.0
 ```
 
 Never commit results with credentials, account ids or hostnames you do not want
-public: results are published as release assets after review, not committed.
+public. Raw data is not committed: a campaign commits only its manifests, cell
+results, reports and archive checksums, after review (see `results/`).
 
 ## Contributor License Agreement
 

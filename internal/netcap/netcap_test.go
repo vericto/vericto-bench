@@ -49,7 +49,7 @@ func oneEach(names ...string) Components {
 	return c
 }
 
-func TestDefaultCapsAreTheOwners(t *testing.T) {
+func TestDefaultCapsAreTheProjectCaps(t *testing.T) {
 	c := Default()
 	if c.ComponentHard != 400 || c.ComponentTarget != 300 || c.AggregateHard != 800 || c.AggregateTarget != 600 || c.Consecutive != 3 {
 		t.Fatalf("defaults %+v", c)
@@ -182,7 +182,7 @@ func TestSharedCounterCountsInEveryComponent(t *testing.T) {
 	}
 }
 
-// The design's Tier S example: 2 proxy tasks x 3,500 QPS of the ORM mix at
+// Example: 2 proxy tasks x 3,500 QPS of the ORM mix at
 // ~4 KB per crossing exceeds the 600-Mbps aggregate target, and the pre-flight
 // gives the reduced rate instead.
 func TestPreflightReducesRatesNotTheMargin(t *testing.T) {
@@ -215,7 +215,7 @@ func TestPreflightReducesRatesNotTheMargin(t *testing.T) {
 	}
 }
 
-func TestPreflightPassesTheDesignW8Cells(t *testing.T) {
+func TestPreflightPassesThePlannedW8Cells(t *testing.T) {
 	c := Default()
 	// 1 MB result at 10/s, two hosts: loadgen NIC 1 crossing, SUT NIC 1, proxy
 	// ports 2 (client side and database side), database port 1.

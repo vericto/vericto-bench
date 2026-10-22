@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2026 Vericto S.A.S.
 #
-# Prints the host's provenance as JSON (manifest input, design §5 "Host hygiene").
+# Prints the host's provenance as JSON (manifest input, METHODOLOGY.md section 3).
 # Hardware, kernel, clock, tuning and the CPU plan. No secrets, no environment dump.
 set -euo pipefail
 exec python3 -I - <<'PY'
