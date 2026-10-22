@@ -10,7 +10,7 @@ locals {
   two_host     = var.topology == "two-host"
   name         = "vericto-bench-${var.run_id}"
   repo_root    = abspath("${path.module}/../..")
-  auto_hours   = { quick = 3, c7i = 14, day2 = 24, published = 132 }
+  auto_hours   = { quick = 3, "m2-quick" = 9, c7i = 14, day2 = 24, published = 132 }
   max_hours    = var.max_hours > 0 ? var.max_hours : lookup(local.auto_hours, var.suite, 30)
   max_minutes  = local.max_hours * 60
   day          = var.day > 0 ? var.day : (var.suite == "day2" ? 2 : 1)

@@ -1,0 +1,151 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# M2 release gate (business policy rules): vericto-proxy 4.15.0 with
+# VERICTO_POLICY_RULES=off against 4.14.3, the quick suite (suites/quick.toml)
+# on the same two hosts in one session. Not published.
+#
+# Changes from quick.toml, fixed before the run:
+# - targets: direct, 4.14.3 (baseline), 4.15.0 with VERICTO_POLICY_RULES=off
+#   (the gate) and 4.15.0 with VERICTO_POLICY_RULES=observe (informational; the
+#   stub serves the 42 built-in rules and no principals, so the policy set is
+#   empty). All three run the vericto-enforce configuration (telemetry to the
+#   stub, monitor_mode=false). HAProxy is left out;
+# - 3 repetitions of every open-loop curve (quick: 1); within a repetition every
+#   target runs at a rate before the next rate, in a Williams order, so the
+#   releases are paired per repetition and rate;
+# - the headline curves add 50% of S, so that the CPU fit has 3 rates below 80%;
+# - S is the closed-loop maximum of 4.14.3 (the baseline).
+# Gate: every cell below 70% of S, 4.15.0(off) and 4.14.3 overlap in their 95%
+# intervals of added latency, or the paired difference's interval contains 0
+# (analysis/compare.py).
+
+[suite]
+name = "m2-quick"
+profile = "quick"
+order_seed = 2026112200
+reps = 3
+warmup_s = 15
+duration_s = 60
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-enforce-4143"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4143]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_14_3_IMAGE"
+label = "4.14.3"
+
+[variant.vericto-enforce-4150-off]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_15_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.15.0, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-4150-observe]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_15_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "observe" }
+label = "4.15.0, VERICTO_POLICY_RULES=observe, empty policy set"
+
+# Closed-loop saturation, W1 select-only extended, TLS, 0.5 vCPU
+[[curve]]
+id = "sat-pg-w1-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4143", "vericto-enforce-4150-off", "vericto-enforce-4150-observe"]
+loop = "closed"
+concurrency = [1, 4, 16, 64]
+warmup_s = 10
+duration_s = 30
+reps = 1
+
+# Closed-loop saturation, W3 oltp_read_only replay (text), TLS, 0.5 vCPU
+[[curve]]
+id = "sat-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4143", "vericto-enforce-4150-off", "vericto-enforce-4150-observe"]
+loop = "closed"
+concurrency = [1, 4, 16, 64]
+warmup_s = 10
+duration_s = 30
+reps = 1
+
+# HEADLINE PG curve, W1 pgbench select-only, extended protocol, TLS, 0.5 vCPU
+[[curve]]
+id = "head-pg-w1-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4143", "vericto-enforce-4150-off", "vericto-enforce-4150-observe"]
+rates_pct = [30, 50, 70, 100]
+saturation_from = "sat-pg-w1-05"
+conns = 64
+
+# HEADLINE MySQL curve, W3 oltp_read_only (vbench replay, text protocol), TLS, 0.5 vCPU
+[[curve]]
+id = "head-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4143", "vericto-enforce-4150-off", "vericto-enforce-4150-observe"]
+rates_pct = [30, 50, 70, 100]
+saturation_from = "sat-my-w3-05"
+
+[[curve]]
+id = "bytes-pg-payload-100k"
+engine = "pg"
+tool = "vbench"
+workload = "payload-100k"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4143", "vericto-enforce-4150-off", "vericto-enforce-4150-observe"]
+rates = [50]
+
+[[curve]]
+id = "size-pg-batch1000-1"
+engine = "pg"
+tool = "vbench"
+workload = "batch1000"
+mode = "extended"
+tls = true
+size = "1"
+targets = ["direct", "vericto-enforce-4143", "vericto-enforce-4150-off", "vericto-enforce-4150-observe"]
+rates = [10]
+conns = 1
+
+[[curve]]
+id = "validate-generator-pg"
+engine = "pg"
+tool = "vbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct"]
+rates = [500]
+pause_every_s = 20
+pause_s = 1
+reps = 1

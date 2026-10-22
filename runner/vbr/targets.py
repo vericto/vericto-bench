@@ -128,17 +128,20 @@ def budget(topo: T.Topology, size: str, second: bool = False) -> tuple[str, str]
 
 
 def start_target(topo: T.Topology, images: Images, engine: str, target: str, size: str, tls: bool,
-                 certs: dict[str, bytes], second: bool = False) -> T.Container | None:
+                 certs: dict[str, bytes], second: bool = False, variant=None, variant_image: str = "") -> T.Container | None:
+    """variant (suite.Variant): run `target` with the configuration of
+    variant.base, from variant_image, with variant.env on top."""
     if target == "direct":
         return None
     h = topo.sut
+    base = variant.base if variant else target
     cpuset, cpus = budget(topo, size, second)
     db = DB_NAME[engine]
     db_host = T.peer_addr(topo, db)
     db_port = PORTS[(engine, "direct")]
     name = f"vb-{engine}-{target}" + ("-2" if second else "")
     lport = PORTS[(engine, "vericto2")] if second else port(engine, target)
-    if target.startswith("vericto"):
+    if base.startswith("vericto"):
         env = {"VERICTO_WIRE_PROTOCOL": "postgres" if engine == "pg" else "mysql",
                "UPSTREAM_HOST": db_host, "UPSTREAM_PORT": str(db_port), "PROXY_LISTEN_PORT": str(lport),
                "UPSTREAM_SSLMODE": "require" if tls else "disable", "PROXY_TLS_MODE": "require" if tls else "disable",
@@ -146,14 +149,16 @@ def start_target(topo: T.Topology, images: Images, engine: str, target: str, siz
                "RUST_LOG": "info"}
         if tls:
             env.update({"PROXY_TLS_CERT": "/certs/server.crt", "PROXY_TLS_KEY": "/certs/server.key"})
-        if target in ("vericto-enforce", "vericto-observe"):
-            mode = "observe" if target == "vericto-observe" else "enforce"
+        if base in ("vericto-enforce", "vericto-observe"):
+            mode = "observe" if base == "vericto-observe" else "enforce"
             env.update({"VERICTO_API_URL": cpstub_url(topo), "VERICTO_API_KEY": f"{mode}-{engine}",
                         "VERICTO_DATABASE_ID": f"bench-{engine}", "VERICTO_TELEMETRY_BUFFER": "memory"})
             if topo.sut.network != "host":
                 # Compose only: the stub is another container, not loopback.
                 env["VERICTO_ALLOW_INSECURE_API_URL"] = "true"
-        c = T.create(topo, h, name, images.proxy, env=env, cpuset=cpuset, cpus=cpus)
+        if variant:
+            env.update(variant.env)
+        c = T.create(topo, h, name, variant_image or images.proxy, env=env, cpuset=cpuset, cpus=cpus)
         if tls:
             # Throwaway per-run key, readable by the image's non-root user.
             c.put("/", {"certs/": (b"", 0o755), "certs/server.crt": (certs["server.crt"], 0o644),

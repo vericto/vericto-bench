@@ -79,6 +79,17 @@ class Runner:
         self.proxy_ref = proxy_ref
         self._resolve_images({"proxy": proxy_ref, "postgres": self.lock["POSTGRES_IMAGE"], "mysql": self.lock["MYSQL_IMAGE"],
                               "haproxy": self.lock["HAPROXY_IMAGE"]})
+        # Variants (suite [variant.<name>]): other proxy images by digest, from versions.lock.
+        self.variant_refs: dict[str, str] = {}
+        self.variant_images: dict[str, str] = {}
+        for name, v in self.suite.variants.items():
+            if v.image_key not in self.lock:
+                raise S.SuiteError(f"variant {name}: {v.image_key} is not in versions.lock")
+            ref = self.lock[v.image_key]
+            if "@sha256:" not in ref:
+                raise S.SuiteError(f"variant {name}: {v.image_key} is not pinned by digest")
+            self.variant_refs[name] = ref
+            self.variant_images[name] = self._resolve_one(pull_ref(mirror(ref, self.lock)), ref)
         self.datasets = {"pgbench_scale": 100, "sysbench_tables": 8, "sysbench_rows": 1_000_000, "payload_rows": 10_000}
         self.datasets.update(self.suite.datasets)
         self.cells_path = os.path.join(self.out, "cells.jsonl")
@@ -89,6 +100,21 @@ class Runner:
             with open(args.caps) as f:
                 self.caps = json.load(f)
         self._check_profile()
+
+    def _resolve_one(self, mirrored: str, raw: str) -> str:
+        """_resolve_images for one reference: the mirror name, or the origin's
+        (same digest) where only that is on every host."""
+        origin = pull_ref(raw)
+        if self.topo.kind == "compose" or mirrored == origin:
+            return mirrored
+
+        def everywhere(ref: str) -> bool:
+            return all(h.docker("image", "inspect", "-f", "{{.Id}}", ref, check=False).returncode == 0
+                       for h in self.topo.hosts())
+        if not everywhere(mirrored) and everywhere(origin):
+            log(f"image {mirrored} not on every host; using the same digest as {origin}")
+            return origin
+        return mirrored
 
     def _resolve_images(self, origins: dict[str, str]):
         """host/pull-images.sh falls back to the original registry when a mirror
@@ -288,8 +314,10 @@ class Runner:
         c = cell.curve
         out = []
         n = 2 if (c.size == "2x0.5" and cell.target.startswith("vericto")) else 1
+        v = self.suite.variants.get(cell.target)
         for i in range(n):
-            t = TG.start_target(self.topo, self.images, c.engine, cell.target, c.size, c.tls, self.certs, second=i == 1)
+            t = TG.start_target(self.topo, self.images, c.engine, cell.target, c.size, c.tls, self.certs, second=i == 1,
+                                variant=v, variant_image=self.variant_images.get(cell.target, ""))
             if t:
                 out.append(t)
         return out
@@ -323,18 +351,20 @@ class Runner:
             targets = self.start_targets(cell)
             hosts, ports = self.ports_for(cell)
             if cell.target != "direct":
-                self.wait_ready(c.engine, cell.target, timeout=120, expect_enforce=cell.target in ENFORCING, tls=c.tls)
+                self.wait_ready(c.engine, cell.target, timeout=120, expect_enforce=self.suite.base(cell.target) in ENFORCING,
+                                tls=c.tls)
                 if len(ports) > 1:
                     self._wait_port(c.engine, hosts[1], ports[1], c.tls)
-            if cell.target in ("vericto-enforce", "vericto-observe"):
+            base = self.suite.base(cell.target)
+            if base in ("vericto-enforce", "vericto-observe"):
                 st = TG.cpstub_get(self.topo, "/stats")
-                key = ("observe" if cell.target == "vericto-observe" else "enforce") + f"-{c.engine}"
+                key = ("observe" if base == "vericto-observe" else "enforce") + f"-{c.engine}"
                 rec["cpstub_syncs_before"] = st.get("syncs")
                 if not st.get("syncs"):
                     raise T.SetupError(f"{cid}: the proxy never synced with cpstub")
                 TG.cpstub_get(self.topo, "/reset", post=True)
             rec.update(self._load(cell, cid, local, data, stop_local, stop_data, hosts, ports, targets))
-            if cell.target in ("vericto-enforce", "vericto-observe"):
+            if base in ("vericto-enforce", "vericto-observe"):
                 time.sleep(6)  # one telemetry flush interval (5 s) so the cell's events reach the stub
                 rec["cpstub"] = TG.cpstub_get(self.topo, "/stats")
         except T.SetupError as e:
@@ -571,7 +601,7 @@ class Runner:
                 if key in prev and prev[key] > 0 and ach < prev[key] * 1.03:
                     stopped.add(key)  # less than 3% more per doubling: past the knee
                 prev[key] = ach
-                if cell.target == "vericto-enforce":
+                if cell.target == self.suite.saturation_target:
                     r = rec.get("achieved_rate") or 0
                     best[cell.rep] = max(best.get(cell.rep, 0), r)
         # One rerun of an invalid repetition; the original stays in the raw data.
@@ -581,7 +611,7 @@ class Runner:
             self.run_cell(cell, attempt=".rerun")
         if curve.loop == "closed" and best:
             self.saturation[curve.id] = statistics.mean(best.values())
-            log(f"curve {curve.id}: S(vericto-enforce) = {self.saturation[curve.id]:.0f}/s")
+            log(f"curve {curve.id}: S({self.suite.saturation_target}) = {self.saturation[curve.id]:.0f}/s")
             # Recorded in full: day 2 runs the same absolute rates (suites/day2.toml).
             self.manifest.setdefault("saturation", {})[curve.id] = self.saturation[curve.id]
 
@@ -622,7 +652,8 @@ class Runner:
         expected traffic of every rate: refuse the curve if a component would
         pass 300 Mbps or the aggregate 600 Mbps (project rule: reduce the rates,
         never the margin)."""
-        heavy = "vericto-enforce" if "vericto-enforce" in curve.targets else curve.targets[-1]
+        heavy = next((t for t in (self.suite.saturation_target, "vericto-enforce") if t in curve.targets),
+                     next((t for t in curve.targets if self.suite.base(t) == "vericto-enforce"), curve.targets[-1]))
         rates = sorted({c.rate for c in cells})
         probe_rate = max(1.0, min(rates[0], 50.0))
         probe = S.Cell(curve, 0, heavy, probe_rate, 0, None, seq=10_000 + len(self.manifest.get("netprobes", {})))
@@ -674,14 +705,17 @@ class Runner:
         m.update({"run_id": self.run_id, "stage": stage, "profile": self.suite.profile, "suite": self.suite.name,
                   "suite_file": self.suite.raw, "order_seed": self.suite.order_seed, "topology": self.topo.kind,
                   "day": self.args.day, "versions_lock": self.lock, "proxy_image": self.proxy_ref,
-                  "images": self.images.__dict__, "caps": self.caps or "default (400/300 per component, 800/600 aggregate)",
+                  "images": self.images.__dict__, "saturation_target": self.suite.saturation_target,
+                  "proxy_variants": {n: {"base": v.base, "image": self.variant_refs.get(n), "pulled_as": self.variant_images.get(n),
+                                         "env": v.env, "label": v.label} for n, v in self.suite.variants.items()},
+                  "caps": self.caps or "default (400/300 per component, 800/600 aggregate)",
                   "harness_commit": os.environ.get("HARNESS_COMMIT") or _git(self.repo), "updated_at": now_iso()})
         m.setdefault("started_at", now_iso())
         m["hosts"] = {}
         for h in self.topo.hosts():
             info = {"env": h.env}
             ids = {}
-            for img in set(self.images.__dict__.values()):
+            for img in set(self.images.__dict__.values()) | set(self.variant_images.values()):
                 p = h.docker("image", "inspect", "-f", "{{.Id}} {{json .RepoDigests}}", img, check=False)
                 if p.returncode == 0:
                     ids[img] = p.stdout.decode().strip()

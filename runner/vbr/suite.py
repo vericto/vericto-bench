@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import dataclasses
 import random
+import re
 import tomllib
 from typing import Any
 
@@ -27,8 +28,24 @@ TARGETS = {
 }
 
 
+VERICTO_BASES = ("vericto-offline", "vericto-enforce", "vericto-observe")
+
+
 class SuiteError(ValueError):
     pass
+
+
+@dataclasses.dataclass
+class Variant:
+    """A named vericto target that runs another proxy image and/or extra proxy
+    environment, with the configuration of one of the three vericto targets
+    (its base). Lets one run compare releases on the same hosts, in the same
+    session, paired within each repetition (e.g. a release gate)."""
+    name: str
+    base: str
+    image_key: str  # a *_IMAGE key of versions.lock
+    env: dict[str, str]
+    label: str = ""
 
 
 @dataclasses.dataclass
@@ -72,6 +89,13 @@ class Suite:
     raw: dict[str, Any]
     database: dict[str, Any]
     engine_eval: dict[str, Any]
+    variants: dict[str, Variant] = dataclasses.field(default_factory=dict)
+    saturation_target: str = "vericto-enforce"  # whose closed-loop maximum is S
+
+    def base(self, target: str) -> str:
+        """The configuration a target runs with: itself, or a variant's base."""
+        v = self.variants.get(target)
+        return v.base if v else target
 
 
 def _get(d: dict, key: str, typ, default=None, required=False):
@@ -87,6 +111,27 @@ def _get(d: dict, key: str, typ, default=None, required=False):
     return v
 
 
+def _variants(raw: dict) -> dict[str, Variant]:
+    out = {}
+    for name, v in (raw.get("variant") or {}).items():
+        if not isinstance(v, dict):
+            raise SuiteError(f"variant {name} must be a table")
+        if not re.fullmatch(r"vericto-[a-z0-9-]{1,40}", name) or name in VERICTO_BASES:
+            raise SuiteError(f"variant {name}: the name must match vericto-[a-z0-9-]+ and differ from {VERICTO_BASES}")
+        base = _get(v, "base", str, required=True)
+        if base not in VERICTO_BASES:
+            raise SuiteError(f"variant {name}: base must be one of {VERICTO_BASES}")
+        image_key = _get(v, "image", str, "VERICTO_PROXY_IMAGE")
+        if not image_key.endswith("_IMAGE"):
+            raise SuiteError(f"variant {name}: image must be a *_IMAGE key of versions.lock")
+        env = _get(v, "env", dict, {})
+        for k, x in env.items():
+            if not re.fullmatch(r"[A-Z][A-Z0-9_]*", k) or not isinstance(x, str):
+                raise SuiteError(f"variant {name}: env must map NAMES to strings")
+        out[name] = Variant(name=name, base=base, image_key=image_key, env=dict(env), label=_get(v, "label", str, ""))
+    return out
+
+
 def load(path: str) -> Suite:
     with open(path, "rb") as f:
         raw = tomllib.load(f)
@@ -94,6 +139,12 @@ def load(path: str) -> Suite:
     profile = _get(s, "profile", str, required=True)
     if profile not in PROFILES:
         raise SuiteError(f"profile must be one of {PROFILES}")
+    variants = _variants(raw)
+    if variants and profile == "published":
+        raise SuiteError("variants run other proxy images: not for profile=published")
+    sat_target = _get(s, "saturation_target", str, "vericto-enforce")
+    if sat_target not in VERICTO_BASES and sat_target not in variants:
+        raise SuiteError(f"saturation_target {sat_target} is neither a vericto target nor a variant")
     curves = []
     seen = set()
     for c in raw.get("curve", []):
@@ -109,7 +160,7 @@ def load(path: str) -> Suite:
             raise SuiteError(f"{cid}: tool must be one of {TOOLS}")
         targets = _get(c, "targets", list, required=True)
         for t in targets:
-            if t not in TARGETS[engine]:
+            if t not in TARGETS[engine] and t not in variants:
                 raise SuiteError(f"{cid}: unknown {engine} target {t}")
         size = str(_get(c, "size", str, "0.5"))
         if size not in SIZES:
@@ -162,6 +213,7 @@ def load(path: str) -> Suite:
         duration_s=float(_get(s, "duration_s", float, 300.0)), cooldown_s=float(_get(s, "cooldown_s", float, 30.0)),
         interval_s=float(_get(s, "interval_s", float, 10.0)), datasets=dict(raw.get("datasets", {})),
         curves=curves, raw=raw, database=dict(raw.get("database", {})), engine_eval=dict(raw.get("engine_eval", {})),
+        variants=variants, saturation_target=sat_target,
     )
 
 
@@ -215,7 +267,8 @@ def expand(suite: Suite, curve: Curve, saturation: dict[str, float]) -> list[Cel
     if curve.rates_pct:
         s = curve.saturation_qps or saturation.get(curve.saturation_from, 0.0)
         if s <= 0:
-            raise SuiteError(f"{curve.id}: S unknown (closed-loop curve {curve.saturation_from} has no vericto-enforce maximum)")
+            raise SuiteError(f"{curve.id}: S unknown (closed-loop curve {curve.saturation_from} has no "
+                             f"{suite.saturation_target} maximum)")
         rates += [(round(s * p / 100.0, 1), p) for p in curve.rates_pct]
     k = 0
     for rep in range(1, reps + 1):

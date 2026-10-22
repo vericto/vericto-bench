@@ -97,7 +97,7 @@ variable "auto_shutdown" {
 }
 
 variable "max_hours" {
-  description = "Hard runtime guard: every host schedules `shutdown -h` this many hours after boot. 0 = automatic: quick 3, c7i 14, day2 24, published 132 (the planner's upper bound of 118 h plus setup), otherwise 30."
+  description = "Hard runtime guard: every host schedules `shutdown -h` this many hours after boot. 0 = automatic: quick 3, m2-quick 9, c7i 14, day2 24, published 132 (the planner's upper bound of 118 h plus setup), otherwise 30."
   type        = number
   default     = 0
 

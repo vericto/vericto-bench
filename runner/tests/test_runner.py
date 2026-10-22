@@ -55,6 +55,29 @@ class Suites(unittest.TestCase):
             self.assertEqual(rates[-3:], [1000.0] * 3)  # the 100% rate runs last
         self.assertEqual(len({x.id for x in cells}), len(cells))
 
+    def test_variants_resolve_to_their_base_and_are_pinned(self):
+        s = S.load(os.path.join(REPO, "suites", "m2-quick.toml"))
+        self.assertEqual(s.saturation_target, "vericto-enforce-4143")
+        self.assertEqual(s.base("vericto-enforce-4150-off"), "vericto-enforce")
+        self.assertEqual(s.base("direct"), "direct")
+        self.assertEqual(s.variants["vericto-enforce-4150-off"].env, {"VERICTO_POLICY_RULES": "off"})
+        with open(os.path.join(REPO, "versions.lock")) as f:
+            lock = dict(l.strip().split("=", 1) for l in f if "=" in l and not l.lstrip().startswith("#"))
+        for v in s.variants.values():
+            self.assertRegex(lock[v.image_key], r"@sha256:[0-9a-f]{64}$")
+
+    def test_variant_rules(self):
+        for body, err in (('[variant.vericto-x]\nbase = "haproxy-tcp"\n', "base"),
+                          ('[variant.other]\nbase = "vericto-enforce"\n', "name"),
+                          ('[variant.vericto-x]\nbase = "vericto-enforce"\nenv = { lower = "1" }\n', "env")):
+            path = tempfile.mktemp(suffix=".toml")
+            with open(path, "w") as f:
+                f.write('[suite]\nname = "t"\nprofile = "quick"\norder_seed = 1\n' + body +
+                        '[[curve]]\nid = "c"\nengine = "pg"\nworkload = "orm"\ntargets = ["direct"]\nrates = [10]\n')
+            with self.assertRaisesRegex(S.SuiteError, err):
+                S.load(path)
+            os.remove(path)
+
     def test_sysbench_open_loop_is_refused(self):
         path = tempfile.mktemp(suffix=".toml")
         with open(path, "w") as f:
