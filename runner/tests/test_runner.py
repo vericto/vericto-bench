@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from vbr import monitor as M  # noqa: E402
 from vbr import suite as S  # noqa: E402
 from vbr import tools as TL  # noqa: E402
-from vbr.runner import fraction_above, steady_state  # noqa: E402
+from vbr.runner import fraction_above, steady_state, variant_ref  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -66,10 +66,22 @@ class Suites(unittest.TestCase):
         for v in s.variants.values():
             self.assertRegex(lock[v.image_key], r"@sha256:[0-9a-f]{64}$")
 
+    def test_override_variant_takes_the_runs_image(self):
+        s = S.load(os.path.join(REPO, "suites", "m2-fix-ab.toml"))
+        cand = s.variants["vericto-enforce-cand-off"]
+        self.assertEqual(cand.image_key, S.OVERRIDE_IMAGE_KEY)
+        self.assertEqual(cand.env, {"VERICTO_POLICY_RULES": "off"})
+        ref = "registry.example/vericto-proxy@sha256:" + "a" * 64
+        self.assertEqual(variant_ref(cand.image_key, {}, {"PROXY_IMAGE_OVERRIDE": ref}), ref)
+        self.assertIsNone(variant_ref(cand.image_key, {"PROXY_IMAGE_OVERRIDE": ref}, {}))  # never from the lock
+        self.assertEqual(variant_ref("VERICTO_PROXY_4_14_3_IMAGE", {"VERICTO_PROXY_4_14_3_IMAGE": ref}, {}), ref)
+        self.assertIsNone(variant_ref("VERICTO_X_IMAGE", {}, {"PROXY_IMAGE_OVERRIDE": ref}))
+
     def test_variant_rules(self):
         for body, err in (('[variant.vericto-x]\nbase = "haproxy-tcp"\n', "base"),
                           ('[variant.other]\nbase = "vericto-enforce"\n', "name"),
-                          ('[variant.vericto-x]\nbase = "vericto-enforce"\nenv = { lower = "1" }\n', "env")):
+                          ('[variant.vericto-x]\nbase = "vericto-enforce"\nenv = { lower = "1" }\n', "env"),
+                          ('[variant.vericto-x]\nbase = "vericto-enforce"\nimage = "SOMETHING"\n', "image")):
             path = tempfile.mktemp(suffix=".toml")
             with open(path, "w") as f:
                 f.write('[suite]\nname = "t"\nprofile = "quick"\norder_seed = 1\n' + body +

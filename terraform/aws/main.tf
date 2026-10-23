@@ -10,7 +10,7 @@ locals {
   two_host     = var.topology == "two-host"
   name         = "vericto-bench-${var.run_id}"
   repo_root    = abspath("${path.module}/../..")
-  auto_hours   = { quick = 3, "m2-quick" = 9, "m2-mysql-ab" = 5, c7i = 14, day2 = 24, published = 132 }
+  auto_hours   = { quick = 3, "m2-quick" = 9, "m2-mysql-ab" = 5, "m2-fix-ab" = 5, c7i = 14, day2 = 24, published = 132 }
   max_hours    = var.max_hours > 0 ? var.max_hours : lookup(local.auto_hours, var.suite, 30)
   max_minutes  = local.max_hours * 60
   day          = var.day > 0 ? var.day : (var.suite == "day2" ? 2 : 1)
@@ -444,6 +444,48 @@ resource "aws_iam_role_policy" "loadgen" {
   policy = data.aws_iam_policy_document.loadgen[0].json
 }
 
+# proxy_image_override in a private Amazon ECR repository (an unreleased
+# candidate, pushed to a bench-only repository): both hosts may pull exactly
+# that repository (host/pull-images.sh logs in with the host role).
+locals {
+  override_ecr = regex("^(?:([0-9]{12})\\.dkr\\.ecr\\.([a-z0-9-]+)\\.amazonaws\\.com/([^@:]+))?", var.proxy_image_override)
+  override_ecr_repository_arn = local.override_ecr[0] == null ? "" : format(
+    "arn:%s:ecr:%s:%s:repository/%s",
+    data.aws_partition.current.partition, local.override_ecr[1], local.override_ecr[0], local.override_ecr[2]
+  )
+  hosts_pull_ecr = local.override_ecr_repository_arn != ""
+}
+
+data "aws_iam_policy_document" "ecr_pull" {
+  count = local.hosts_pull_ecr ? 1 : 0
+
+  statement {
+    sid       = "EcrLogin"
+    actions   = ["ecr:GetAuthorizationToken"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "PullOverride"
+    actions   = ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer", "ecr:BatchCheckLayerAvailability"]
+    resources = [local.override_ecr_repository_arn]
+  }
+}
+
+resource "aws_iam_role_policy" "sut_ecr_pull" {
+  count  = local.hosts_pull_ecr ? 1 : 0
+  name   = "vericto-bench-ecr-pull"
+  role   = aws_iam_role.sut.id
+  policy = data.aws_iam_policy_document.ecr_pull[0].json
+}
+
+resource "aws_iam_role_policy" "loadgen_ecr_pull" {
+  count  = local.hosts_pull_ecr && local.two_host ? 1 : 0
+  name   = "vericto-bench-ecr-pull"
+  role   = aws_iam_role.loadgen[0].id
+  policy = data.aws_iam_policy_document.ecr_pull[0].json
+}
+
 resource "aws_iam_instance_profile" "sut" {
   name_prefix = "vbench-sut-"
   role        = aws_iam_role.sut.name
@@ -518,6 +560,7 @@ resource "aws_instance" "sut" {
     aws_vpc_endpoint.s3,
     aws_s3_object.harness,
     aws_iam_role_policy.sut,
+    aws_iam_role_policy.sut_ecr_pull,
   ]
 }
 
@@ -559,5 +602,5 @@ resource "aws_instance" "loadgen" {
 
   tags = { Name = "${local.name}-loadgen" }
 
-  depends_on = [aws_iam_role_policy.loadgen]
+  depends_on = [aws_iam_role_policy.loadgen, aws_iam_role_policy.loadgen_ecr_pull]
 }

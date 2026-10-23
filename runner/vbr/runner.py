@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import secrets
 import statistics
 import subprocess
@@ -49,6 +50,14 @@ def mirror(ref: str, lock: dict[str, str]) -> str:
     return ref
 
 
+def variant_ref(image_key: str, lock: dict[str, str], env) -> str | None:
+    """The image reference of a variant: its versions.lock entry, or the run's
+    PROXY_IMAGE_OVERRIDE for image = "PROXY_IMAGE_OVERRIDE". None when unset."""
+    if image_key == S.OVERRIDE_IMAGE_KEY:
+        return env.get(S.OVERRIDE_IMAGE_KEY) or None
+    return lock.get(image_key)
+
+
 def pull_ref(ref: str) -> str:
     """docker run accepts name:tag@digest; keep only name@digest so the digest is what counts."""
     name, _, digest = ref.partition("@")
@@ -83,10 +92,11 @@ class Runner:
         self.variant_refs: dict[str, str] = {}
         self.variant_images: dict[str, str] = {}
         for name, v in self.suite.variants.items():
-            if v.image_key not in self.lock:
-                raise S.SuiteError(f"variant {name}: {v.image_key} is not in versions.lock")
-            ref = self.lock[v.image_key]
-            if "@sha256:" not in ref:
+            ref = variant_ref(v.image_key, self.lock, os.environ)
+            if ref is None:
+                raise S.SuiteError(f"variant {name}: {v.image_key} is not in versions.lock (or, for "
+                                   f"{S.OVERRIDE_IMAGE_KEY}, not set for this run)")
+            if not re.search(r"@sha256:[0-9a-f]{64}$", ref):
                 raise S.SuiteError(f"variant {name}: {v.image_key} is not pinned by digest")
             self.variant_refs[name] = ref
             self.variant_images[name] = self._resolve_one(pull_ref(mirror(ref, self.lock)), ref)

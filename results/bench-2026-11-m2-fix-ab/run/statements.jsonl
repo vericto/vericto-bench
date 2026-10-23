@@ -1,0 +1,28 @@
+{"bytes":36,"class":"sysbench_ro","dialect":"mysql","part":0,"sql":"SELECT c FROM sbtest1 WHERE id=72306","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":1,"sql":"SELECT c FROM sbtest1 WHERE id=734988","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":2,"sql":"SELECT c FROM sbtest1 WHERE id=281669","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":3,"sql":"SELECT c FROM sbtest1 WHERE id=434751","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":36,"class":"sysbench_ro","dialect":"mysql","part":4,"sql":"SELECT c FROM sbtest1 WHERE id=99424","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":5,"sql":"SELECT c FROM sbtest1 WHERE id=901346","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":6,"sql":"SELECT c FROM sbtest1 WHERE id=640358","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":7,"sql":"SELECT c FROM sbtest1 WHERE id=591177","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":8,"sql":"SELECT c FROM sbtest1 WHERE id=582129","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":36,"class":"sysbench_ro","dialect":"mysql","part":9,"sql":"SELECT c FROM sbtest1 WHERE id=82644","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":56,"class":"sysbench_ro","dialect":"mysql","part":10,"sql":"SELECT c FROM sbtest1 WHERE id BETWEEN 908251 AND 908350","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":59,"class":"sysbench_ro","dialect":"mysql","part":11,"sql":"SELECT SUM(k) FROM sbtest1 WHERE id BETWEEN 72300 AND 72399","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":67,"class":"sysbench_ro","dialect":"mysql","part":12,"sql":"SELECT c FROM sbtest1 WHERE id BETWEEN 784640 AND 784739 ORDER BY c","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":76,"class":"sysbench_ro","dialect":"mysql","part":13,"sql":"SELECT DISTINCT c FROM sbtest1 WHERE id BETWEEN 382569 AND 382668 ORDER BY c","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":36,"class":"sysbench_ro","dialect":"mysql","part":0,"sql":"SELECT c FROM sbtest1 WHERE id=72306","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":1,"sql":"SELECT c FROM sbtest1 WHERE id=734988","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":2,"sql":"SELECT c FROM sbtest1 WHERE id=281669","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":3,"sql":"SELECT c FROM sbtest1 WHERE id=434751","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":36,"class":"sysbench_ro","dialect":"mysql","part":4,"sql":"SELECT c FROM sbtest1 WHERE id=99424","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":5,"sql":"SELECT c FROM sbtest1 WHERE id=901346","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":6,"sql":"SELECT c FROM sbtest1 WHERE id=640358","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":7,"sql":"SELECT c FROM sbtest1 WHERE id=591177","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":37,"class":"sysbench_ro","dialect":"mysql","part":8,"sql":"SELECT c FROM sbtest1 WHERE id=582129","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":36,"class":"sysbench_ro","dialect":"mysql","part":9,"sql":"SELECT c FROM sbtest1 WHERE id=82644","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":56,"class":"sysbench_ro","dialect":"mysql","part":10,"sql":"SELECT c FROM sbtest1 WHERE id BETWEEN 908251 AND 908350","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":59,"class":"sysbench_ro","dialect":"mysql","part":11,"sql":"SELECT SUM(k) FROM sbtest1 WHERE id BETWEEN 72300 AND 72399","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":67,"class":"sysbench_ro","dialect":"mysql","part":12,"sql":"SELECT c FROM sbtest1 WHERE id BETWEEN 784640 AND 784739 ORDER BY c","verdict":"flag","workload":"sysbench-ro"}
+{"bytes":76,"class":"sysbench_ro","dialect":"mysql","part":13,"sql":"SELECT DISTINCT c FROM sbtest1 WHERE id BETWEEN 382569 AND 382668 ORDER BY c","verdict":"flag","workload":"sysbench-ro"}
