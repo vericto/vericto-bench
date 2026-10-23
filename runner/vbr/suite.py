@@ -29,6 +29,7 @@ TARGETS = {
 
 
 VERICTO_BASES = ("vericto-offline", "vericto-enforce", "vericto-observe")
+ORDERS = ("williams", "listed-reversed")
 
 
 class SuiteError(ValueError):
@@ -72,6 +73,12 @@ class Curve:
     pause_every_s: float = 0.0  # generator validation: docker pause of the database
     pause_s: float = 1.0
     reps: int = 0  # 0 = the suite's
+    # Target order within a repetition: "williams" (balanced Latin square, the
+    # default) or "listed-reversed" (the listed order in odd repetitions, reversed
+    # in even ones, for every rate of the repetition: ABAB... for two targets, and
+    # AABB then BBAA when a target is listed twice through an alias variant).
+    order: str = "williams"
+    profile_s: float = 0.0  # > 0: perf record the proxy for this long after the warm-up (two-host only)
 
 
 @dataclasses.dataclass
@@ -181,7 +188,14 @@ def load(path: str) -> Suite:
             conn_mode=_get(c, "conn_mode", str, "pooled"),
             pause_every_s=float(_get(c, "pause_every_s", float, 0.0)), pause_s=float(_get(c, "pause_s", float, 1.0)),
             reps=_get(c, "reps", int, 0),
+            order=_get(c, "order", str, "williams"), profile_s=float(_get(c, "profile_s", float, 0.0)),
         )
+        if cur.order not in ORDERS:
+            raise SuiteError(f"{cid}: order must be one of {ORDERS}")
+        if len(set(cur.targets)) != len(cur.targets):
+            raise SuiteError(f"{cid}: a target is listed twice (list an alias variant instead)")
+        if cur.profile_s < 0 or (cur.profile_s and cur.loop != "open"):
+            raise SuiteError(f"{cid}: profile_s is for open-loop curves, in seconds")
         if loop == "open":
             if not cur.rates and not cur.rates_pct:
                 raise SuiteError(f"{cid}: an open-loop curve needs rates or rates_pct")
@@ -254,6 +268,10 @@ def expand(suite: Suite, curve: Curve, saturation: dict[str, float]) -> list[Cel
     targets = list(curve.targets)
     rng.shuffle(targets)  # which target gets which Latin-square symbol
     square = williams(len(targets))
+    if curve.order == "listed-reversed":
+        targets = list(curve.targets)
+        n = len(targets)
+        square = [list(range(n)), list(reversed(range(n)))]
     cells: list[Cell] = []
     reps = curve.reps or suite.reps
     if curve.loop == "closed":
@@ -276,7 +294,7 @@ def expand(suite: Suite, curve: Curve, saturation: dict[str, float]) -> list[Cel
         saturating = [x for x in rates if (x[1] or 0) >= 100]
         rng.shuffle(normal)
         for rate, pct in normal + saturating:
-            row = square[k % len(square)]
+            row = square[(rep - 1) % 2] if curve.order == "listed-reversed" else square[k % len(square)]
             k += 1
             for i in row:
                 cells.append(Cell(curve, rep, targets[i], rate, curve.conns, pct))

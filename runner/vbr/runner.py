@@ -427,6 +427,10 @@ class Runner:
         proc = subprocess.Popen(lg.docker_cmd() + ["start", "-a", name], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         time.sleep(0.3)
         self._samplers(guard, load, targets, c.engine)
+        profiler = None
+        if c.profile_s > 0 and self.topo.kind == "two-host" and targets:
+            profiler = _Profiler(self.topo.sut, targets[0], cid, warmup + 5, c.profile_s)
+            profiler.start()
         pauser = None
         if c.pause_every_s > 0:
             pauser = _Pauser(self.topo.sut, TG.DB_NAME[c.engine], c.pause_every_s, c.pause_s, warmup)
@@ -441,6 +445,7 @@ class Runner:
         t_end = time.time()
         if pauser:
             pauser.stop()
+        prof = profiler.finish(local) if profiler else None
         with open(os.path.join(local, "load.log"), "w") as f:
             f.write(output)
         net = guard.stop()
@@ -486,6 +491,8 @@ class Runner:
         budgets = {"target": 1.0 if c.size == "1" else 0.5, "target2": 0.5}
         rec["cpu"] = M.cpu_and_steal(os.path.join(local, "samples.jsonl"), mfrom, mend, budgets)
         rec["wall_s"] = t_end - t_start
+        if prof:
+            rec["profile"] = prof
         if pauser:
             frac = fraction_above(os.path.join(self.out, rec["intervals"]), 500_000) if rec.get("intervals") else None
             rec["validation"] = pauser.verdict(rec, frac)
@@ -857,6 +864,45 @@ def steady_state(intervals_path: str, offered: float, poisson: bool = False) -> 
     elif drift > 0.10 and a > 0.2:
         out["flag"] = f"p50 drifts {drift * 100:.0f}% from the first to the last third"
     return out
+
+
+class _Profiler:
+    """perf record of the proxy under test on the SUT (curves with profile_s >
+    0), started after the warm-up, through host/profile.sh. Writes the folded
+    stacks (profile.folded.gz) and perf report (profile-report.txt) into the
+    cell directory. Profiled cells carry the profiler's overhead: they are for
+    where the time goes, not for latency."""
+
+    SCRIPT = "/opt/vericto-bench/host/profile.sh"
+
+    def __init__(self, host: T.Host, target: T.Container, name: str, delay_s: float, secs: float):
+        self.host, self.target, self.name, self.delay, self.secs = host, target, name, delay_s, int(secs)
+        self.result: dict = {}
+        self.t = threading.Thread(target=self._run, daemon=True)
+
+    def start(self):
+        self.t.start()
+
+    def _run(self):
+        time.sleep(self.delay)
+        try:
+            pid = self.target.pid()
+            p = self.host.shell(f"sudo {self.SCRIPT} record {pid} {self.secs} {self.name}", check=False)
+            self.result = {"seconds": self.secs, "frequency_hz": 499, "call_graph": "dwarf,16384",
+                           "record_exit": p.returncode, "data_bytes": p.stdout.decode(errors="replace").strip()[-40:]}
+        except T.SetupError as e:
+            self.result = {"error": str(e)[:300]}
+
+    def finish(self, local: str) -> dict:
+        self.t.join(timeout=self.delay + self.secs + 120)
+        if self.result.get("record_exit") == 0:
+            for sub, fname in (("script", "profile.folded.gz"), ("report", "profile-report.txt")):
+                p = self.host.shell(f"sudo {self.SCRIPT} {sub} {self.name}", check=False)
+                with open(os.path.join(local, fname), "wb") as f:
+                    f.write(p.stdout)
+                self.result[f"{sub}_exit"] = p.returncode
+        self.host.shell(f"sudo {self.SCRIPT} clean {self.name}", check=False)
+        return self.result
 
 
 class _Pauser:

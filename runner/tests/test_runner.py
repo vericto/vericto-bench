@@ -78,6 +78,36 @@ class Suites(unittest.TestCase):
                 S.load(path)
             os.remove(path)
 
+    def test_listed_reversed_order_alternates_per_repetition(self):
+        s = S.load(os.path.join(REPO, "suites", "m2-mysql-ab.toml"))
+        sat = {"sat-my-w3-05": 360.0}
+        ab = next(c for c in s.curves if c.id == "ab-my-w3-05")
+        cells = S.expand(s, ab, sat)
+        first = collections.Counter()
+        for a, b in zip(cells[::2], cells[1::2]):
+            self.assertEqual((a.rep, a.rate), (b.rep, b.rate))  # each rate: both releases next to each other
+            self.assertNotEqual(a.target, b.target)
+            first[(a.rate, a.target)] += 1
+            self.assertEqual(a.target == "vericto-enforce-4143", a.rep % 2 == 1)
+        self.assertEqual(set(first.values()), {4})  # each release first 4 times per rate
+        swap = next(c for c in s.curves if c.id == "swap-my-w3-05")
+        order = [c.target.removeprefix("vericto-enforce-") for c in S.expand(s, swap, sat)]
+        self.assertEqual(order, ["4143", "4143-2nd", "4150-off", "4150-off-2nd",
+                                 "4150-off-2nd", "4150-off", "4143-2nd", "4143"])
+        self.assertTrue(all(c.profile_s == 0 for c in s.curves if c.id != "prof-my-w3-05"))
+
+    def test_order_and_profile_rules(self):
+        for body, err in (('order = "random"\n', "order"), ('profile_s = 10\nloop = "closed"\nconcurrency = [1]\n', "profile_s"),
+                          ('targets = ["direct", "direct"]\n', "twice")):
+            path = tempfile.mktemp(suffix=".toml")
+            with open(path, "w") as f:
+                t = "" if "targets" in body else 'targets = ["direct"]\n'
+                f.write('[suite]\nname = "t"\nprofile = "quick"\norder_seed = 1\n[[curve]]\nid = "c"\nengine = "pg"\n'
+                        'workload = "orm"\nrates = [10]\n' + t + body)
+            with self.assertRaisesRegex(S.SuiteError, err):
+                S.load(path)
+            os.remove(path)
+
     def test_sysbench_open_loop_is_refused(self):
         path = tempfile.mktemp(suffix=".toml")
         with open(path, "w") as f:
