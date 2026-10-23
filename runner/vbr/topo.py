@@ -161,8 +161,14 @@ class Container:
         self.host.docker("start", self.name)
 
     def put(self, dest_dir: str, files: dict[str, tuple[bytes, int]], uid: int = 0, gid: int = 0):
-        """Copy files into the (created, not necessarily started) container."""
-        self.host.docker("cp", "-a", "-", f"{self.name}:{dest_dir}", input=tar_files(files, uid, gid))
+        """Copy files into the (created, not necessarily started) container.
+
+        `docker cp -a` (keep the tar's owner) resolves users with the image's
+        `getent`, which a shell-less image (vericto-proxy 4.15.2 and later,
+        Chainguard) does not have; without it docker writes root-owned files,
+        so -a is used only for another owner."""
+        archive = ["-a"] if (uid, gid) != (0, 0) else []
+        self.host.docker("cp", *archive, "-", f"{self.name}:{dest_dir}", input=tar_files(files, uid, gid))
 
     def pid(self) -> int:
         return int(self.host.docker("inspect", "-f", "{{.State.Pid}}", self.name).stdout.decode().strip())

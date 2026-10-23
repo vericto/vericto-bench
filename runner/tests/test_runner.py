@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from vbr import monitor as M  # noqa: E402
 from vbr import suite as S  # noqa: E402
 from vbr import tools as TL  # noqa: E402
-from vbr.runner import fraction_above, steady_state  # noqa: E402
+from vbr.runner import fraction_above, steady_state, variant_ref  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -54,6 +54,71 @@ class Suites(unittest.TestCase):
             rates = [x.rate for x in cells if x.rep == rep]
             self.assertEqual(rates[-3:], [1000.0] * 3)  # the 100% rate runs last
         self.assertEqual(len({x.id for x in cells}), len(cells))
+
+    def test_variants_resolve_to_their_base_and_are_pinned(self):
+        s = S.load(os.path.join(REPO, "suites", "m2-quick.toml"))
+        self.assertEqual(s.saturation_target, "vericto-enforce-4143")
+        self.assertEqual(s.base("vericto-enforce-4150-off"), "vericto-enforce")
+        self.assertEqual(s.base("direct"), "direct")
+        self.assertEqual(s.variants["vericto-enforce-4150-off"].env, {"VERICTO_POLICY_RULES": "off"})
+        with open(os.path.join(REPO, "versions.lock")) as f:
+            lock = dict(l.strip().split("=", 1) for l in f if "=" in l and not l.lstrip().startswith("#"))
+        for v in s.variants.values():
+            self.assertRegex(lock[v.image_key], r"@sha256:[0-9a-f]{64}$")
+
+    def test_override_variant_takes_the_runs_image(self):
+        s = S.load(os.path.join(REPO, "suites", "m2-fix-ab.toml"))
+        cand = s.variants["vericto-enforce-cand-off"]
+        self.assertEqual(cand.image_key, S.OVERRIDE_IMAGE_KEY)
+        self.assertEqual(cand.env, {"VERICTO_POLICY_RULES": "off"})
+        ref = "registry.example/vericto-proxy@sha256:" + "a" * 64
+        self.assertEqual(variant_ref(cand.image_key, {}, {"PROXY_IMAGE_OVERRIDE": ref}), ref)
+        self.assertIsNone(variant_ref(cand.image_key, {"PROXY_IMAGE_OVERRIDE": ref}, {}))  # never from the lock
+        self.assertEqual(variant_ref("VERICTO_PROXY_4_14_3_IMAGE", {"VERICTO_PROXY_4_14_3_IMAGE": ref}, {}), ref)
+        self.assertIsNone(variant_ref("VERICTO_X_IMAGE", {}, {"PROXY_IMAGE_OVERRIDE": ref}))
+
+    def test_variant_rules(self):
+        for body, err in (('[variant.vericto-x]\nbase = "haproxy-tcp"\n', "base"),
+                          ('[variant.other]\nbase = "vericto-enforce"\n', "name"),
+                          ('[variant.vericto-x]\nbase = "vericto-enforce"\nenv = { lower = "1" }\n', "env"),
+                          ('[variant.vericto-x]\nbase = "vericto-enforce"\nimage = "SOMETHING"\n', "image")):
+            path = tempfile.mktemp(suffix=".toml")
+            with open(path, "w") as f:
+                f.write('[suite]\nname = "t"\nprofile = "quick"\norder_seed = 1\n' + body +
+                        '[[curve]]\nid = "c"\nengine = "pg"\nworkload = "orm"\ntargets = ["direct"]\nrates = [10]\n')
+            with self.assertRaisesRegex(S.SuiteError, err):
+                S.load(path)
+            os.remove(path)
+
+    def test_listed_reversed_order_alternates_per_repetition(self):
+        s = S.load(os.path.join(REPO, "suites", "m2-mysql-ab.toml"))
+        sat = {"sat-my-w3-05": 360.0}
+        ab = next(c for c in s.curves if c.id == "ab-my-w3-05")
+        cells = S.expand(s, ab, sat)
+        first = collections.Counter()
+        for a, b in zip(cells[::2], cells[1::2]):
+            self.assertEqual((a.rep, a.rate), (b.rep, b.rate))  # each rate: both releases next to each other
+            self.assertNotEqual(a.target, b.target)
+            first[(a.rate, a.target)] += 1
+            self.assertEqual(a.target == "vericto-enforce-4143", a.rep % 2 == 1)
+        self.assertEqual(set(first.values()), {4})  # each release first 4 times per rate
+        swap = next(c for c in s.curves if c.id == "swap-my-w3-05")
+        order = [c.target.removeprefix("vericto-enforce-") for c in S.expand(s, swap, sat)]
+        self.assertEqual(order, ["4143", "4143-2nd", "4150-off", "4150-off-2nd",
+                                 "4150-off-2nd", "4150-off", "4143-2nd", "4143"])
+        self.assertTrue(all(c.profile_s == 0 for c in s.curves if c.id != "prof-my-w3-05"))
+
+    def test_order_and_profile_rules(self):
+        for body, err in (('order = "random"\n', "order"), ('profile_s = 10\nloop = "closed"\nconcurrency = [1]\n', "profile_s"),
+                          ('targets = ["direct", "direct"]\n', "twice")):
+            path = tempfile.mktemp(suffix=".toml")
+            with open(path, "w") as f:
+                t = "" if "targets" in body else 'targets = ["direct"]\n'
+                f.write('[suite]\nname = "t"\nprofile = "quick"\norder_seed = 1\n[[curve]]\nid = "c"\nengine = "pg"\n'
+                        'workload = "orm"\nrates = [10]\n' + t + body)
+            with self.assertRaisesRegex(S.SuiteError, err):
+                S.load(path)
+            os.remove(path)
 
     def test_sysbench_open_loop_is_refused(self):
         path = tempfile.mktemp(suffix=".toml")

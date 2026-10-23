@@ -1,0 +1,413 @@
+{
+  "gate": {
+    "baseline": "vericto-enforce-4143",
+    "candidate": "vericto-enforce-4150-off",
+    "gate_below_pct_of_S": 70.0,
+    "cells": [
+      {
+        "curve": "ab-my-w3-05",
+        "offered_rate": 142.3,
+        "rate_pct": 40.0,
+        "n_pairs": 8,
+        "gated": true,
+        "checks": {
+          "p50": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": 0.0674999999999999,
+            "diff_ci": [
+              0.03724291690068952,
+              0.09775708309931028
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": false,
+            "pass": false
+          },
+          "p99": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": 0.07850000000000013,
+            "diff_ci": [
+              0.010896271559128284,
+              0.14610372844087197
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": false,
+            "pass": false
+          },
+          "p999": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": -0.04600000000000004,
+            "diff_ci": [
+              -0.7597062412605665,
+              0.6677062412605664
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": true,
+            "pass": true
+          }
+        },
+        "vcpu_per_kqps": {
+          "vericto-enforce-4143": {
+            "mean": 0.09819526992786513,
+            "lo": 0.09704576461538407,
+            "hi": 0.0993447752403462,
+            "n": 8
+          },
+          "vericto-enforce-4150-off": {
+            "mean": 0.10265242651370801,
+            "lo": 0.10047577622591276,
+            "hi": 0.10482907680150326,
+            "n": 8
+          }
+        },
+        "vcpu_per_kqps_diff": {
+          "mean": 0.004457156585842878,
+          "lo": 0.0023685469191608477,
+          "hi": 0.006545766252524909,
+          "n": 8
+        },
+        "pass": false
+      },
+      {
+        "curve": "ab-my-w3-05",
+        "offered_rate": 177.9,
+        "rate_pct": 50.0,
+        "n_pairs": 8,
+        "gated": true,
+        "checks": {
+          "p50": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": 0.039999999999999813,
+            "diff_ci": [
+              -0.0017742288977310103,
+              0.08177422889773064
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": true,
+            "pass": true
+          },
+          "p99": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": 0.07599999999999985,
+            "diff_ci": [
+              0.017030619083169142,
+              0.13496938091683056
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": false,
+            "pass": false
+          },
+          "p999": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": 0.1539999999999997,
+            "diff_ci": [
+              -0.841362005984327,
+              1.1493620059843264
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": true,
+            "pass": true
+          }
+        },
+        "vcpu_per_kqps": {
+          "vericto-enforce-4143": {
+            "mean": 0.09751299948641019,
+            "lo": 0.09646400067488384,
+            "hi": 0.09856199829793655,
+            "n": 8
+          },
+          "vericto-enforce-4150-off": {
+            "mean": 0.10034322045064674,
+            "lo": 0.0979915579973443,
+            "hi": 0.10269488290394918,
+            "n": 8
+          }
+        },
+        "vcpu_per_kqps_diff": {
+          "mean": 0.0028302209642365427,
+          "lo": 0.0004939355902660982,
+          "hi": 0.005166506338206987,
+          "n": 8
+        },
+        "pass": false
+      },
+      {
+        "curve": "ab-my-w3-05",
+        "offered_rate": 213.5,
+        "rate_pct": 60.0,
+        "n_pairs": 8,
+        "gated": true,
+        "checks": {
+          "p50": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": 0.03249999999999986,
+            "diff_ci": [
+              -0.020967160473576392,
+              0.08596716047357611
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": true,
+            "pass": true
+          },
+          "p99": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": 0.0249999999999998,
+            "diff_ci": [
+              -0.10359226336148161,
+              0.1535922633614812
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": true,
+            "pass": true
+          },
+          "p999": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": 0.8870000000000002,
+            "diff_ci": [
+              -0.628302845137612,
+              2.4023028451376125
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": true,
+            "pass": true
+          }
+        },
+        "vcpu_per_kqps": {
+          "vericto-enforce-4143": {
+            "mean": 0.09864513311914298,
+            "lo": 0.0971856164675213,
+            "hi": 0.10010464977076466,
+            "n": 8
+          },
+          "vericto-enforce-4150-off": {
+            "mean": 0.10192819192148828,
+            "lo": 0.09854205884854372,
+            "hi": 0.10531432499443283,
+            "n": 8
+          }
+        },
+        "vcpu_per_kqps_diff": {
+          "mean": 0.0032830588023452893,
+          "lo": -0.0006392038391456363,
+          "hi": 0.007205321443836215,
+          "n": 8
+        },
+        "pass": true
+      },
+      {
+        "curve": "swap-my-w3-05",
+        "offered_rate": 177.9,
+        "rate_pct": 50.0,
+        "n_pairs": 2,
+        "gated": true,
+        "checks": {
+          "p50": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": -0.01399999999999979,
+            "diff_ci": [
+              -0.39517999999999726,
+              0.3671799999999977
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": true,
+            "pass": true
+          },
+          "p99": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": 0.014000000000000234,
+            "diff_ci": [
+              -0.672123999999992,
+              0.7001239999999924
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": true,
+            "pass": true
+          },
+          "p999": {
+            "base_added": null,
+            "base_ci": [
+              null,
+              null
+            ],
+            "cand_added": null,
+            "cand_ci": [
+              null,
+              null
+            ],
+            "diff": -1.2400000000000002,
+            "diff_ci": [
+              -11.099855999999997,
+              8.619855999999997
+            ],
+            "intervals_overlap": null,
+            "diff_ci_contains_0": true,
+            "pass": true
+          }
+        },
+        "vcpu_per_kqps": {
+          "vericto-enforce-4143": {
+            "mean": 0.09989475531696654,
+            "lo": 0.07665598642322785,
+            "hi": 0.12313352421070523,
+            "n": 2
+          },
+          "vericto-enforce-4150-off": {
+            "mean": 0.0996049525255748,
+            "lo": 0.09310115886409932,
+            "hi": 0.10610874618705028,
+            "n": 2
+          }
+        },
+        "vcpu_per_kqps_diff": {
+          "mean": -0.00028980279139172865,
+          "lo": -0.030032365346605895,
+          "hi": 0.029452759763822438,
+          "n": 2
+        },
+        "pass": true
+      }
+    ],
+    "gate_pass": false,
+    "failing_cells": [
+      "ab-my-w3-05@142.3",
+      "ab-my-w3-05@177.9"
+    ]
+  },
+  "extra": [],
+  "cpu_fits": [
+    {
+      "curve": "ab-my-w3-05",
+      "engine": "mysql",
+      "target": "vericto-enforce-4143",
+      "size": "0.5",
+      "n": 24,
+      "slope": 0.09954422767137384,
+      "slope_lo": 0.09544611292189355,
+      "slope_hi": 0.10364234242085414,
+      "intercept": -0.00397476729550722,
+      "intercept_lo": -0.015794322104941944,
+      "intercept_hi": 0.007844787513927502,
+      "usd_per_month_per_1000qps_at_100pct": 2.3529667271593318,
+      "usd_per_month_per_1000qps_at_70pct": 3.3613810387990455,
+      "usd_per_month_per_1000qps_at_50pct": 4.7059334543186635
+    },
+    {
+      "curve": "ab-my-w3-05",
+      "engine": "mysql",
+      "target": "vericto-enforce-4150-off",
+      "size": "0.5",
+      "n": 24,
+      "slope": 0.10048073992046484,
+      "slope_lo": 0.0914069961968495,
+      "slope_hi": 0.10955448364408019,
+      "intercept": 0.0031658522173673154,
+      "intercept_lo": -0.023004135160764647,
+      "intercept_hi": 0.029335839595499277,
+      "usd_per_month_per_1000qps_at_100pct": 2.3751034417959955,
+      "usd_per_month_per_1000qps_at_70pct": 3.3930049168514222,
+      "usd_per_month_per_1000qps_at_50pct": 4.750206883591991
+    }
+  ],
+  "closed_loop_max": {
+    "sat-my-w3-05|vericto-enforce-4150-off": 5540.266666666666,
+    "sat-my-w3-05|vericto-enforce-4143": 5695.466666666666
+  }
+}

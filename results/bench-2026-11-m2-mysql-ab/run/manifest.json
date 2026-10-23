@@ -1,0 +1,1050 @@
+{
+  "caps": "default (400/300 per component, 800/600 aggregate)",
+  "datasets": {
+    "checksums": {
+      "mysql/orm": {
+        "checksum": "20000:100000:300000:9f89f18c05da03add4ed90f5e3438342",
+        "seconds": 3.7
+      },
+      "mysql/sysbench": {
+        "checksum": "1000000:49718419",
+        "seconds": 102.5
+      }
+    },
+    "sizes": {
+      "payload_rows": 10000,
+      "pgbench_scale": 100,
+      "sysbench_rows": 1000000,
+      "sysbench_tables": 8
+    }
+  },
+  "day": 1,
+  "finished_at": "2026-10-22T23:50:38.032160+00:00",
+  "harness_commit": "6533a02",
+  "hosts": {
+    "loadgen": {
+      "env": {
+        "ARCH": "aarch64",
+        "CGROUP_DRIVER": "systemd",
+        "CHRONY_SYNCED": "1",
+        "CPU_AUX": "",
+        "CPU_DB": "",
+        "CPU_IDLE": "",
+        "CPU_LOADGEN": "1-3",
+        "CPU_OS": "0",
+        "CPU_PROXY": "",
+        "CPU_PROXY2": "",
+        "CPU_SPARE": "",
+        "INSTANCE_TYPE": "c7g.xlarge",
+        "IRQ_PIN_FAILED": "16",
+        "LOG_DIR": "/var/log/vericto-bench",
+        "NCPU": "4",
+        "REPO_DIR": "/opt/vericto-bench",
+        "RESULTS_ROOT": "/var/lib/vericto-bench/results",
+        "ROLE": "loadgen",
+        "SMT": "0",
+        "TOPOLOGY": "two-host"
+      },
+      "images": {
+        "ghcr.io/vericto/vericto-proxy@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b": "sha256:0da72f754f2b6b34abe52b69e3249266a5eb5fc0e2a1f50e2f0e86fd12d29572 [\"ghcr.io/vericto/vericto-proxy@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b\"]",
+        "ghcr.io/vericto/vericto-proxy@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354": "sha256:92193f8feb0fbd6770752211f25bfb3393bbce660b3b5eece2c99f5b434f5bad [\"ghcr.io/vericto/vericto-proxy@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354\"]",
+        "ghcr.io/vericto/vericto-proxy@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124": "sha256:dd38fbdce934962207d0405cfd952f3e18ecb84c4b375c276e98d2d0b6467280 [\"ghcr.io/vericto/vericto-proxy@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124\"]",
+        "public.ecr.aws/docker/library/haproxy@sha256:836f65081bc532d2d024641ca868122105cca2f150effd2e04f8c155258b9ef8": "sha256:f7c05f70498dcbab91c66a60663450e8cfb4ee2918a429587a7287c09780ff1b [\"public.ecr.aws/docker/library/haproxy@sha256:836f65081bc532d2d024641ca868122105cca2f150effd2e04f8c155258b9ef8\"]",
+        "public.ecr.aws/docker/library/mysql@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70": "sha256:cc52b8b5900d106bc482241091cfa7496d830280868e19aca8a24e8e7086568e [\"public.ecr.aws/docker/library/mysql@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70\"]",
+        "public.ecr.aws/docker/library/postgres@sha256:00bc86618629af00d2937fdc5a5d63db3ff8450acf52f0636ec813c7f4902929": "sha256:fd0bfa08287c27c8dc5187c93e041d60e6dac623a65117d3ac7f7e7988e01608 [\"public.ecr.aws/docker/library/postgres@sha256:00bc86618629af00d2937fdc5a5d63db3ff8450acf52f0636ec813c7f4902929\"]",
+        "vericto-bench/pgbouncer:local": "sha256:6f0cf01dbb54ff5903eb871a296a9744b7008426e6a64cd8c96a86ad12361b5d []",
+        "vericto-bench/proxysql:local": "sha256:bb57fe430d3aa0867f5dc99ccdd38e474f8c9b011daa452085a0167b15d8baa0 []",
+        "vericto-bench/sysbench:local": "sha256:83ff073b69d499bbf30921edbf7ad14c419b0ebe646e3b672971bf19c9612d5a []",
+        "vericto-bench/tools:local": "sha256:774c26c46839d1e0489adc718a18af802c09ed10cfbdee5556c87c249312c504 []"
+      },
+      "provenance": {
+        "cgroup_version": 2,
+        "chrony_tracking": "Reference ID    : A9FEA97B (169.254.169.123)\nStratum         : 4\nRef time (UTC)  : Thu Oct 22 21:56:58 2026\nSystem time     : 0.000002152 seconds slow of NTP time\nLast offset     : -0.000003255 seconds\nRMS offset      : 0.000043734 seconds\nFrequency       : 7.212 ppm fast\nResidual freq   : -0.006 ppm\nSkew            : 1.091 ppm\nRoot delay      : 0.000346668 seconds\nRoot dispersion : 0.000319066 seconds\nUpdate interval : 16.1 seconds\nLeap status     : Normal",
+        "clocksource": "arch_sys_counter",
+        "docker_version": {
+          "Client": {
+            "ApiVersion": "1.44",
+            "Arch": "arm64",
+            "BuildTime": "Tue Oct  6 00:00:00 2026",
+            "Context": "default",
+            "DefaultAPIVersion": "1.44",
+            "GitCommit": "0bab007",
+            "GoVersion": "go1.26.8-X:nodwarf5",
+            "Os": "linux",
+            "Version": "25.0.14"
+          },
+          "Server": {
+            "ApiVersion": "1.44",
+            "Arch": "arm64",
+            "BuildTime": "2026-10-06T00:00:00.000000000+00:00",
+            "Components": [
+              {
+                "Details": {
+                  "ApiVersion": "1.44",
+                  "Arch": "arm64",
+                  "BuildTime": "Tue Oct  6 00:00:00 2026",
+                  "Experimental": "false",
+                  "GitCommit": "6fdf0a6",
+                  "GoVersion": "go1.26.8-X:nodwarf5",
+                  "KernelVersion": "6.18.54-121.166.amzn2023.aarch64",
+                  "MinAPIVersion": "1.24",
+                  "Os": "linux"
+                },
+                "Name": "Engine",
+                "Version": "25.0.16"
+              },
+              {
+                "Details": {
+                  "GitCommit": ""
+                },
+                "Name": "containerd",
+                "Version": "2.3.5+unknown"
+              },
+              {
+                "Details": {
+                  "GitCommit": "bb14dabeb7185bb72c8c86735d090dcb20f36587"
+                },
+                "Name": "runc",
+                "Version": "1.4.3"
+              },
+              {
+                "Details": {
+                  "GitCommit": "de40ad0"
+                },
+                "Name": "docker-init",
+                "Version": "0.19.0"
+              }
+            ],
+            "GitCommit": "6fdf0a6",
+            "GoVersion": "go1.26.8-X:nodwarf5",
+            "KernelVersion": "6.18.54-121.166.amzn2023.aarch64",
+            "MinAPIVersion": "1.24",
+            "Os": "linux",
+            "Platform": {
+              "Name": ""
+            },
+            "Version": "25.0.16"
+          }
+        },
+        "host_env": {
+          "ARCH": "aarch64",
+          "CGROUP_DRIVER": "systemd",
+          "CHRONY_SYNCED": "1",
+          "CPU_AUX": "",
+          "CPU_DB": "",
+          "CPU_IDLE": "",
+          "CPU_LOADGEN": "1-3",
+          "CPU_OS": "0",
+          "CPU_PROXY": "",
+          "CPU_PROXY2": "",
+          "CPU_SPARE": "",
+          "INSTANCE_TYPE": "c7g.xlarge",
+          "IRQ_PIN_FAILED": "16",
+          "LOG_DIR": "/var/log/vericto-bench",
+          "NCPU": "4",
+          "REPO_DIR": "/opt/vericto-bench",
+          "RESULTS_ROOT": "/var/lib/vericto-bench/results",
+          "ROLE": "loadgen",
+          "SMT": "0",
+          "TOPOLOGY": "two-host"
+        },
+        "imds": {
+          "ami-id": "ami-redacted",
+          "instance-id": "i-redacted",
+          "instance-type": "c7g.xlarge",
+          "placement/availability-zone": "us-east-1a",
+          "placement/availability-zone-id": "use1-az1",
+          "placement/group-name": "vericto-bench-bench-2026-11-m2-mysql-ab-1",
+          "placement/region": "us-east-1"
+        },
+        "irqbalance": "inactive",
+        "kernel_cmdline": "BOOT_IMAGE=(hd0,gpt1)/boot/vmlinuz-6.18.54-121.166.amzn2023.aarch64 root=UUID=29b85f1b-f3eb-4d6d-89f8-c6fa3deb9c6c ro console=tty0 console=ttyS0,115200n8 nvme_core.io_timeout=4294967295 rd.emergency=poweroff rd.shell=0 selinux=1 security=selinux quiet numa_cma=1:64M",
+        "kernels_installed": "package kernel is not installed",
+        "lscpu": {
+          "lscpu": [
+            {
+              "data": "aarch64",
+              "field": "Architecture:"
+            },
+            {
+              "data": "32-bit, 64-bit",
+              "field": "CPU op-mode(s):"
+            },
+            {
+              "data": "Little Endian",
+              "field": "Byte Order:"
+            },
+            {
+              "data": "4",
+              "field": "CPU(s):"
+            },
+            {
+              "data": "0-3",
+              "field": "On-line CPU(s) list:"
+            },
+            {
+              "data": "ARM",
+              "field": "Vendor ID:"
+            },
+            {
+              "data": "AWS",
+              "field": "BIOS Vendor ID:"
+            },
+            {
+              "data": "AWS Graviton3",
+              "field": "BIOS Model name:"
+            },
+            {
+              "data": "1",
+              "field": "Model:"
+            },
+            {
+              "data": "1",
+              "field": "Thread(s) per core:"
+            },
+            {
+              "data": "4",
+              "field": "Core(s) per socket:"
+            },
+            {
+              "data": "1",
+              "field": "Socket(s):"
+            },
+            {
+              "data": "r1p1",
+              "field": "Stepping:"
+            },
+            {
+              "data": "2100.00",
+              "field": "BogoMIPS:"
+            },
+            {
+              "data": "fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm paca pacg dcpodp svei8mm svebf16 i8mm bf16 dgh rng",
+              "field": "Flags:"
+            },
+            {
+              "data": "256 KiB (4 instances)",
+              "field": "L1d cache:"
+            },
+            {
+              "data": "256 KiB (4 instances)",
+              "field": "L1i cache:"
+            },
+            {
+              "data": "4 MiB (4 instances)",
+              "field": "L2 cache:"
+            },
+            {
+              "data": "32 MiB (1 instance)",
+              "field": "L3 cache:"
+            },
+            {
+              "data": "1",
+              "field": "NUMA node(s):"
+            },
+            {
+              "data": "0-3",
+              "field": "NUMA node0 CPU(s):"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Gather data sampling:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Ghostwrite:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Indirect target selection:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Itlb multihit:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability L1tf:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Mds:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Meltdown:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Mmio stale data:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Old microcode:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Reg file data sampling:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Retbleed:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Spec rstack overflow:"
+            },
+            {
+              "data": "Mitigation; Speculative Store Bypass disabled via prctl",
+              "field": "Vulnerability Spec store bypass:"
+            },
+            {
+              "data": "Mitigation; __user pointer sanitization",
+              "field": "Vulnerability Spectre v1:"
+            },
+            {
+              "data": "Mitigation; CSV2, BHB",
+              "field": "Vulnerability Spectre v2:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Srbds:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Tsa:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Tsx async abort:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Vmscape:"
+            }
+          ]
+        },
+        "mpstat_5s_max_steal_pct": 0.0,
+        "nic_driver": "driver: ena\nversion: 2.17.4g\nfirmware-version: \nexpansion-rom-version: \nbus-info: 0000:00:05.0\nsupports-statistics: yes\nsupports-test: no\nsupports-eeprom-access: no\nsupports-register-dump: no\nsupports-priv-flags: no",
+        "nproc": 4,
+        "os_release": {
+          "ANSI_COLOR": "0;33",
+          "BUG_REPORT_URL": "https://github.com/amazonlinux/amazon-linux-2023",
+          "CPE_NAME": "cpe:2.3:o:amazon:amazon_linux:2023",
+          "DOCUMENTATION_URL": "https://docs.aws.amazon.com/linux/",
+          "HOME_URL": "https://aws.amazon.com/linux/amazon-linux-2023/",
+          "ID": "amzn",
+          "ID_LIKE": "fedora",
+          "NAME": "Amazon Linux",
+          "PLATFORM_ID": "platform:al2023",
+          "PRETTY_NAME": "Amazon Linux 2023.12.20261021",
+          "SUPPORT_END": "2029-06-30",
+          "SUPPORT_URL": "https://aws.amazon.com/premiumsupport/",
+          "VENDOR_NAME": "AWS",
+          "VENDOR_URL": "https://aws.amazon.com/",
+          "VERSION": "2023",
+          "VERSION_ID": "2023"
+        },
+        "primary_interface": "ens5",
+        "schema": "vericto-bench/provenance/1",
+        "sysctl": {
+          "kernel.sched_autogroup_enabled": "1",
+          "net.core.rmem_max": "4194304",
+          "net.core.somaxconn": "4096",
+          "net.core.wmem_max": "4194304",
+          "net.ipv4.ip_local_port_range": "32768\t60999",
+          "net.ipv4.tcp_congestion_control": "cubic",
+          "net.ipv4.tcp_rmem": "4096\t131072\t33554432",
+          "net.ipv4.tcp_tw_reuse": "2",
+          "net.ipv4.tcp_wmem": "4096\t20480\t4194304"
+        },
+        "system_release": "system-release-2023.12.20261021-0.amzn2023.noarch",
+        "thp_defrag": "always defer defer+madvise madvise [never]",
+        "thp_enabled": "always madvise [never]",
+        "uname": "Linux ip-redacted.ec2.internal 6.18.54-121.166.amzn2023.aarch64 #2 SMP Tue Oct  6 23:12:04 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux"
+      }
+    },
+    "sut": {
+      "env": {
+        "ARCH": "aarch64",
+        "CGROUP_DRIVER": "systemd",
+        "CHRONY_SYNCED": "1",
+        "CPU_AUX": "1",
+        "CPU_DB": "5-7",
+        "CPU_IDLE": "",
+        "CPU_LOADGEN": "",
+        "CPU_OS": "0",
+        "CPU_PROXY": "3",
+        "CPU_PROXY2": "4",
+        "CPU_SPARE": "2",
+        "INSTANCE_TYPE": "c7g.2xlarge",
+        "IRQ_PIN_FAILED": "16",
+        "LOG_DIR": "/var/log/vericto-bench",
+        "NCPU": "8",
+        "REPO_DIR": "/opt/vericto-bench",
+        "RESULTS_ROOT": "/var/lib/vericto-bench/results",
+        "ROLE": "sut",
+        "SMT": "0",
+        "TOPOLOGY": "two-host"
+      },
+      "images": {
+        "ghcr.io/vericto/vericto-proxy@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b": "sha256:0da72f754f2b6b34abe52b69e3249266a5eb5fc0e2a1f50e2f0e86fd12d29572 [\"ghcr.io/vericto/vericto-proxy@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b\"]",
+        "ghcr.io/vericto/vericto-proxy@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354": "sha256:92193f8feb0fbd6770752211f25bfb3393bbce660b3b5eece2c99f5b434f5bad [\"ghcr.io/vericto/vericto-proxy@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354\"]",
+        "ghcr.io/vericto/vericto-proxy@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124": "sha256:dd38fbdce934962207d0405cfd952f3e18ecb84c4b375c276e98d2d0b6467280 [\"ghcr.io/vericto/vericto-proxy@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124\"]",
+        "public.ecr.aws/docker/library/haproxy@sha256:836f65081bc532d2d024641ca868122105cca2f150effd2e04f8c155258b9ef8": "sha256:f7c05f70498dcbab91c66a60663450e8cfb4ee2918a429587a7287c09780ff1b [\"public.ecr.aws/docker/library/haproxy@sha256:836f65081bc532d2d024641ca868122105cca2f150effd2e04f8c155258b9ef8\"]",
+        "public.ecr.aws/docker/library/mysql@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70": "sha256:cc52b8b5900d106bc482241091cfa7496d830280868e19aca8a24e8e7086568e [\"public.ecr.aws/docker/library/mysql@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70\"]",
+        "public.ecr.aws/docker/library/postgres@sha256:00bc86618629af00d2937fdc5a5d63db3ff8450acf52f0636ec813c7f4902929": "sha256:fd0bfa08287c27c8dc5187c93e041d60e6dac623a65117d3ac7f7e7988e01608 [\"public.ecr.aws/docker/library/postgres@sha256:00bc86618629af00d2937fdc5a5d63db3ff8450acf52f0636ec813c7f4902929\"]",
+        "vericto-bench/pgbouncer:local": "sha256:b46aeac1bcb462c821396fa92923e55c0b14451ca5c4c089e2db79e1f8b19feb []",
+        "vericto-bench/proxysql:local": "sha256:bc46a9ef2abc3fa4719be6a0d88fa59fa358b0668558edf05a97a5e1407bbf77 []",
+        "vericto-bench/sysbench:local": "sha256:1e51b997f7d82486e709e1afc1648af378e849f2a27b366029b14bac776b178f []",
+        "vericto-bench/tools:local": "sha256:f1d06410efa73403f8f35da046534d46632acbf8e52aa08bf49af80e0135c05b []"
+      },
+      "provenance": {
+        "cgroup_version": 2,
+        "chrony_tracking": "Reference ID    : A9FEA97B (169.254.169.123)\nStratum         : 4\nRef time (UTC)  : Thu Oct 22 21:51:21 2026\nSystem time     : 0.000000133 seconds slow of NTP time\nLast offset     : -0.000000016 seconds\nRMS offset      : 0.000002514 seconds\nFrequency       : 21.771 ppm slow\nResidual freq   : -0.000 ppm\nSkew            : 0.047 ppm\nRoot delay      : 0.000341077 seconds\nRoot dispersion : 0.000238179 seconds\nUpdate interval : 16.1 seconds\nLeap status     : Normal",
+        "clocksource": "arch_sys_counter",
+        "docker_version": {
+          "Client": {
+            "ApiVersion": "1.44",
+            "Arch": "arm64",
+            "BuildTime": "Tue Oct  6 00:00:00 2026",
+            "Context": "default",
+            "DefaultAPIVersion": "1.44",
+            "GitCommit": "0bab007",
+            "GoVersion": "go1.26.8-X:nodwarf5",
+            "Os": "linux",
+            "Version": "25.0.14"
+          },
+          "Server": {
+            "ApiVersion": "1.44",
+            "Arch": "arm64",
+            "BuildTime": "2026-10-06T00:00:00.000000000+00:00",
+            "Components": [
+              {
+                "Details": {
+                  "ApiVersion": "1.44",
+                  "Arch": "arm64",
+                  "BuildTime": "Tue Oct  6 00:00:00 2026",
+                  "Experimental": "false",
+                  "GitCommit": "6fdf0a6",
+                  "GoVersion": "go1.26.8-X:nodwarf5",
+                  "KernelVersion": "6.18.54-121.166.amzn2023.aarch64",
+                  "MinAPIVersion": "1.24",
+                  "Os": "linux"
+                },
+                "Name": "Engine",
+                "Version": "25.0.16"
+              },
+              {
+                "Details": {
+                  "GitCommit": ""
+                },
+                "Name": "containerd",
+                "Version": "2.3.5+unknown"
+              },
+              {
+                "Details": {
+                  "GitCommit": "bb14dabeb7185bb72c8c86735d090dcb20f36587"
+                },
+                "Name": "runc",
+                "Version": "1.4.3"
+              },
+              {
+                "Details": {
+                  "GitCommit": "de40ad0"
+                },
+                "Name": "docker-init",
+                "Version": "0.19.0"
+              }
+            ],
+            "GitCommit": "6fdf0a6",
+            "GoVersion": "go1.26.8-X:nodwarf5",
+            "KernelVersion": "6.18.54-121.166.amzn2023.aarch64",
+            "MinAPIVersion": "1.24",
+            "Os": "linux",
+            "Platform": {
+              "Name": ""
+            },
+            "Version": "25.0.16"
+          }
+        },
+        "host_env": {
+          "ARCH": "aarch64",
+          "CGROUP_DRIVER": "systemd",
+          "CHRONY_SYNCED": "1",
+          "CPU_AUX": "1",
+          "CPU_DB": "5-7",
+          "CPU_IDLE": "",
+          "CPU_LOADGEN": "",
+          "CPU_OS": "0",
+          "CPU_PROXY": "3",
+          "CPU_PROXY2": "4",
+          "CPU_SPARE": "2",
+          "INSTANCE_TYPE": "c7g.2xlarge",
+          "IRQ_PIN_FAILED": "16",
+          "LOG_DIR": "/var/log/vericto-bench",
+          "NCPU": "8",
+          "REPO_DIR": "/opt/vericto-bench",
+          "RESULTS_ROOT": "/var/lib/vericto-bench/results",
+          "ROLE": "sut",
+          "SMT": "0",
+          "TOPOLOGY": "two-host"
+        },
+        "imds": {
+          "ami-id": "ami-redacted",
+          "instance-id": "i-redacted",
+          "instance-type": "c7g.2xlarge",
+          "placement/availability-zone": "us-east-1a",
+          "placement/availability-zone-id": "use1-az1",
+          "placement/group-name": "vericto-bench-bench-2026-11-m2-mysql-ab-1",
+          "placement/region": "us-east-1"
+        },
+        "irqbalance": "inactive",
+        "kernel_cmdline": "BOOT_IMAGE=(hd0,gpt1)/boot/vmlinuz-6.18.54-121.166.amzn2023.aarch64 root=UUID=29b85f1b-f3eb-4d6d-89f8-c6fa3deb9c6c ro console=tty0 console=ttyS0,115200n8 nvme_core.io_timeout=4294967295 rd.emergency=poweroff rd.shell=0 selinux=1 security=selinux quiet numa_cma=1:64M",
+        "kernels_installed": "package kernel is not installed",
+        "lscpu": {
+          "lscpu": [
+            {
+              "data": "aarch64",
+              "field": "Architecture:"
+            },
+            {
+              "data": "32-bit, 64-bit",
+              "field": "CPU op-mode(s):"
+            },
+            {
+              "data": "Little Endian",
+              "field": "Byte Order:"
+            },
+            {
+              "data": "8",
+              "field": "CPU(s):"
+            },
+            {
+              "data": "0-7",
+              "field": "On-line CPU(s) list:"
+            },
+            {
+              "data": "ARM",
+              "field": "Vendor ID:"
+            },
+            {
+              "data": "AWS",
+              "field": "BIOS Vendor ID:"
+            },
+            {
+              "data": "AWS Graviton3",
+              "field": "BIOS Model name:"
+            },
+            {
+              "data": "1",
+              "field": "Model:"
+            },
+            {
+              "data": "1",
+              "field": "Thread(s) per core:"
+            },
+            {
+              "data": "8",
+              "field": "Core(s) per socket:"
+            },
+            {
+              "data": "1",
+              "field": "Socket(s):"
+            },
+            {
+              "data": "r1p1",
+              "field": "Stepping:"
+            },
+            {
+              "data": "2100.00",
+              "field": "BogoMIPS:"
+            },
+            {
+              "data": "fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm paca pacg dcpodp svei8mm svebf16 i8mm bf16 dgh rng",
+              "field": "Flags:"
+            },
+            {
+              "data": "512 KiB (8 instances)",
+              "field": "L1d cache:"
+            },
+            {
+              "data": "512 KiB (8 instances)",
+              "field": "L1i cache:"
+            },
+            {
+              "data": "8 MiB (8 instances)",
+              "field": "L2 cache:"
+            },
+            {
+              "data": "32 MiB (1 instance)",
+              "field": "L3 cache:"
+            },
+            {
+              "data": "1",
+              "field": "NUMA node(s):"
+            },
+            {
+              "data": "0-7",
+              "field": "NUMA node0 CPU(s):"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Gather data sampling:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Ghostwrite:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Indirect target selection:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Itlb multihit:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability L1tf:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Mds:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Meltdown:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Mmio stale data:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Old microcode:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Reg file data sampling:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Retbleed:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Spec rstack overflow:"
+            },
+            {
+              "data": "Mitigation; Speculative Store Bypass disabled via prctl",
+              "field": "Vulnerability Spec store bypass:"
+            },
+            {
+              "data": "Mitigation; __user pointer sanitization",
+              "field": "Vulnerability Spectre v1:"
+            },
+            {
+              "data": "Mitigation; CSV2, BHB",
+              "field": "Vulnerability Spectre v2:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Srbds:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Tsa:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Tsx async abort:"
+            },
+            {
+              "data": "Not affected",
+              "field": "Vulnerability Vmscape:"
+            }
+          ]
+        },
+        "mpstat_5s_max_steal_pct": 0.0,
+        "nic_driver": "driver: ena\nversion: 2.17.4g\nfirmware-version: \nexpansion-rom-version: \nbus-info: 0000:00:05.0\nsupports-statistics: yes\nsupports-test: no\nsupports-eeprom-access: no\nsupports-register-dump: no\nsupports-priv-flags: no",
+        "nproc": 8,
+        "os_release": {
+          "ANSI_COLOR": "0;33",
+          "BUG_REPORT_URL": "https://github.com/amazonlinux/amazon-linux-2023",
+          "CPE_NAME": "cpe:2.3:o:amazon:amazon_linux:2023",
+          "DOCUMENTATION_URL": "https://docs.aws.amazon.com/linux/",
+          "HOME_URL": "https://aws.amazon.com/linux/amazon-linux-2023/",
+          "ID": "amzn",
+          "ID_LIKE": "fedora",
+          "NAME": "Amazon Linux",
+          "PLATFORM_ID": "platform:al2023",
+          "PRETTY_NAME": "Amazon Linux 2023.12.20261021",
+          "SUPPORT_END": "2029-06-30",
+          "SUPPORT_URL": "https://aws.amazon.com/premiumsupport/",
+          "VENDOR_NAME": "AWS",
+          "VENDOR_URL": "https://aws.amazon.com/",
+          "VERSION": "2023",
+          "VERSION_ID": "2023"
+        },
+        "primary_interface": "ens5",
+        "schema": "vericto-bench/provenance/1",
+        "sysctl": {
+          "kernel.sched_autogroup_enabled": "1",
+          "net.core.rmem_max": "4194304",
+          "net.core.somaxconn": "4096",
+          "net.core.wmem_max": "4194304",
+          "net.ipv4.ip_local_port_range": "32768\t60999",
+          "net.ipv4.tcp_congestion_control": "cubic",
+          "net.ipv4.tcp_rmem": "4096\t131072\t33554432",
+          "net.ipv4.tcp_tw_reuse": "2",
+          "net.ipv4.tcp_wmem": "4096\t20480\t4194304"
+        },
+        "system_release": "system-release-2023.12.20261021-0.amzn2023.noarch",
+        "thp_defrag": "always defer defer+madvise madvise [never]",
+        "thp_enabled": "always madvise [never]",
+        "uname": "Linux ip-redacted.ec2.internal 6.18.54-121.166.amzn2023.aarch64 #2 SMP Tue Oct  6 23:12:04 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux"
+      }
+    }
+  },
+  "images": {
+    "haproxy": "public.ecr.aws/docker/library/haproxy@sha256:836f65081bc532d2d024641ca868122105cca2f150effd2e04f8c155258b9ef8",
+    "mysql": "public.ecr.aws/docker/library/mysql@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70",
+    "pgbouncer": "vericto-bench/pgbouncer:local",
+    "postgres": "public.ecr.aws/docker/library/postgres@sha256:00bc86618629af00d2937fdc5a5d63db3ff8450acf52f0636ec813c7f4902929",
+    "proxy": "ghcr.io/vericto/vericto-proxy@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b",
+    "proxysql": "vericto-bench/proxysql:local",
+    "sysbench": "vericto-bench/sysbench:local",
+    "tools": "vericto-bench/tools:local"
+  },
+  "netprobes": {
+    "ab-my-w3-05": {
+      "caps": {
+        "aggregate_hard_mbps": 800,
+        "aggregate_target_mbps": 600,
+        "average_samples": 0,
+        "component_hard_mbps": 400,
+        "component_target_mbps": 300,
+        "consecutive": 3,
+        "stale_ns": 5000000000
+      },
+      "cells": {
+        "ab-my-w3-05@142.3": {
+          "aggregate_mbps": 219.43763052680004,
+          "bytes_per_request": {
+            "database": 35523.85666666667,
+            "intermediary": 71877.70166666666,
+            "loadgen-nic": 39902.761666666665,
+            "sut-nic": 36276.33666666667
+          },
+          "max_rate": 389.0854991235084,
+          "mbps": {
+            "database": 42.46237635080001,
+            "intermediary": 85.9168543562,
+            "loadgen-nic": 47.6965690754,
+            "sut-nic": 43.36183074440001
+          }
+        },
+        "ab-my-w3-05@177.9": {
+          "aggregate_mbps": 274.33559009640004,
+          "bytes_per_request": {
+            "database": 35523.85666666667,
+            "intermediary": 71877.70166666666,
+            "loadgen-nic": 39902.761666666665,
+            "sut-nic": 36276.33666666667
+          },
+          "max_rate": 389.0854991235084,
+          "mbps": {
+            "database": 53.085430448400004,
+            "intermediary": 107.4111622626,
+            "loadgen-nic": 59.6290909242,
+            "sut-nic": 54.20990646120001
+          }
+        },
+        "ab-my-w3-05@213.5": {
+          "aggregate_mbps": 329.23354966600004,
+          "bytes_per_request": {
+            "database": 35523.85666666667,
+            "intermediary": 71877.70166666666,
+            "loadgen-nic": 39902.761666666665,
+            "sut-nic": 36276.33666666667
+          },
+          "max_rate": 389.0854991235084,
+          "mbps": {
+            "database": 63.708484546,
+            "intermediary": 128.905470169,
+            "loadgen-nic": 71.56161277300001,
+            "sut-nic": 65.05798217800002
+          }
+        }
+      },
+      "ok": true,
+      "violations": null
+    },
+    "prof-my-w3-05": {
+      "caps": {
+        "aggregate_hard_mbps": 800,
+        "aggregate_target_mbps": 600,
+        "average_samples": 0,
+        "component_hard_mbps": 400,
+        "component_target_mbps": 300,
+        "consecutive": 3,
+        "stale_ns": 5000000000
+      },
+      "cells": {
+        "prof-my-w3-05@177.9": {
+          "aggregate_mbps": 292.4874116556,
+          "bytes_per_request": {
+            "database": 38584.24333333333,
+            "intermediary": 78112.635,
+            "loadgen-nic": 39494.025,
+            "sut-nic": 39536.64
+          },
+          "max_rate": 364.93878282079675,
+          "mbps": {
+            "database": 57.65874986760001,
+            "intermediary": 116.7283972386,
+            "loadgen-nic": 59.018291199000004,
+            "sut-nic": 59.0819733504
+          }
+        }
+      },
+      "ok": true,
+      "violations": null
+    },
+    "swap-my-w3-05": {
+      "caps": {
+        "aggregate_hard_mbps": 800,
+        "aggregate_target_mbps": 600,
+        "average_samples": 0,
+        "component_hard_mbps": 400,
+        "component_target_mbps": 300,
+        "consecutive": 3,
+        "stale_ns": 5000000000
+      },
+      "cells": {
+        "swap-my-w3-05@177.9": {
+          "aggregate_mbps": 295.7797283238,
+          "bytes_per_request": {
+            "database": 39078.455,
+            "intermediary": 79046.29333333333,
+            "loadgen-nic": 39902.86833333333,
+            "sut-nic": 39903.08833333333
+          },
+          "max_rate": 360.87665846777753,
+          "mbps": {
+            "database": 58.39728001380001,
+            "intermediary": 118.12361890560001,
+            "loadgen-nic": 59.6292503226,
+            "sut-nic": 59.6295790818
+          }
+        }
+      },
+      "ok": true,
+      "violations": null
+    }
+  },
+  "order_seed": 2026102201,
+  "profile": "quick",
+  "proxy_image": "docker.io/vericto/vericto-proxy:4.14.2@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b",
+  "proxy_variants": {
+    "vericto-enforce-4143": {
+      "base": "vericto-enforce",
+      "env": {},
+      "image": "docker.io/vericto/vericto-proxy:4.14.3@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354",
+      "label": "4.14.3",
+      "pulled_as": "ghcr.io/vericto/vericto-proxy@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354"
+    },
+    "vericto-enforce-4143-2nd": {
+      "base": "vericto-enforce",
+      "env": {},
+      "image": "docker.io/vericto/vericto-proxy:4.14.3@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354",
+      "label": "4.14.3 (second back-to-back run)",
+      "pulled_as": "ghcr.io/vericto/vericto-proxy@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354"
+    },
+    "vericto-enforce-4150-off": {
+      "base": "vericto-enforce",
+      "env": {
+        "VERICTO_POLICY_RULES": "off"
+      },
+      "image": "docker.io/vericto/vericto-proxy:4.15.0@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124",
+      "label": "4.15.0, VERICTO_POLICY_RULES=off",
+      "pulled_as": "ghcr.io/vericto/vericto-proxy@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124"
+    },
+    "vericto-enforce-4150-off-2nd": {
+      "base": "vericto-enforce",
+      "env": {
+        "VERICTO_POLICY_RULES": "off"
+      },
+      "image": "docker.io/vericto/vericto-proxy:4.15.0@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124",
+      "label": "4.15.0, VERICTO_POLICY_RULES=off (second back-to-back run)",
+      "pulled_as": "ghcr.io/vericto/vericto-proxy@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124"
+    }
+  },
+  "run_id": "bench-2026-11-m2-mysql-ab-1",
+  "saturation": {
+    "sat-my-w3-05": 355.8333333333333
+  },
+  "saturation_target": "vericto-enforce-4143",
+  "stage": "done",
+  "started_at": "2026-10-22T22:01:09.058375+00:00",
+  "suite": "m2-mysql-ab",
+  "suite_file": {
+    "curve": [
+      {
+        "concurrency": [
+          1,
+          4,
+          16,
+          64
+        ],
+        "duration_s": 30,
+        "engine": "mysql",
+        "id": "sat-my-w3-05",
+        "loop": "closed",
+        "mode": "text",
+        "reps": 1,
+        "size": "0.5",
+        "targets": [
+          "vericto-enforce-4143",
+          "vericto-enforce-4150-off"
+        ],
+        "tls": true,
+        "tool": "vbench",
+        "warmup_s": 10,
+        "workload": "sysbench-ro"
+      },
+      {
+        "engine": "mysql",
+        "id": "ab-my-w3-05",
+        "mode": "text",
+        "order": "listed-reversed",
+        "rates_pct": [
+          40,
+          50,
+          60
+        ],
+        "reps": 8,
+        "saturation_from": "sat-my-w3-05",
+        "size": "0.5",
+        "targets": [
+          "vericto-enforce-4143",
+          "vericto-enforce-4150-off"
+        ],
+        "tls": true,
+        "tool": "vbench",
+        "workload": "sysbench-ro"
+      },
+      {
+        "engine": "mysql",
+        "id": "swap-my-w3-05",
+        "mode": "text",
+        "order": "listed-reversed",
+        "rates_pct": [
+          50
+        ],
+        "reps": 2,
+        "saturation_from": "sat-my-w3-05",
+        "size": "0.5",
+        "targets": [
+          "vericto-enforce-4143",
+          "vericto-enforce-4143-2nd",
+          "vericto-enforce-4150-off",
+          "vericto-enforce-4150-off-2nd"
+        ],
+        "tls": true,
+        "tool": "vbench",
+        "workload": "sysbench-ro"
+      },
+      {
+        "engine": "mysql",
+        "id": "prof-my-w3-05",
+        "mode": "text",
+        "order": "listed-reversed",
+        "profile_s": 30,
+        "rates_pct": [
+          50
+        ],
+        "reps": 2,
+        "saturation_from": "sat-my-w3-05",
+        "size": "0.5",
+        "targets": [
+          "vericto-enforce-4143",
+          "vericto-enforce-4150-off"
+        ],
+        "tls": true,
+        "tool": "vbench",
+        "workload": "sysbench-ro"
+      }
+    ],
+    "datasets": {
+      "payload_rows": 10000,
+      "pgbench_scale": 100,
+      "sysbench_rows": 1000000,
+      "sysbench_tables": 8
+    },
+    "suite": {
+      "cooldown_s": 10,
+      "duration_s": 60,
+      "interval_s": 10,
+      "name": "m2-mysql-ab",
+      "order_seed": 2026102201,
+      "profile": "quick",
+      "reps": 8,
+      "saturation_target": "vericto-enforce-4143",
+      "warmup_s": 15
+    },
+    "variant": {
+      "vericto-enforce-4143": {
+        "base": "vericto-enforce",
+        "image": "VERICTO_PROXY_4_14_3_IMAGE",
+        "label": "4.14.3"
+      },
+      "vericto-enforce-4143-2nd": {
+        "base": "vericto-enforce",
+        "image": "VERICTO_PROXY_4_14_3_IMAGE",
+        "label": "4.14.3 (second back-to-back run)"
+      },
+      "vericto-enforce-4150-off": {
+        "base": "vericto-enforce",
+        "env": {
+          "VERICTO_POLICY_RULES": "off"
+        },
+        "image": "VERICTO_PROXY_4_15_0_IMAGE",
+        "label": "4.15.0, VERICTO_POLICY_RULES=off"
+      },
+      "vericto-enforce-4150-off-2nd": {
+        "base": "vericto-enforce",
+        "env": {
+          "VERICTO_POLICY_RULES": "off"
+        },
+        "image": "VERICTO_PROXY_4_15_0_IMAGE",
+        "label": "4.15.0, VERICTO_POLICY_RULES=off (second back-to-back run)"
+      }
+    }
+  },
+  "topology": "two-host",
+  "updated_at": "2026-10-22T23:50:38.032198+00:00",
+  "versions_lock": {
+    "ALPINE_IMAGE": "docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc",
+    "GO_IMAGE": "docker.io/library/golang:1.25-alpine@sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59",
+    "HAPROXY_IMAGE": "docker.io/library/haproxy:3.0.30@sha256:836f65081bc532d2d024641ca868122105cca2f150effd2e04f8c155258b9ef8",
+    "MATPLOTLIB_APT_VERSION": "3.6.3-1ubuntu5",
+    "MYSQL_IMAGE": "docker.io/library/mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70",
+    "PGBOUNCER_SHA256": "da72a3aba13072876d055a3e58dd4aba4a5de4ed6148e73033185245598fd3e0",
+    "PGBOUNCER_VERSION": "1.24.1",
+    "POSTGRES_IMAGE": "docker.io/library/postgres:17.6@sha256:00bc86618629af00d2937fdc5a5d63db3ff8450acf52f0636ec813c7f4902929",
+    "PROXYSQL_DEB_SHA256_AMD64": "8a372ff5fcae6a1bfa55982bb11f4380fb47252e933d690ecc82ffcb1998c4f0",
+    "PROXYSQL_DEB_SHA256_ARM64": "da7aba2be2f98fabc48487130f7a285b4157dbb96dea7251e8aa5bdeae96eeef",
+    "PROXYSQL_VERSION": "2.7.3",
+    "PUBLISHED_PROXY_VERSION": "4.14.2",
+    "RUST_IMAGE": "docker.io/library/rust:1.88-bookworm@sha256:af306cfa71d987911a781c37b59d7d67d934f49684058f96cf72079c3626bfe0",
+    "SYSBENCH_APT_VERSION": "1.0.20+ds-6build2",
+    "UBUNTU_IMAGE": "docker.io/library/ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac",
+    "VERICTO_ENGINE_TAG": "v4.3.0",
+    "VERICTO_PROXY_4_14_3_IMAGE": "docker.io/vericto/vericto-proxy:4.14.3@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354",
+    "VERICTO_PROXY_4_15_0_IMAGE": "docker.io/vericto/vericto-proxy:4.15.0@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124",
+    "VERICTO_PROXY_IMAGE": "docker.io/vericto/vericto-proxy:4.14.2@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b",
+    "VERICTO_PROXY_MIRROR": "ghcr.io/vericto/vericto-proxy"
+  }
+}

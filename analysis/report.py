@@ -46,6 +46,20 @@ TARGET_STYLE = {
     "vericto-observe": ("#008300", "P"),
 }
 TARGET_ORDER = list(TARGET_STYLE)
+# Suite variants (other proxy releases, extra proxy environment): further slots of
+# the same palette, in the order they first appear.
+VARIANT_STYLE = [("#7c5cd6", "X"), ("#b5504a", "h"), ("#3a9fb0", "*"), ("#8a7a2e", "p")]
+
+
+def style(t: str) -> tuple[str, str]:
+    if t not in TARGET_STYLE:
+        TARGET_STYLE[t] = VARIANT_STYLE[sum(1 for k in TARGET_STYLE if k not in TARGET_ORDER) % len(VARIANT_STYLE)]
+    return TARGET_STYLE[t]
+
+
+def order(targets) -> list[str]:
+    ts = set(targets)
+    return [t for t in TARGET_ORDER if t in ts] + sorted(ts - set(TARGET_ORDER))
 T975 = [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228, 2.201, 2.179, 2.160, 2.145, 2.131,
         2.120, 2.110, 2.101, 2.093, 2.086, 2.080, 2.074, 2.069, 2.064, 2.060, 2.056, 2.052, 2.048, 2.045, 2.042]
 PCTS = ("p50", "p99", "p999")
@@ -503,9 +517,9 @@ def charts(out: str, used: list[dict], drows: list[dict], fits: list[dict], smok
         rs = [r for r in drows if r["curve"] == curve]
         fig, axes = plt.subplots(1, 3, figsize=(11, 3.4), sharex=True)
         for ax, p in zip(axes, PCTS):
-            for t in [x for x in TARGET_ORDER if any(r["target"] == x for r in rs)]:
+            for t in order(r["target"] for r in rs):
                 pts = sorted((r["offered_rate"], r[f"added_{p}_ms"], r[f"added_{p}_lo"], r[f"added_{p}_hi"]) for r in rs if r["target"] == t)
-                col, mk = TARGET_STYLE[t]
+                col, mk = style(t)
                 xs = [x[0] for x in pts]
                 ys = [x[1] for x in pts]
                 err = [[(y - lo) if lo is not None else 0 for _, y, lo, _ in pts], [(hi - y) if hi is not None else 0 for _, y, _, hi in pts]]
@@ -529,7 +543,7 @@ def charts(out: str, used: list[dict], drows: list[dict], fits: list[dict], smok
                 q = (c.get("statements_per_s") or c.get("achieved_rate") or 0) / 1000.0
                 pts.append((q, v))
         fig, ax = plt.subplots(figsize=(5, 3.4))
-        col, mk = TARGET_STYLE[f["target"]]
+        col, mk = style(f["target"])
         ax.scatter([x for x, _ in pts], [y for _, y in pts], color=col, marker=mk, s=40, label=f["target"])
         xs = [0, max(x for x, _ in pts) * 1.05]
         ax.plot(xs, [f["intercept"] + f["slope"] * x for x in xs], color="#52514e", linewidth=1.2,
@@ -544,13 +558,13 @@ def charts(out: str, used: list[dict], drows: list[dict], fits: list[dict], smok
     for curve in sorted({c["curve"] for c in closed}):
         cs = [c for c in closed if c["curve"] == curve]
         fig, ax = plt.subplots(figsize=(5.5, 3.4))
-        for t in [x for x in TARGET_ORDER if any(c["target"] == x for c in cs)]:
+        for t in order(c["target"] for c in cs):
             pts = {}
             for c in cs:
                 if c["target"] == t:
                     pts.setdefault(c["conc"], []).append(c.get("statements_per_s") or c.get("achieved_rate") or 0)
             xs = sorted(pts)
-            col, mk = TARGET_STYLE[t]
+            col, mk = style(t)
             ax.plot(xs, [statistics.mean(pts[x]) for x in xs], color=col, marker=mk, label=t)
         ax.set_xscale("log", base=2)
         ax.set_xlabel("concurrency (closed loop)")
@@ -568,14 +582,14 @@ def charts(out: str, used: list[dict], drows: list[dict], fits: list[dict], smok
         fig, ax = plt.subplots(figsize=(5.5, 3.4))
         qs = [0.5, 0.75, 0.9, 0.95, 0.99, 0.995, 0.999, 0.9999]
         drawn = False
-        for t in TARGET_ORDER:
+        for t in order(x["target"] for x in cs):
             c = next((x for x in cs if x["target"] == t and x["offered_rate"] == rate), None)
             if not c:
                 continue
             m = merge_buckets(intervals(c))
             if not m:
                 continue
-            col, mk = TARGET_STYLE[t]
+            col, mk = style(t)
             ax.plot([1 / (1 - q) for q in qs], [quantile(m, q) for q in qs], color=col, marker=mk, label=t)
             drawn = True
         if not drawn:

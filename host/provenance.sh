@@ -67,6 +67,8 @@ out = {
     "schema": "vericto-bench/provenance/1",
     "imds": imds(),
     "uname": run("uname", "-a"),
+    "kernels_installed": run("rpm", "-q", "kernel"),
+    "system_release": run("rpm", "-q", "system-release"),
     "os_release": dict(re.findall(r'^(\w+)="?([^"\n]*)"?$', read("/etc/os-release") or "", re.M)),
     "lscpu": jsonish(run("lscpu", "-J")),
     "nproc": os.cpu_count(),

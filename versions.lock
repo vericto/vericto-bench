@@ -21,6 +21,13 @@ VERICTO_PROXY_MIRROR=ghcr.io/vericto/vericto-proxy
 PUBLISHED_PROXY_VERSION=4.14.2
 # The engine the proxy pins (vericto-proxy Cargo.toml): engine-eval and the stub's rules use the same tag.
 VERICTO_ENGINE_TAG=v4.3.0
+# Release comparisons (suite [variant.*] targets; never profile=published). Same
+# digests on GHCR (VERICTO_PROXY_MIRROR). 4.14.3 changes only the code's default
+# log filter (the harness sets RUST_LOG=info anyway); 4.15.0 pins engine v4.4.0,
+# whose 42 built-in rules and evaluate() are unchanged, and adds
+# VERICTO_POLICY_RULES (default off).
+VERICTO_PROXY_4_14_3_IMAGE=docker.io/vericto/vericto-proxy:4.14.3@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354
+VERICTO_PROXY_4_15_0_IMAGE=docker.io/vericto/vericto-proxy:4.15.0@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124
 
 # --- Databases ----------------------------------------------------------------
 POSTGRES_IMAGE=docker.io/library/postgres:17.6@sha256:00bc86618629af00d2937fdc5a5d63db3ff8450acf52f0636ec813c7f4902929
@@ -41,7 +48,7 @@ PROXYSQL_DEB_SHA256_AMD64=8a372ff5fcae6a1bfa55982bb11f4380fb47252e933d690ecc82ff
 SYSBENCH_APT_VERSION=1.0.20+ds-6build2
 
 # --- Build and analysis images --------------------------------------------------
-GO_IMAGE=docker.io/library/golang:1.23-alpine@sha256:383395b794dffa5b53012a212365d40c8e37109a626ca30d6151c8348d380b5f
+GO_IMAGE=docker.io/library/golang:1.25-alpine@sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59
 RUST_IMAGE=docker.io/library/rust:1.88-bookworm@sha256:af306cfa71d987911a781c37b59d7d67d934f49684058f96cf72079c3626bfe0
 ALPINE_IMAGE=docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
 UBUNTU_IMAGE=docker.io/library/ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac
