@@ -13,6 +13,15 @@ output "availability_zone" {
   value = local.az
 }
 
+output "network" {
+  description = "VPC and subnet of the hosts, and whether this stack created them (false = existing_vpc_id)."
+  value = {
+    vpc_id      = local.vpc_id
+    subnet_id   = local.host_subnet_id
+    own_network = local.own_network
+  }
+}
+
 output "results_bucket" {
   value = aws_s3_bucket.results.id
 }
