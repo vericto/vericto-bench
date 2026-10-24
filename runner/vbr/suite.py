@@ -21,7 +21,9 @@ from typing import Any
 
 PROFILES = ("smoke", "quick", "published")
 TOOLS = ("vbench", "pgbench", "sysbench")
-SIZES = ("0.5", "1", "2x0.5")
+# 0.5x2c: the 0.5 vCPU quota over two cores, as a 0.5 vCPU Fargate task on its
+# 2-vCPU host (the quota caps CPU time, not the CPUs the threads run on).
+SIZES = ("0.5", "1", "2x0.5", "0.5x2c")
 TARGETS = {
     "pg": ("direct", "haproxy-tcp", "pgbouncer-session", "vericto-offline", "vericto-enforce", "vericto-observe"),
     "mysql": ("direct", "haproxy-tcp", "proxysql", "vericto-offline", "vericto-enforce", "vericto-observe"),
@@ -47,6 +49,7 @@ class Variant:
     image_key: str  # a *_IMAGE key of versions.lock
     env: dict[str, str]
     label: str = ""
+    size: str = ""  # a size of SIZES that replaces the curve's for this target ("" = the curve's)
 
 
 @dataclasses.dataclass
@@ -142,7 +145,11 @@ def _variants(raw: dict) -> dict[str, Variant]:
         for k, x in env.items():
             if not re.fullmatch(r"[A-Z][A-Z0-9_]*", k) or not isinstance(x, str):
                 raise SuiteError(f"variant {name}: env must map NAMES to strings")
-        out[name] = Variant(name=name, base=base, image_key=image_key, env=dict(env), label=_get(v, "label", str, ""))
+        size = _get(v, "size", str, "")
+        if size and size not in SIZES or size == "2x0.5":
+            raise SuiteError(f"variant {name}: size must be one of {[x for x in SIZES if x != '2x0.5']}")
+        out[name] = Variant(name=name, base=base, image_key=image_key, env=dict(env), label=_get(v, "label", str, ""),
+                            size=size)
     return out
 
 

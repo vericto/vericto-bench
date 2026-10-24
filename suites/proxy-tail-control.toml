@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Control of suites/proxy-tail.toml: did the knee move with the proxy release or
+# with the environment? BENCH-2026-11 ran vericto-proxy 4.14.2 on 2026-10-20;
+# proxy-tail runs 4.15.3 on a newer AMI, kernel and PostgreSQL patch release.
+# This suite runs both releases on the same hosts, same session, at the knee:
+# PostgreSQL W1 (pgbench select-only, extended, TLS, 0.5 vCPU) at 70, 80 and 90%
+# of BENCH-2026-11's S (6,032.6/s), 3 repetitions, Williams order, the
+# methodology of proxy-tail (30 s warm-up, 120 s measured, 10 s cool-down).
+
+[suite]
+name = "proxy-tail-control"
+profile = "quick"
+order_seed = 2026102303
+reps = 3
+warmup_s = 30
+duration_s = 120
+cooldown_s = 10
+interval_s = 10
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4153]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_15_3_IMAGE"
+label = "4.15.3, 0.5"
+
+[[curve]]
+id = "pg-knee-control"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce", "vericto-enforce-4153"]
+rates_pct = [70, 80, 90]
+saturation_qps = 6032.6

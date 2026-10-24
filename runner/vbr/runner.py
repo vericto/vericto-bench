@@ -320,13 +320,19 @@ class Runner:
 
     # ---- cells ----------------------------------------------------------------------
 
+    def size_of(self, cell) -> str:
+        """The target's size in this cell: its variant's size, else the curve's."""
+        v = self.suite.variants.get(cell.target)
+        return (v.size if v and v.size else "") or cell.curve.size
+
     def start_targets(self, cell) -> list[T.Container]:
         c = cell.curve
         out = []
-        n = 2 if (c.size == "2x0.5" and cell.target.startswith("vericto")) else 1
+        size = self.size_of(cell)
+        n = 2 if (size == "2x0.5" and cell.target.startswith("vericto")) else 1
         v = self.suite.variants.get(cell.target)
         for i in range(n):
-            t = TG.start_target(self.topo, self.images, c.engine, cell.target, c.size, c.tls, self.certs, second=i == 1,
+            t = TG.start_target(self.topo, self.images, c.engine, cell.target, size, c.tls, self.certs, second=i == 1,
                                 variant=v, variant_image=self.variant_images.get(cell.target, ""))
             if t:
                 out.append(t)
@@ -338,7 +344,7 @@ class Runner:
         task is its own container."""
         host, ports, _ = self.addr(cell.curve.engine, cell.target)
         hosts = [host]
-        if cell.curve.size == "2x0.5" and cell.target.startswith("vericto"):
+        if self.size_of(cell) == "2x0.5" and cell.target.startswith("vericto"):
             ports = [ports[0], TG.PORTS[(cell.curve.engine, "vericto2")]]
             hosts.append(T.addr(self.topo, self.topo.sut, f"vb-{cell.curve.engine}-{cell.target}-2"))
         return hosts, ports
@@ -352,7 +358,7 @@ class Runner:
         stop_local = os.path.join(local, "STOP")
         stop_data = f"{data}/STOP"
         rec = {"cell": cid, "curve": c.id, "engine": c.engine, "tool": c.tool, "arrival": c.arrival, "workload": c.workload, "mode": c.mode,
-               "tls": c.tls, "size": c.size, "target": cell.target, "loop": c.loop, "offered_rate": cell.rate,
+               "tls": c.tls, "size": self.size_of(cell), "target": cell.target, "loop": c.loop, "offered_rate": cell.rate,
                "rate_pct": cell.pct, "conc": cell.conc, "rep": cell.rep, "seq": cell.seq, "day": self.args.day,
                "started_at": now_iso(), "invalid_reasons": [], "warnings": []}
         log(f"cell {cid}")
@@ -498,7 +504,7 @@ class Runner:
             rec["reason"] = "network cap: " + str(net.get("reason"))
         mfrom = _ts(rec.get("measure_from")) or (t_start + warmup)
         mend = _ts(rec.get("end")) or (t_start + warmup + duration)
-        budgets = {"target": 1.0 if c.size == "1" else 0.5, "target2": 0.5}
+        budgets = {"target": 1.0 if self.size_of(cell) == "1" else 0.5, "target2": 0.5}
         rec["cpu"] = M.cpu_and_steal(os.path.join(local, "samples.jsonl"), mfrom, mend, budgets)
         rec["wall_s"] = t_end - t_start
         if prof:

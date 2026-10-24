@@ -77,8 +77,20 @@ class Suites(unittest.TestCase):
         self.assertEqual(variant_ref("VERICTO_PROXY_4_14_3_IMAGE", {"VERICTO_PROXY_4_14_3_IMAGE": ref}, {}), ref)
         self.assertIsNone(variant_ref("VERICTO_X_IMAGE", {}, {"PROXY_IMAGE_OVERRIDE": ref}))
 
+    def test_variant_sizes(self):
+        s = S.load(os.path.join(REPO, "suites", "proxy-tail.toml"))
+        self.assertEqual(s.variants["vericto-enforce-4153-fg"].size, "0.5x2c")
+        self.assertEqual(s.variants["vericto-enforce-4153-fg"].env, {"TOKIO_WORKER_THREADS": "2"})
+        self.assertEqual(s.variants["vericto-enforce-4153-1c"].size, "1")
+        self.assertEqual(s.variants["vericto-enforce-cand"].size, "")
+        cells = S.expand(s, next(c for c in s.curves if c.id == "pg-knee"), {})
+        self.assertEqual(sorted({round(c.rate, 1) for c in cells}), [3619.6, 4222.8, 4826.1, 5429.3])
+        self.assertEqual(len(cells), 7 * 4 * 3)
+
     def test_variant_rules(self):
-        for body, err in (('[variant.vericto-x]\nbase = "haproxy-tcp"\n', "base"),
+        for body, err in (('[variant.vericto-x]\nbase = "vericto-enforce"\nsize = "2x0.5"\n', "size"),
+                          ('[variant.vericto-x]\nbase = "vericto-enforce"\nsize = "3"\n', "size"),
+                          ('[variant.vericto-x]\nbase = "haproxy-tcp"\n', "base"),
                           ('[variant.other]\nbase = "vericto-enforce"\n', "name"),
                           ('[variant.vericto-x]\nbase = "vericto-enforce"\nenv = { lower = "1" }\n', "env"),
                           ('[variant.vericto-x]\nbase = "vericto-enforce"\nimage = "SOMETHING"\n', "image")):

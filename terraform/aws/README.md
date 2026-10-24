@@ -19,7 +19,7 @@ uploads the results to an S3 bucket in the same stack and stops the instances.
 Every resource is tagged `Project=vericto-bench`, `Campaign`, `RunId`, `ExpiresOn`, `ManagedBy=terraform`.
 
 **Runtime guard:** each host schedules `shutdown -h` at boot, `max_hours` later
-(automatic: `quick` 3 h, `c7i` 14 h, `day2` 24 h, `published` 132 h, otherwise 30 h), so a stuck run cannot bill for days.
+(automatic: `quick` 3 h, `proxy-tail` 10 h, `c7i` 14 h, `day2` 24 h, `published` 132 h, otherwise 30 h), so a stuck run cannot bill for days.
 A stopped instance still bills its EBS volume until `teardown.sh`.
 
 ## In an existing VPC
