@@ -30,6 +30,10 @@ VERICTO_PROXY_4_14_3_IMAGE=docker.io/vericto/vericto-proxy:4.14.3@sha256:66fa5e9
 VERICTO_PROXY_4_15_0_IMAGE=docker.io/vericto/vericto-proxy:4.15.0@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124
 # 4.15.3: less CPU per statement (telemetry serialization); the baseline of the tail-latency investigation.
 VERICTO_PROXY_4_15_3_IMAGE=docker.io/vericto/vericto-proxy:4.15.3@sha256:e543749208dbc485de08d139de6b4e7c82fd29f227c6b1b52a7ec7b0669667cf
+# 4.16.2: tokio workers sized from the CPU limit (cgroup quota, ECS task limit); the fix of the 4.15.x tail.
+VERICTO_PROXY_4_16_2_IMAGE=docker.io/vericto/vericto-proxy:4.16.2@sha256:91b4b805126ad913fde955381bcc37c64a7a8781fb95522770a36b6bdf7f97ec
+# 4.17.0: bounded reads (rewrite_limit business policies, engine 4.5.0); Latest on 2026-10-24.
+VERICTO_PROXY_4_17_0_IMAGE=docker.io/vericto/vericto-proxy:4.17.0@sha256:9306b0954e132040760aaf38fa48c95a31b1281882bc7555e74c9ea9e6864ada
 
 # --- Databases ----------------------------------------------------------------
 # Latest patch releases on 2026-10-23 (BENCH-2026-11 ran 17.6 and 8.4.11; the
