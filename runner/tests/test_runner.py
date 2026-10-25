@@ -76,6 +76,11 @@ class Suites(unittest.TestCase):
         self.assertIsNone(variant_ref(cand.image_key, {"PROXY_IMAGE_OVERRIDE": ref}, {}))  # never from the lock
         self.assertEqual(variant_ref("VERICTO_PROXY_4_14_3_IMAGE", {"VERICTO_PROXY_4_14_3_IMAGE": ref}, {}), ref)
         self.assertIsNone(variant_ref("VERICTO_X_IMAGE", {}, {"PROXY_IMAGE_OVERRIDE": ref}))
+        ref2 = "registry.example/vericto-proxy@sha256:" + "b" * 64
+        env = {"PROXY_IMAGE_OVERRIDE": ref, "PROXY_IMAGE_OVERRIDE_2": ref2}
+        self.assertEqual(variant_ref(S.OVERRIDE_IMAGE_KEY_2, {}, env), ref2)
+        self.assertEqual(variant_ref(S.OVERRIDE_IMAGE_KEY, {}, env), ref)
+        self.assertIsNone(variant_ref(S.OVERRIDE_IMAGE_KEY_2, {"PROXY_IMAGE_OVERRIDE_2": ref2}, {"PROXY_IMAGE_OVERRIDE": ref}))
 
     def test_policies_on_variants_need_the_signing_stub(self):
         from vbr import targets as TG
@@ -86,6 +91,27 @@ class Suites(unittest.TestCase):
         self.assertFalse(TG.policies_on(None))
         g = S.load(os.path.join(REPO, "suites", "proxy-4172-gate-a.toml"))
         self.assertFalse(any(TG.policies_on(v) for v in g.variants.values()), "the gate runs policies off")
+
+    def test_4173_suites_two_candidates_and_two_bundles(self):
+        from vbr import targets as TG
+        for f in ("a1", "a2", "b1", "b2"):
+            g = S.load(os.path.join(REPO, "suites", f"proxy-4173-gate-{f}.toml"))
+            self.assertFalse(any(TG.policies_on(v) for v in g.variants.values()), f)
+            self.assertEqual(g.variants["vericto-enforce-4173"].image_key, S.OVERRIDE_IMAGE_KEY)
+            self.assertEqual(g.variants["vericto-enforce-4172"].image_key, S.OVERRIDE_IMAGE_KEY_2)
+            for c in g.curves:
+                if c.loop == "open" and not c.id.startswith("prof"):
+                    self.assertEqual(c.targets, ["direct", "vericto-enforce-4162", "vericto-enforce-4170",
+                                                 "vericto-enforce-4172", "vericto-enforce-4173"], c.id)
+        for m in ("ext", "prep"):
+            p = S.load(os.path.join(REPO, "suites", f"proxy-4173-policies-{m}.toml"))
+            for name, v in p.variants.items():
+                alt = name.startswith("vericto-poltf-")
+                self.assertEqual(TG.policies_on(v), name.startswith("vericto-pol"), name)
+                self.assertEqual(v.env.get("VERICTO_API_KEY", "enforce-pg").endswith("-alt"), alt, name)
+        with open(os.path.join(REPO, "configs", "cpstub", "policy-rules-alt.json")) as f:
+            alt_rules = json.load(f)
+        self.assertNotIn("time.", alt_rules[0]["ast_condition_yaml"])
 
     def test_variant_sizes(self):
         s = S.load(os.path.join(REPO, "suites", "proxy-tail.toml"))

@@ -38,6 +38,7 @@ COPY --from=rust /engine-eval /usr/local/bin/engine-eval
 COPY --from=rust /rules.json /opt/vericto-bench/rules.json
 COPY configs/cpstub/sensitive.json /opt/vericto-bench/sensitive.json
 COPY configs/cpstub/policy-rules.json /opt/vericto-bench/policy-rules.json
+COPY configs/cpstub/policy-rules-alt.json /opt/vericto-bench/policy-rules-alt.json
 COPY configs/cpstub/principals.json /opt/vericto-bench/principals.json
 LABEL org.opencontainers.image.source="https://github.com/vericto/vericto-bench" \
       org.opencontainers.image.licenses="Apache-2.0 AND FSL-1.1-ALv2"

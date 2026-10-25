@@ -52,9 +52,9 @@ def mirror(ref: str, lock: dict[str, str]) -> str:
 
 def variant_ref(image_key: str, lock: dict[str, str], env) -> str | None:
     """The image reference of a variant: its versions.lock entry, or the run's
-    PROXY_IMAGE_OVERRIDE for image = "PROXY_IMAGE_OVERRIDE". None when unset."""
-    if image_key == S.OVERRIDE_IMAGE_KEY:
-        return env.get(S.OVERRIDE_IMAGE_KEY) or None
+    PROXY_IMAGE_OVERRIDE (PROXY_IMAGE_OVERRIDE_2) for image = that key. None when unset."""
+    if image_key in S.OVERRIDE_IMAGE_KEYS:
+        return env.get(image_key) or None
     return lock.get(image_key)
 
 
@@ -95,7 +95,7 @@ class Runner:
             ref = variant_ref(v.image_key, self.lock, os.environ)
             if ref is None:
                 raise S.SuiteError(f"variant {name}: {v.image_key} is not in versions.lock (or, for "
-                                   f"{S.OVERRIDE_IMAGE_KEY}, not set for this run)")
+                                   f"{'/'.join(S.OVERRIDE_IMAGE_KEYS)}, not set for this run)")
             if not re.search(r"@sha256:[0-9a-f]{64}$", ref):
                 raise S.SuiteError(f"variant {name}: {v.image_key} is not pinned by digest")
             self.variant_refs[name] = ref

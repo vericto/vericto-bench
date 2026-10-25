@@ -1,0 +1,10 @@
+[
+  {
+    "rule_id": "bench-policy-read-has-where",
+    "code": "POL-BENCH-2",
+    "severity": "high",
+    "default_action": "block",
+    "rule_type": "custom",
+    "ast_condition_yaml": "rule: bench-accounts-read-has-where\napplies_to: { ops: [select], tables: [\"public.pgbench_accounts\"], principal_types: [service] }\ndeny_if: stmt.has_where == false\naction: block\n"
+  }
+]

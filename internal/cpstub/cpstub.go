@@ -27,6 +27,12 @@
 // as the proxy's VERICTO_BUNDLE_SIGNING_KEYS JSON. To a proxy that announces
 // the policy language (X-Vericto-Policy-Language: cel/1...) the body also
 // carries Config.PolicyRules after the built-in rules, and Config.Principals.
+//
+// A second policy set (Config.AltPolicyRules) goes instead to a proxy whose
+// API key ends in AltKeySuffix ("-alt"), so one stub serves two bundles to the
+// variants of one run (e.g. a time-dependent and a time-free policy): each
+// variant picks its bundle with VERICTO_API_KEY. Both are signed with the same
+// ephemeral key.
 package cpstub
 
 import (
@@ -94,7 +100,16 @@ type Config struct {
 	PolicyRules []Rule
 	// Principals: the principals section, with PolicyRules.
 	Principals json.RawMessage
+	// AltPolicyRules: the business policy rules sent, instead of PolicyRules,
+	// to a proxy that announces cel/1 with an API key ending in AltKeySuffix.
+	AltPolicyRules []Rule
 }
+
+// AltKeySuffix selects Config.AltPolicyRules (an API key such as "enforce-pg-alt").
+const AltKeySuffix = "-alt"
+
+// Alt reports whether an API key selects the alternative policy set.
+func Alt(apiKey string) bool { return strings.HasSuffix(apiKey, AltKeySuffix) }
 
 // PolicyLanguageHeader is the request header a proxy with business policies
 // on announces its policy language in.
@@ -106,9 +121,9 @@ const SignatureHeader = "X-Vericto-Bundle-Signature"
 // bundleDomain prefixes the signed digest's input (as vericto-fmw).
 const bundleDomain = "vericto-sync-bundle/1\n"
 
-// variant of a /sync/rules body: monitor mode, and whether the proxy speaks
-// the policy language.
-type variant struct{ monitor, cel bool }
+// variant of a /sync/rules body: monitor mode, whether the proxy speaks the
+// policy language, and whether its API key selects the alternative policy set.
+type variant struct{ monitor, cel, alt bool }
 
 // DefaultSeverityActions is EnforcementPolicy::default() of vericto-engine.
 func DefaultSeverityActions() map[string]string {
@@ -158,10 +173,17 @@ func New(cfg Config) (*Server, error) {
 		}
 		s.publicKey, private = public, priv
 	}
-	for _, v := range []variant{{false, false}, {true, false}, {false, true}, {true, true}} {
+	for _, v := range []variant{{false, false, false}, {true, false, false}, {false, true, false}, {true, true, false},
+		{false, true, true}, {true, true, true}} {
+		if v.alt && len(cfg.AltPolicyRules) == 0 {
+			continue
+		}
 		rules := cfg.Rules.Rules
 		version := cfg.Rules.RulesetVersion
-		if v.cel && len(cfg.PolicyRules) > 0 {
+		if v.alt {
+			rules = append(append([]Rule{}, rules...), cfg.AltPolicyRules...)
+			version += "+policies-alt"
+		} else if v.cel && len(cfg.PolicyRules) > 0 {
 			rules = append(append([]Rule{}, rules...), cfg.PolicyRules...)
 			version += "+policies"
 		}
@@ -244,6 +266,9 @@ func (s *Server) sync(w http.ResponseWriter, r *http.Request) {
 	s.syncs++
 	s.mu.Unlock()
 	v := variant{monitor: Monitor(apiKey), cel: strings.HasPrefix(r.Header.Get(PolicyLanguageHeader), "cel/1")}
+	if v.cel && Alt(apiKey) && len(s.cfg.AltPolicyRules) > 0 {
+		v.alt = true
+	}
 	w.Header().Set("ETag", s.etags[v])
 	if r.Header.Get("If-None-Match") == s.etags[v] {
 		w.WriteHeader(http.StatusNotModified)

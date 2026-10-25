@@ -188,3 +188,91 @@ func TestSignedBundlesVerifyAndPoliciesGoOnlyToCel(t *testing.T) {
 		t.Fatalf("GET /signing-keys: %v %v", res, err)
 	}
 }
+
+// One stub, two bundles: an API key ending in -alt gets AltPolicyRules
+// instead of PolicyRules (cel/1 only), signed with the same key, under
+// distinct ETags; without cel/1 or without an alt set the key changes nothing.
+func TestAltKeySelectsTheAlternativePolicySet(t *testing.T) {
+	base := []Rule{{RuleID: "VERICTO-001", Code: "VERICTO-001", Severity: "critical", DefaultAction: "block", RuleType: "standard"}}
+	s, err := New(Config{Rules: RulesExport{RulesetVersion: "r1", Rules: base}, Sign: true,
+		PolicyRules:    []Rule{{RuleID: "p-time", Code: "POL-TIME", Severity: "high", DefaultAction: "block", RuleType: "custom"}},
+		AltPolicyRules: []Rule{{RuleID: "p-free", Code: "POL-FREE", Severity: "high", DefaultAction: "block", RuleType: "custom"}},
+		Principals:     json.RawMessage(`{"version":"p1","entries":[]}`)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(s.Handler())
+	t.Cleanup(ts.Close)
+	keys, _ := s.SigningKeysJSON()
+	var ring []map[string]string
+	_ = json.Unmarshal([]byte(keys), &ring)
+	block, _ := pem.Decode([]byte(ring[0]["public_key"]))
+	pub, _ := x509.ParsePKIXPublicKey(block.Bytes)
+	get := func(key string, cel bool) (codes []string, version, etag string) {
+		req, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/v1/sync/rules", nil)
+		req.Header.Set("X-API-Key", key)
+		if cel {
+			req.Header.Set(PolicyLanguageHeader, "cel/1, rewrite_limit")
+		}
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		parts := map[string]string{}
+		for _, p := range strings.Split(res.Header.Get(SignatureHeader), ";") {
+			k, v, _ := strings.Cut(strings.TrimSpace(p), "=")
+			parts[k] = v
+		}
+		digest := sha256.Sum256(append([]byte(bundleDomain), body...))
+		sig, _ := base64.StdEncoding.DecodeString(parts["sig"])
+		if !ed25519.Verify(pub.(ed25519.PublicKey), digest[:], sig) {
+			t.Fatalf("%s cel=%v: signature does not verify", key, cel)
+		}
+		var b struct {
+			Version string `json:"version"`
+			Rules   []Rule `json:"rules"`
+			Policy  struct {
+				Monitor bool `json:"monitor_mode"`
+			} `json:"policy"`
+		}
+		_ = json.Unmarshal(body, &b)
+		for _, r := range b.Rules {
+			codes = append(codes, r.Code)
+		}
+		return codes, b.Version, res.Header.Get("ETag")
+	}
+	c1, v1, e1 := get("enforce-pg", true)
+	c2, v2, e2 := get("enforce-pg-alt", true)
+	c3, _, _ := get("enforce-pg-alt", false)
+	if strings.Join(c1, ",") != "VERICTO-001,POL-TIME" || v1 != "r1+policies" {
+		t.Fatalf("default key: %v %s", c1, v1)
+	}
+	if strings.Join(c2, ",") != "VERICTO-001,POL-FREE" || v2 != "r1+policies-alt" || e1 == e2 {
+		t.Fatalf("alt key: %v %s (etags %s %s)", c2, v2, e1, e2)
+	}
+	if strings.Join(c3, ",") != "VERICTO-001" {
+		t.Fatalf("alt key without cel/1: %v", c3)
+	}
+	if !Alt("enforce-pg-alt") || Alt("enforce-pg") || Monitor("enforce-pg-alt") {
+		t.Fatal("key classification")
+	}
+	// No alt set: an -alt key gets the default policies.
+	s2, _ := New(Config{Rules: RulesExport{RulesetVersion: "r1", Rules: base},
+		PolicyRules: []Rule{{RuleID: "p-time", Code: "POL-TIME", Severity: "high", DefaultAction: "block", RuleType: "custom"}}})
+	ts2 := httptest.NewServer(s2.Handler())
+	t.Cleanup(ts2.Close)
+	req, _ := http.NewRequest(http.MethodGet, ts2.URL+"/api/v1/sync/rules", nil)
+	req.Header.Set("X-API-Key", "enforce-pg-alt")
+	req.Header.Set(PolicyLanguageHeader, "cel/1")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(res.Body)
+	res.Body.Close()
+	if !strings.Contains(string(body), "POL-TIME") {
+		t.Fatalf("no alt set: %s", body)
+	}
+}

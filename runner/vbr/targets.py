@@ -100,13 +100,18 @@ def start_cpstub(topo: T.Topology, images: Images, sign: bool = False) -> T.Cont
     """sign: the stub signs every bundle with an Ed25519 key it generates in
     memory (bench-only, never a Vericto key), and serves the bench business
     policy and principals to a proxy that announces cel/1; for variants with
-    VERICTO_POLICY_RULES on (see start_target)."""
+    VERICTO_POLICY_RULES on (see start_target). A variant with an API key
+    ending in -alt (env VERICTO_API_KEY = "enforce-pg-alt") gets the
+    alternative policy set (configs/cpstub/policy-rules-alt.json) instead."""
     h = topo.sut
     listen = f"127.0.0.1:{CPSTUB_PORT}" if h.network == "host" else f"0.0.0.0:{CPSTUB_PORT}"
     args = ["cpstub", "-listen", listen, "-rules", "/opt/vericto-bench/rules.json",
             "-sensitive", "/opt/vericto-bench/sensitive.json"]
     if sign:
+        # Two bundles: the default policy set, and the alternative one for a
+        # variant whose VERICTO_API_KEY ends in -alt (cpstub.AltKeySuffix).
         args += ["-sign", "-policy-rules", "/opt/vericto-bench/policy-rules.json",
+                 "-policy-rules-alt", "/opt/vericto-bench/policy-rules-alt.json",
                  "-principals", "/opt/vericto-bench/principals.json"]
     _SIGNING_KEYS.clear()
     c = T.create(topo, h, "vb-cpstub", images.tools, args=args, cpuset=h.cpuset("CPU_AUX"))

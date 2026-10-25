@@ -79,6 +79,17 @@ variable "root_volume_gib" {
   default     = 100
 }
 
+variable "proxy_image_override_2" {
+  description = "Optional second vericto-proxy image by digest (variants with image = \"PROXY_IMAGE_OVERRIDE_2\"), in the repository of proxy_image_override (the hosts may pull exactly that one)."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.proxy_image_override_2 == "" || can(regex("@sha256:[0-9a-f]{64}$", var.proxy_image_override_2))
+    error_message = "proxy_image_override_2 must be pinned by digest (...@sha256:<64 hex>)."
+  }
+}
+
 variable "proxy_image_override" {
   description = "Optional vericto-proxy image by digest (repo@sha256:...) instead of the one in versions.lock. Recorded in the manifest."
   type        = string
