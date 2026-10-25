@@ -1,0 +1,146 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Release gate of vericto-proxy 4.17.2 (4.17.1 / PR #89 with the PostgreSQL
+# relay performance fix on top: one client write and flush per upstream read,
+# coordinator once per read, Bind/Execute freshness check without a lookup),
+# policies off, against 4.16.2 and 4.17.0. The same suites as the 4.17.1 gate
+# (proxy-4171-gate-a.toml, 2026-10-24) with the candidate swapped; 4.17.1
+# itself is not run again (its levels come from that session). Stack
+# A of three (same harness; stack B: proxy-4172-gate-b.toml; stack C:
+# proxy-4172-policies.toml, business policies on). PostgreSQL W1, extended protocol, at 0.5 vCPU and 0.5x2c (the 0.5 quota
+# over two cores, as on a 0.5 vCPU Fargate task: where 4.15.x had its +39 ms
+# p99 at 80% of S and 4.17.1 +16.3 ms).
+# Not published.
+#
+# Fixed before the run: S pre-registered as in proxy-tail and the 4.17.1 gate
+# (PostgreSQL W1 6,032.6/s, MySQL W3 356.6/s); targets direct, 4.16.2 and 4.17.0
+# by digest (versions.lock), the 4.17.2 candidate built with the proxy's
+# Dockerfile (linux/arm64) from a bench-only registry (PROXY_IMAGE_OVERRIDE),
+# all with VERICTO_POLICY_RULES=off; a Williams order per (repetition, rate).
+# Decision (owner, 2026-10-24): about parity with 4.16.2; at most +3% CPU per
+# transaction and +0.05 ms p99 per cell below the knee against 4.16.2 and
+# 4.17.0; no quota tail at 80-90% of S (the added p99 at the 80% Fargate shape
+# in line with 4.16.2's, no collapse at 90%).
+
+[suite]
+name = "proxy-4172-gate-a"
+profile = "quick"
+order_seed = 2026102501
+reps = 5
+warmup_s = 15
+duration_s = 60
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-enforce-4170"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4162]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_16_2_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.16.2, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-4170]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_17_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.17.0, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-4172]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.17.2 candidate (patch 0066 on 77ff155), VERICTO_POLICY_RULES=off"
+
+[[curve]]
+id = "sat-pg-ext-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4162", "vericto-enforce-4170", "vericto-enforce-4172"]
+loop = "closed"
+concurrency = [1, 4, 16, 64]
+warmup_s = 10
+duration_s = 30
+reps = 3
+
+[[curve]]
+id = "gate-pg-ext-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4162", "vericto-enforce-4170", "vericto-enforce-4172"]
+rates_pct = [30, 50]
+saturation_qps = 6032.6
+
+[[curve]]
+id = "knee-pg-ext-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4162", "vericto-enforce-4170", "vericto-enforce-4172"]
+rates_pct = [70, 80, 90]
+saturation_qps = 6032.6
+warmup_s = 30
+duration_s = 120
+reps = 4
+
+[[curve]]
+id = "knee-pg-ext-fg"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5x2c"
+targets = ["direct", "vericto-enforce-4162", "vericto-enforce-4170", "vericto-enforce-4172"]
+rates_pct = [80, 90]
+saturation_qps = 6032.6
+warmup_s = 30
+duration_s = 120
+reps = 4
+
+[[curve]]
+id = "prof-pg-ext-4170"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4170"]
+rates_pct = [50]
+saturation_qps = 6032.6
+duration_s = 40
+reps = 1
+profile_s = 20
+
+[[curve]]
+id = "prof-pg-ext-4172"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4172"]
+rates_pct = [50]
+saturation_qps = 6032.6
+duration_s = 40
+reps = 1
+profile_s = 20

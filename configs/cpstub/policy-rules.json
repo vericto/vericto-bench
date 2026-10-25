@@ -1,0 +1,10 @@
+[
+  {
+    "rule_id": "bench-policy-read-window",
+    "code": "POL-BENCH-1",
+    "severity": "high",
+    "default_action": "block",
+    "rule_type": "custom",
+    "ast_condition_yaml": "rule: bench-accounts-read-window\napplies_to: { ops: [select], tables: [\"public.pgbench_accounts\"], principal_types: [service] }\ndeny_if: in_window(time.now, \"Wed 03:00-03:01\", \"UTC\")\naction: block\n"
+  }
+]

@@ -6,9 +6,17 @@ package cpstub
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/ed25519"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
+	"encoding/pem"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -118,5 +126,65 @@ func TestIngestRecordsLatencyPerVerdict(t *testing.T) {
 	s.reset()
 	if st := s.Snapshot(); st.Requests != 0 || len(st.Events) != 0 {
 		t.Fatalf("after reset %+v", st)
+	}
+}
+
+func TestSignedBundlesVerifyAndPoliciesGoOnlyToCel(t *testing.T) {
+	s, err := New(Config{Rules: RulesExport{RulesetVersion: "r1",
+		Rules: []Rule{{RuleID: "VERICTO-001", Code: "VERICTO-001", Severity: "critical", DefaultAction: "block", RuleType: "standard"}}},
+		Sign: true, PolicyRules: []Rule{{RuleID: "p1", Code: "POL-1", Severity: "high", DefaultAction: "block", RuleType: "custom"}},
+		Principals: json.RawMessage(`{"version":"p1","entries":[]}`)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(s.Handler())
+	t.Cleanup(ts.Close)
+	keys, err := s.SigningKeysJSON()
+	if err != nil || keys == "" {
+		t.Fatalf("keys %q %v", keys, err)
+	}
+	var ring []map[string]string
+	if err := json.Unmarshal([]byte(keys), &ring); err != nil || len(ring) != 1 || ring[0]["key_id"] != "bench-ephemeral" {
+		t.Fatalf("keyring %s", keys)
+	}
+	block, _ := pem.Decode([]byte(ring[0]["public_key"]))
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, cel := range []bool{false, true} {
+		req, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/v1/sync/rules", nil)
+		req.Header.Set("X-API-Key", "enforce-pg")
+		if cel {
+			req.Header.Set(PolicyLanguageHeader, "cel/1, rewrite_limit")
+		}
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		header := res.Header.Get(SignatureHeader)
+		parts := map[string]string{}
+		for _, p := range strings.Split(header, ";") {
+			k, v, _ := strings.Cut(strings.TrimSpace(p), "=")
+			parts[k] = v
+		}
+		digest := sha256.Sum256(append([]byte(bundleDomain), body...))
+		sig, _ := base64.StdEncoding.DecodeString(parts["sig"])
+		if parts["scheme"] != "ed25519-sha256" || parts["sha256"] != hex.EncodeToString(digest[:]) ||
+			!ed25519.Verify(pub.(ed25519.PublicKey), digest[:], sig) {
+			t.Fatalf("cel=%v: signature %q does not verify", cel, header)
+		}
+		var b map[string]any
+		_ = json.Unmarshal(body, &b)
+		_, hasPrincipals := b["principals"]
+		if n := len(b["rules"].([]any)); (cel && (n != 2 || !hasPrincipals)) || (!cel && (n != 1 || hasPrincipals)) {
+			t.Fatalf("cel=%v: %d rules, principals %v", cel, n, hasPrincipals)
+		}
+	}
+	res, err := http.Get(ts.URL + "/signing-keys")
+	if err != nil || res.StatusCode != 200 {
+		t.Fatalf("GET /signing-keys: %v %v", res, err)
 	}
 }

@@ -224,7 +224,8 @@ class Runner:
                    "GRANT ALL PRIVILEGES ON *.* TO 'bench'@'%';\nFLUSH PRIVILEGES;\n").encode()
             self.topo.sut.docker("exec", "-i", "-e", "MYSQL_PWD", TG.DB_NAME["mysql"], "mysql", "-uroot", input=sql)
         self.seed()
-        self.cpstub = TG.start_cpstub(self.topo, self.images)
+        self.cpstub = TG.start_cpstub(self.topo, self.images,
+                                      sign=any(TG.policies_on(v) for v in self.suite.variants.values()))
         self.verdict_preflight()
         self.write_manifest(stage="running")
 
@@ -349,6 +350,20 @@ class Runner:
             hosts.append(T.addr(self.topo, self.topo.sut, f"vb-{cell.curve.engine}-{cell.target}-2"))
         return hosts, ports
 
+    def _check_policy_bundle(self, cid: str, targets) -> None:
+        """Business policies on: the proxy applied a signed bundle (a refused
+        signature leaves it on its built-in rules, which would measure
+        policies off) and every policy compiled."""
+        for t in targets:
+            p = t.host.docker("logs", t.name, check=False)
+            text = (p.stdout + p.stderr).decode(errors="replace")
+            if "Ruleset and policy updated from API" not in text:
+                raise T.SetupError(f"{cid}: {t.name} applied no verified bundle")
+            for line in text.splitlines():
+                warning = '"level":"WARN"' in line or '"level":"ERROR"' in line
+                if warning and any(bad in line for bad in ("No verified sync bundle", "does not compile", "signature")):
+                    raise T.SetupError(f"{cid}: {t.name}: {line[:300]}")
+
     def run_cell(self, cell, attempt: str = "") -> dict:
         c = cell.curve
         cid = cell.id + attempt
@@ -378,6 +393,8 @@ class Runner:
                 rec["cpstub_syncs_before"] = st.get("syncs")
                 if not st.get("syncs"):
                     raise T.SetupError(f"{cid}: the proxy never synced with cpstub")
+                if TG.policies_on(self.suite.variants.get(cell.target)):
+                    self._check_policy_bundle(cid, targets)
                 TG.cpstub_get(self.topo, "/reset", post=True)
             rec.update(self._load(cell, cid, local, data, stop_local, stop_data, hosts, ports, targets))
             if base in ("vericto-enforce", "vericto-observe"):

@@ -77,6 +77,16 @@ class Suites(unittest.TestCase):
         self.assertEqual(variant_ref("VERICTO_PROXY_4_14_3_IMAGE", {"VERICTO_PROXY_4_14_3_IMAGE": ref}, {}), ref)
         self.assertIsNone(variant_ref("VERICTO_X_IMAGE", {}, {"PROXY_IMAGE_OVERRIDE": ref}))
 
+    def test_policies_on_variants_need_the_signing_stub(self):
+        from vbr import targets as TG
+        s = S.load(os.path.join(REPO, "suites", "proxy-4172-policies.toml"))
+        self.assertTrue(TG.policies_on(s.variants["vericto-pol-4172"]))
+        self.assertTrue(TG.policies_on(s.variants["vericto-pol-4170"]))
+        self.assertFalse(TG.policies_on(s.variants["vericto-enforce-4172"]))
+        self.assertFalse(TG.policies_on(None))
+        g = S.load(os.path.join(REPO, "suites", "proxy-4172-gate-a.toml"))
+        self.assertFalse(any(TG.policies_on(v) for v in g.variants.values()), "the gate runs policies off")
+
     def test_variant_sizes(self):
         s = S.load(os.path.join(REPO, "suites", "proxy-tail.toml"))
         self.assertEqual(s.variants["vericto-enforce-4153-fg"].size, "0.5x2c")

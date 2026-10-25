@@ -25,6 +25,9 @@ func main() {
 	listen := flag.String("listen", "127.0.0.1:9090", "address")
 	rules := flag.String("rules", "", "rules export from engine-eval --export-rules (required)")
 	sensitive := flag.String("sensitive", "", "JSON array of sensitive-column tags (optional)")
+	sign := flag.Bool("sign", false, "sign every bundle with an ephemeral Ed25519 key (public key at GET /signing-keys)")
+	policyRules := flag.String("policy-rules", "", "JSON array of business policy rules, sent to a proxy that announces cel/1 (optional)")
+	principals := flag.String("principals", "", "JSON principals section, with -policy-rules (optional)")
 	flag.Parse()
 	if *rules == "" {
 		log.Fatal("cpstub: -rules is required")
@@ -38,12 +41,29 @@ func main() {
 			log.Fatalf("cpstub: %v", err)
 		}
 	}
+	cfg.Sign = *sign
+	if *policyRules != "" {
+		if err := readJSON(*policyRules, &cfg.PolicyRules); err != nil {
+			log.Fatalf("cpstub: %v", err)
+		}
+	}
+	if *principals != "" {
+		b, err := os.ReadFile(*principals)
+		if err != nil {
+			log.Fatalf("cpstub: %v", err)
+		}
+		if !json.Valid(b) {
+			log.Fatalf("cpstub: %s: not JSON", *principals)
+		}
+		cfg.Principals = b
+	}
 	s, err := cpstub.New(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("cpstub: %d rules (engine %s, ruleset %s), %d sensitive columns, listening on %s",
-		len(cfg.Rules.Rules), cfg.Rules.EngineVersion, cfg.Rules.RulesetVersion, len(cfg.SensitiveColumns), *listen)
+	log.Printf("cpstub: %d rules (engine %s, ruleset %s), %d sensitive columns, %d policy rules, signed %v, listening on %s",
+		len(cfg.Rules.Rules), cfg.Rules.EngineVersion, cfg.Rules.RulesetVersion, len(cfg.SensitiveColumns),
+		len(cfg.PolicyRules), cfg.Sign, *listen)
 	srv := &http.Server{Addr: *listen, Handler: s.Handler(), ReadHeaderTimeout: 10 * time.Second}
 	log.Fatal(srv.ListenAndServe())
 }

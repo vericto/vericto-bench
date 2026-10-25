@@ -19,7 +19,8 @@ COPY cmd ./cmd
 COPY internal ./internal
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=${VERSION}" -o /out/vbench ./cmd/vbench && \
     CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/cpstub ./cmd/cpstub && \
-    CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/hostmon ./cmd/hostmon
+    CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/hostmon ./cmd/hostmon && \
+    CGO_ENABLED=0 go test ./internal/cpstub/
 
 FROM ${RUST_IMAGE} AS rust
 RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends libclang-dev && rm -rf /var/lib/apt/lists/*
@@ -36,5 +37,7 @@ COPY --from=go /out/vbench /out/cpstub /out/hostmon /usr/local/bin/
 COPY --from=rust /engine-eval /usr/local/bin/engine-eval
 COPY --from=rust /rules.json /opt/vericto-bench/rules.json
 COPY configs/cpstub/sensitive.json /opt/vericto-bench/sensitive.json
+COPY configs/cpstub/policy-rules.json /opt/vericto-bench/policy-rules.json
+COPY configs/cpstub/principals.json /opt/vericto-bench/principals.json
 LABEL org.opencontainers.image.source="https://github.com/vericto/vericto-bench" \
       org.opencontainers.image.licenses="Apache-2.0 AND FSL-1.1-ALv2"
