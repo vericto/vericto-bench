@@ -1,0 +1,107 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Proxy tail latency near saturation (results/bench-2026-11-proxy-tail). Not
+# published. BENCH-2026-11 measured an added p99 of about 43 ms for PostgreSQL W1
+# at 80% of S at 0.5 vCPU (3.6 ms at 70%), and 32.9 ms for MySQL W3 at 90%. This
+# suite re-measures the knee on vericto-proxy 4.15.3 and the variants that could
+# move it, with the cgroup throttling and the proxy's threads recorded per cell
+# (hostmon at 1 Hz, host/schedmon.py at 100 ms and per thread).
+#
+# Fixed before the run:
+# - S per engine: BENCH-2026-11 day 1 (PostgreSQL W1 6,032.6/s, MySQL W3
+#   356.6/s at 0.5 vCPU, 4.14.2), so that the rates are the same absolute
+#   values as the published cells;
+# - pg-knee: PostgreSQL W1 (pgbench select-only, extended, TLS) at 60, 70, 80
+#   and 90% of S; my-knee: MySQL W3 (oltp_read_only replay, text, TLS) at 80
+#   and 90% of S;
+# - targets, each against direct at the same rate in the same repetition:
+#   4.15.3 at 0.5 (one core, 50% quota: the published size);
+#   the 4.16.1 candidate at 0.5 (workers sized from the CPU limit), and with
+#   VERICTO_BLOCKING_THREADS=4;
+#   4.15.3 and the candidate at 0.5x2c (the 50% quota over two cores, as a
+#   0.5 vCPU Fargate task on its 2-vCPU host). On Fargate the quota is not
+#   visible in the container, so 4.15.3 starts 2 workers there: the 4.15.3
+#   variant sets TOKIO_WORKER_THREADS=2 to reproduce that, since Docker on EC2
+#   shows the quota; the candidate reads the ECS task limit on Fargate and the
+#   cgroup quota here, 1 worker either way;
+#   4.15.3 at 1 vCPU (a whole core, no quota);
+# - 3 repetitions, a Williams order of the targets per (repetition, rate), the
+#   rates shuffled with the seed; 30 s warm-up, 120 s measured, 10 s cool-down.
+
+[suite]
+name = "proxy-tail"
+profile = "quick"
+order_seed = 2026102302
+reps = 3
+warmup_s = 30
+duration_s = 120
+cooldown_s = 10
+interval_s = 10
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4153]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_15_3_IMAGE"
+label = "4.15.3, 0.5"
+
+[variant.vericto-enforce-cand]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+label = "4.16.1 candidate, 0.5"
+
+[variant.vericto-enforce-cand-b4]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_BLOCKING_THREADS = "4" }
+label = "4.16.1 candidate, 0.5, VERICTO_BLOCKING_THREADS=4"
+
+[variant.vericto-enforce-4153-fg]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_15_3_IMAGE"
+size = "0.5x2c"
+env = { TOKIO_WORKER_THREADS = "2" }
+label = "4.15.3, 0.5 over two cores, 2 workers (as on Fargate)"
+
+[variant.vericto-enforce-cand-fg]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+size = "0.5x2c"
+label = "4.16.1 candidate, 0.5 over two cores (1 worker)"
+
+[variant.vericto-enforce-4153-1c]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_15_3_IMAGE"
+size = "1"
+label = "4.15.3, 1 vCPU"
+
+[[curve]]
+id = "pg-knee"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4153", "vericto-enforce-cand", "vericto-enforce-cand-b4",
+           "vericto-enforce-4153-fg", "vericto-enforce-cand-fg", "vericto-enforce-4153-1c"]
+rates_pct = [60, 70, 80, 90]
+saturation_qps = 6032.6
+
+[[curve]]
+id = "my-knee"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4153", "vericto-enforce-cand", "vericto-enforce-cand-b4",
+           "vericto-enforce-4153-fg", "vericto-enforce-cand-fg", "vericto-enforce-4153-1c"]
+rates_pct = [80, 90]
+saturation_qps = 356.6

@@ -35,6 +35,11 @@ chmod -R a+rX /opt/vericto-bench
 
 bash /opt/vericto-bench/host/setup.sh sut
 LIBRARY_MIRROR=public.ecr.aws/docker/library PROXY_FROM_MIRROR=1 bash /opt/vericto-bench/host/pull-images.sh
+# Scheduler monitor (host/schedmon.py): 100 ms cgroup cpu.stat and per-thread
+# CPU and run-queue wait of the proxy containers, on the auxiliary core.
+CPU_AUX="$(sed -n 's/^CPU_AUX=//p' /etc/vericto-bench/host.env)"
+nohup taskset -c "$${CPU_AUX:-0}" python3 /opt/vericto-bench/host/schedmon.py --out /var/log/vericto-bench/schedmon.jsonl \
+  > /var/log/vericto-bench/schedmon.log 2>&1 &
 chmod -R a+rX /var/log/vericto-bench
 touch /etc/vericto-bench/ready
 echo "SUT ready"

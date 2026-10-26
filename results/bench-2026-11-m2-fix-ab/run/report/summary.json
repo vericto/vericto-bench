@@ -1,0 +1,61 @@
+{
+  "banner": null,
+  "runs": [
+    "bench-2026-11-m2-fix-ab-3"
+  ],
+  "profiles": [
+    "quick"
+  ],
+  "cells": 94,
+  "used": 92,
+  "invalid": 0,
+  "deltas": [],
+  "cpu_fits": [
+    {
+      "curve": "ab-my-w3-05",
+      "engine": "mysql",
+      "target": "vericto-enforce-4143",
+      "size": "0.5",
+      "n": 24,
+      "slope": 0.09139801427245371,
+      "slope_lo": 0.0875404485295777,
+      "slope_hi": 0.09525558001532973,
+      "intercept": 0.0074627097390165265,
+      "intercept_lo": -0.0038255048323253757,
+      "intercept_hi": 0.01875092431035843,
+      "usd_per_month_per_1000qps_at_100pct": 2.1604114225636972,
+      "usd_per_month_per_1000qps_at_70pct": 3.0863020322338532,
+      "usd_per_month_per_1000qps_at_50pct": 4.3208228451273945
+    },
+    {
+      "curve": "ab-my-w3-05",
+      "engine": "mysql",
+      "target": "vericto-enforce-cand-off",
+      "size": "0.5",
+      "n": 24,
+      "slope": 0.08456210926955009,
+      "slope_lo": 0.07967506644795064,
+      "slope_hi": 0.08944915209114954,
+      "intercept": 0.010588015684055707,
+      "intercept_lo": -0.0037127096092017704,
+      "intercept_hi": 0.024888740977313185,
+      "usd_per_month_per_1000qps_at_100pct": 1.9988284016480633,
+      "usd_per_month_per_1000qps_at_70pct": 2.855469145211519,
+      "usd_per_month_per_1000qps_at_50pct": 3.9976568032961266
+    }
+  ],
+  "validation": [],
+  "aborted_by_cap": [],
+  "charts": [
+    "charts/cpu-ab-my-w3-05-vericto-enforce-4143.png",
+    "charts/cpu-ab-my-w3-05-vericto-enforce-cand-off.png",
+    "charts/throughput-sat-my-w3-05.png",
+    "charts/throughput-sat-pg-w1-05.png",
+    "charts/spectrum-ab-my-w3-05.png",
+    "charts/spectrum-ab-pg-w1-05.png"
+  ],
+  "label": null,
+  "size_fits": [],
+  "large_results": [],
+  "large_results_cpu_fits": []
+}

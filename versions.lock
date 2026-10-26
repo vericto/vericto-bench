@@ -21,13 +21,25 @@ VERICTO_PROXY_MIRROR=ghcr.io/vericto/vericto-proxy
 PUBLISHED_PROXY_VERSION=4.14.2
 # The engine the proxy pins (vericto-proxy Cargo.toml): engine-eval and the stub's rules use the same tag.
 VERICTO_ENGINE_TAG=v4.3.0
+# Release comparisons (suite [variant.*] targets; never profile=published). Same
+# digests on GHCR (VERICTO_PROXY_MIRROR). 4.14.3 changes only the code's default
+# log filter (the harness sets RUST_LOG=info anyway); 4.15.0 pins engine v4.4.0,
+# whose 42 built-in rules and evaluate() are unchanged, and adds
+# VERICTO_POLICY_RULES (default off).
+VERICTO_PROXY_4_14_3_IMAGE=docker.io/vericto/vericto-proxy:4.14.3@sha256:66fa5e986f2b63089c5bcf07324bc2a0501920e6d180997c04d0526cf75c7354
+VERICTO_PROXY_4_15_0_IMAGE=docker.io/vericto/vericto-proxy:4.15.0@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124
+# 4.15.3: less CPU per statement (telemetry serialization); the baseline of the tail-latency investigation.
+VERICTO_PROXY_4_15_3_IMAGE=docker.io/vericto/vericto-proxy:4.15.3@sha256:e543749208dbc485de08d139de6b4e7c82fd29f227c6b1b52a7ec7b0669667cf
 
 # --- Databases ----------------------------------------------------------------
-POSTGRES_IMAGE=docker.io/library/postgres:17.6@sha256:00bc86618629af00d2937fdc5a5d63db3ff8450acf52f0636ec813c7f4902929
-MYSQL_IMAGE=docker.io/library/mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70
+# Latest patch releases on 2026-10-23 (BENCH-2026-11 ran 17.6 and 8.4.11; the
+# runs of results/bench-2026-11-proxy-tail and later use these).
+POSTGRES_IMAGE=docker.io/library/postgres:17.11@sha256:b8faeff7712663c2773a190181e1246e37e364b887611c04658c28b44e2408fe
+MYSQL_IMAGE=docker.io/library/mysql:8.4.13@sha256:76f0358884cb92d9a086d24e5671c38048d3fef40f2588703d73eb55392d6b69
 
 # --- Baselines ----------------------------------------------------------------
-HAPROXY_IMAGE=docker.io/library/haproxy:3.0.30@sha256:836f65081bc532d2d024641ca868122105cca2f150effd2e04f8c155258b9ef8
+# 3.0.30 rebuilt upstream (current digest of the tag on 2026-10-23).
+HAPROXY_IMAGE=docker.io/library/haproxy:3.0.30@sha256:f7f26e983c1c1d0c99d2a82e5a7135d9c77917eb51d0bd3b624bd3d75b10ca30
 # PgBouncer has no official image: built from the release tarball (docker/pgbouncer).
 PGBOUNCER_VERSION=1.24.1
 PGBOUNCER_SHA256=da72a3aba13072876d055a3e58dd4aba4a5de4ed6148e73033185245598fd3e0
@@ -37,12 +49,13 @@ PROXYSQL_DEB_SHA256_ARM64=da7aba2be2f98fabc48487130f7a285b4157dbb96dea7251e8aa5b
 PROXYSQL_DEB_SHA256_AMD64=8a372ff5fcae6a1bfa55982bb11f4380fb47252e933d690ecc82ffcb1998c4f0
 
 # --- Load generators ----------------------------------------------------------
-# pgbench comes from POSTGRES_IMAGE (17.6). sysbench from Ubuntu 24.04 (docker/sysbench).
+# pgbench comes from POSTGRES_IMAGE (17.11). sysbench from Ubuntu 24.04 (docker/sysbench).
 SYSBENCH_APT_VERSION=1.0.20+ds-6build2
 
 # --- Build and analysis images --------------------------------------------------
-GO_IMAGE=docker.io/library/golang:1.23-alpine@sha256:383395b794dffa5b53012a212365d40c8e37109a626ca30d6151c8348d380b5f
+# Latest on 2026-10-23: Go 1.27 (go.mod stays at go 1.25.0), Alpine 3.24.3 (3.20 is out of support).
+GO_IMAGE=docker.io/library/golang:1.27-alpine@sha256:b8c9b82affbbb82a020bbcf998dad2ba9516944ac7e883524642a481a9505e9c
 RUST_IMAGE=docker.io/library/rust:1.88-bookworm@sha256:af306cfa71d987911a781c37b59d7d67d934f49684058f96cf72079c3626bfe0
-ALPINE_IMAGE=docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+ALPINE_IMAGE=docker.io/library/alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
 UBUNTU_IMAGE=docker.io/library/ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac
 MATPLOTLIB_APT_VERSION=3.6.3-1ubuntu5

@@ -31,6 +31,19 @@ if [ -n "${PROXY_IMAGE_OVERRIDE:-}" ]; then
 fi
 [ "${#images[@]}" -gt 0 ] || { echo "no *_IMAGE entries in $LOCK" >&2; exit 3; }
 
+# An override in a private Amazon ECR repository (an unreleased candidate):
+# log in to that registry with the host role (terraform grants it pull on
+# exactly that repository). Public registries need no login.
+ecr_re='^([0-9]{12})\.dkr\.ecr\.([a-z0-9-]+)\.amazonaws\.com/'
+if [[ "${PROXY_IMAGE_OVERRIDE:-}" =~ $ecr_re ]]; then
+  registry="${BASH_REMATCH[1]}.dkr.ecr.${BASH_REMATCH[2]}.amazonaws.com"
+  for attempt in 1 2 3 4 5; do
+    aws ecr get-login-password --region "${BASH_REMATCH[2]}" | docker login --username AWS --password-stdin "$registry" >/dev/null && break
+    [ "$attempt" = 5 ] && { echo "ECR login failed for the override's registry" >&2; exit 4; }
+    sleep $((attempt * 10))
+  done
+fi
+
 # Same rewriting as runner/run.py: official images from LIBRARY_MIRROR, the
 # proxy from its mirror (GHCR), by the same digest. Docker Hub's anonymous pull
 # limit is shared by many EC2 hosts, so the user-data sets both.

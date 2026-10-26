@@ -5,12 +5,17 @@
 # private subnet with egress through a NAT gateway, no inbound access from
 # outside the VPC, SSM Session Manager for access, and an S3 bucket for results.
 # The hosts run the suite from user-data, upload the results and stop.
+#
+# Or, with existing_vpc_id, in an existing VPC whose private subnets already
+# route out through a NAT (gateway or instance): then no VPC, subnet, internet
+# gateway, NAT, route or S3 endpoint is created, only the run's own security
+# groups, placement group, bucket, roles and instances.
 
 locals {
   two_host     = var.topology == "two-host"
   name         = "vericto-bench-${var.run_id}"
   repo_root    = abspath("${path.module}/../..")
-  auto_hours   = { quick = 3, c7i = 14, day2 = 24, published = 132 }
+  auto_hours   = { quick = 3, "m2-quick" = 9, "m2-mysql-ab" = 5, "m2-fix-ab" = 5, "proxy-tail" = 10, "proxy-tail-control" = 3, c7i = 14, day2 = 24, published = 132 }
   max_hours    = var.max_hours > 0 ? var.max_hours : lookup(local.auto_hours, var.suite, 30)
   max_minutes  = local.max_hours * 60
   day          = var.day > 0 ? var.day : (var.suite == "day2" ? 2 : 1)
@@ -30,7 +35,22 @@ locals {
       ], t)
     ])
   ])
-  az = var.availability_zone != "" ? var.availability_zone : local.az_candidates[0]
+  own_network = var.existing_vpc_id == ""
+
+  # Existing network: the hosts go to existing_placement_subnet_id, or else to the
+  # first of existing_subnet_ids whose AZ offers every instance type. A cluster
+  # placement group is one AZ, so both hosts share that one subnet.
+  existing_subnet_az = { for id, sn in data.aws_subnet.existing : id => sn.availability_zone }
+  existing_placement = var.existing_placement_subnet_id != "" ? var.existing_placement_subnet_id : try(
+    [for id in var.existing_subnet_ids : id if contains(local.az_candidates, local.existing_subnet_az[id])][0], ""
+  )
+
+  az = (local.own_network
+    ? (var.availability_zone != "" ? var.availability_zone : local.az_candidates[0])
+    : try(local.existing_subnet_az[local.existing_placement], data.aws_subnet.placement[0].availability_zone)
+  )
+  vpc_id         = local.own_network ? one(aws_vpc.bench[*].id) : var.existing_vpc_id
+  host_subnet_id = local.own_network ? one(aws_subnet.private[*].id) : local.existing_placement
 
   # Bench ports the SUT accepts from the load generator (two-host only).
   # 5432/3306 databases (direct), 6432-6433/6306-6307 vericto-proxy (1st, 2nd task),
@@ -91,9 +111,21 @@ locals {
 
 data "aws_partition" "current" {}
 
+data "aws_subnet" "existing" {
+  for_each = local.own_network ? toset([]) : toset(var.existing_subnet_ids)
+  id       = each.value
+}
+
+data "aws_subnet" "placement" {
+  count = !local.own_network && var.existing_placement_subnet_id != "" && !contains(var.existing_subnet_ids, var.existing_placement_subnet_id) ? 1 : 0
+  id    = var.existing_placement_subnet_id
+}
+
 # ---------------------------------------------------------------- network
 
 resource "aws_vpc" "bench" {
+  count = local.own_network ? 1 : 0
+
   cidr_block           = "10.81.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -102,13 +134,17 @@ resource "aws_vpc" "bench" {
 }
 
 resource "aws_internet_gateway" "bench" {
-  vpc_id = aws_vpc.bench.id
+  count = local.own_network ? 1 : 0
+
+  vpc_id = aws_vpc.bench[0].id
   tags   = { Name = local.name }
 }
 
 # Public subnet: holds only the NAT gateway. No instance has a public IP.
 resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.bench.id
+  count = local.own_network ? 1 : 0
+
+  vpc_id                  = aws_vpc.bench[0].id
   cidr_block              = "10.81.0.0/24"
   availability_zone       = local.az
   map_public_ip_on_launch = false
@@ -116,7 +152,9 @@ resource "aws_subnet" "public" {
 }
 
 resource "aws_subnet" "private" {
-  vpc_id                  = aws_vpc.bench.id
+  count = local.own_network ? 1 : 0
+
+  vpc_id                  = aws_vpc.bench[0].id
   cidr_block              = "10.81.1.0/24"
   availability_zone       = local.az
   map_public_ip_on_launch = false
@@ -124,56 +162,70 @@ resource "aws_subnet" "private" {
 }
 
 resource "aws_eip" "nat" {
+  count = local.own_network ? 1 : 0
+
   domain = "vpc"
   tags   = { Name = "${local.name}-nat" }
 }
 
 resource "aws_nat_gateway" "bench" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public.id
+  count = local.own_network ? 1 : 0
+
+  allocation_id = aws_eip.nat[0].id
+  subnet_id     = aws_subnet.public[0].id
   tags          = { Name = local.name }
 
   depends_on = [aws_internet_gateway.bench]
 }
 
 resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.bench.id
+  count = local.own_network ? 1 : 0
+
+  vpc_id = aws_vpc.bench[0].id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.bench.id
+    gateway_id = aws_internet_gateway.bench[0].id
   }
 
   tags = { Name = "${local.name}-public" }
 }
 
 resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public.id
+  count = local.own_network ? 1 : 0
+
+  subnet_id      = aws_subnet.public[0].id
+  route_table_id = aws_route_table.public[0].id
 }
 
 resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.bench.id
+  count = local.own_network ? 1 : 0
+
+  vpc_id = aws_vpc.bench[0].id
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.bench.id
+    nat_gateway_id = aws_nat_gateway.bench[0].id
   }
 
   tags = { Name = "${local.name}-private" }
 }
 
 resource "aws_route_table_association" "private" {
-  subnet_id      = aws_subnet.private.id
-  route_table_id = aws_route_table.private.id
+  count = local.own_network ? 1 : 0
+
+  subnet_id      = aws_subnet.private[0].id
+  route_table_id = aws_route_table.private[0].id
 }
 
 # S3 traffic (harness download, results upload) stays off the NAT gateway.
 resource "aws_vpc_endpoint" "s3" {
-  vpc_id            = aws_vpc.bench.id
+  count = local.own_network ? 1 : 0
+
+  vpc_id            = aws_vpc.bench[0].id
   service_name      = "com.amazonaws.${var.region}.s3"
   vpc_endpoint_type = "Gateway"
-  route_table_ids   = [aws_route_table.private.id]
+  route_table_ids   = [aws_route_table.private[0].id]
   tags              = { Name = "${local.name}-s3" }
 }
 
@@ -181,7 +233,7 @@ resource "aws_vpc_endpoint" "s3" {
 resource "aws_security_group" "loadgen" {
   name        = "${local.name}-loadgen"
   description = "vericto-bench load generator: no inbound access"
-  vpc_id      = aws_vpc.bench.id
+  vpc_id      = local.vpc_id
 
   egress {
     description = "Image pulls, SSM, S3, the SUT"
@@ -199,7 +251,7 @@ resource "aws_security_group" "loadgen" {
 resource "aws_security_group" "sut" {
   name        = "${local.name}-sut"
   description = "vericto-bench SUT: inbound only from the load generator SG"
-  vpc_id      = aws_vpc.bench.id
+  vpc_id      = local.vpc_id
 
   dynamic "ingress" {
     for_each = local.two_host ? local.sut_ports : []
@@ -313,6 +365,12 @@ data "archive_file" "harness" {
     "terraform/aws/terraform.tfstate",
     "terraform/aws/terraform.tfstate.backup",
     "terraform/aws/results",
+    "terraform/aws/run.tfplan",
+    "terraform/aws/.terraform.tfstate.lock.info",
+    "terraform/archive/.terraform",
+    "terraform/archive/archive.tfplan",
+    "terraform/archive/terraform.tfstate",
+    "terraform/archive/terraform.tfstate.backup",
   ]
 }
 
@@ -438,6 +496,48 @@ resource "aws_iam_role_policy" "loadgen" {
   policy = data.aws_iam_policy_document.loadgen[0].json
 }
 
+# proxy_image_override in a private Amazon ECR repository (an unreleased
+# candidate, pushed to a bench-only repository): both hosts may pull exactly
+# that repository (host/pull-images.sh logs in with the host role).
+locals {
+  override_ecr = regex("^(?:([0-9]{12})\\.dkr\\.ecr\\.([a-z0-9-]+)\\.amazonaws\\.com/([^@:]+))?", var.proxy_image_override)
+  override_ecr_repository_arn = local.override_ecr[0] == null ? "" : format(
+    "arn:%s:ecr:%s:%s:repository/%s",
+    data.aws_partition.current.partition, local.override_ecr[1], local.override_ecr[0], local.override_ecr[2]
+  )
+  hosts_pull_ecr = local.override_ecr_repository_arn != ""
+}
+
+data "aws_iam_policy_document" "ecr_pull" {
+  count = local.hosts_pull_ecr ? 1 : 0
+
+  statement {
+    sid       = "EcrLogin"
+    actions   = ["ecr:GetAuthorizationToken"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "PullOverride"
+    actions   = ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer", "ecr:BatchCheckLayerAvailability"]
+    resources = [local.override_ecr_repository_arn]
+  }
+}
+
+resource "aws_iam_role_policy" "sut_ecr_pull" {
+  count  = local.hosts_pull_ecr ? 1 : 0
+  name   = "vericto-bench-ecr-pull"
+  role   = aws_iam_role.sut.id
+  policy = data.aws_iam_policy_document.ecr_pull[0].json
+}
+
+resource "aws_iam_role_policy" "loadgen_ecr_pull" {
+  count  = local.hosts_pull_ecr && local.two_host ? 1 : 0
+  name   = "vericto-bench-ecr-pull"
+  role   = aws_iam_role.loadgen[0].id
+  policy = data.aws_iam_policy_document.ecr_pull[0].json
+}
+
 resource "aws_iam_instance_profile" "sut" {
   name_prefix = "vbench-sut-"
   role        = aws_iam_role.sut.name
@@ -470,7 +570,7 @@ locals {
 resource "aws_instance" "sut" {
   ami                                  = local.ami[local.sut_arch]
   instance_type                        = var.sut_instance_type
-  subnet_id                            = aws_subnet.private.id
+  subnet_id                            = local.host_subnet_id
   vpc_security_group_ids               = [aws_security_group.sut.id]
   iam_instance_profile                 = aws_iam_instance_profile.sut.name
   placement_group                      = aws_placement_group.bench.id
@@ -506,12 +606,20 @@ resource "aws_instance" "sut" {
 
   tags = { Name = local.two_host ? "${local.name}-sut" : "${local.name}-single" }
 
+  lifecycle {
+    precondition {
+      condition     = local.own_network || (local.host_subnet_id != "" && contains(local.az_candidates, local.az))
+      error_message = "existing_vpc_id: no subnet among existing_subnet_ids / existing_placement_subnet_id is in an AZ that offers every instance type of this run."
+    }
+  }
+
   depends_on = [
     aws_route_table_association.private,
     aws_nat_gateway.bench,
     aws_vpc_endpoint.s3,
     aws_s3_object.harness,
     aws_iam_role_policy.sut,
+    aws_iam_role_policy.sut_ecr_pull,
   ]
 }
 
@@ -520,7 +628,7 @@ resource "aws_instance" "loadgen" {
 
   ami                                  = local.ami[local.loadgen_arch]
   instance_type                        = var.loadgen_instance_type
-  subnet_id                            = aws_subnet.private.id
+  subnet_id                            = local.host_subnet_id
   vpc_security_group_ids               = [aws_security_group.loadgen.id]
   iam_instance_profile                 = aws_iam_instance_profile.loadgen[0].name
   placement_group                      = aws_placement_group.bench.id
@@ -553,5 +661,52 @@ resource "aws_instance" "loadgen" {
 
   tags = { Name = "${local.name}-loadgen" }
 
-  depends_on = [aws_iam_role_policy.loadgen]
+  depends_on = [aws_iam_role_policy.loadgen, aws_iam_role_policy.loadgen_ecr_pull]
+}
+
+# Before existing_vpc_id, the network resources had no count. A state from that
+# version moves to index 0 instead of being destroyed and recreated.
+moved {
+  from = aws_vpc.bench
+  to   = aws_vpc.bench[0]
+}
+moved {
+  from = aws_internet_gateway.bench
+  to   = aws_internet_gateway.bench[0]
+}
+moved {
+  from = aws_subnet.public
+  to   = aws_subnet.public[0]
+}
+moved {
+  from = aws_subnet.private
+  to   = aws_subnet.private[0]
+}
+moved {
+  from = aws_eip.nat
+  to   = aws_eip.nat[0]
+}
+moved {
+  from = aws_nat_gateway.bench
+  to   = aws_nat_gateway.bench[0]
+}
+moved {
+  from = aws_route_table.public
+  to   = aws_route_table.public[0]
+}
+moved {
+  from = aws_route_table_association.public
+  to   = aws_route_table_association.public[0]
+}
+moved {
+  from = aws_route_table.private
+  to   = aws_route_table.private[0]
+}
+moved {
+  from = aws_route_table_association.private
+  to   = aws_route_table_association.private[0]
+}
+moved {
+  from = aws_vpc_endpoint.s3
+  to   = aws_vpc_endpoint.s3[0]
 }

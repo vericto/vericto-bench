@@ -1,0 +1,126 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# M2 release gate, targeted diagnostic: the one cell that failed the M2 quick run
+# (suites/m2-quick.toml, results/bench-2026-11-m2-quick): MySQL W3 (oltp_read_only,
+# vbench replay, text protocol, TLS, 0.5 vCPU), vericto-proxy 4.15.0 with
+# VERICTO_POLICY_RULES=off against 4.14.3. Same hosts, configuration, warm-up
+# (15 s) and duration (60 s) per cell as the quick suite. Not published.
+#
+# Fixed before the run:
+# - S: the closed-loop maximum of 4.14.3, measured in this session;
+# - ab-my-w3-05: 40, 50 and 60% of S, 8 repetitions; within each repetition the
+#   rates are shuffled with the seed and every rate runs both releases next to
+#   each other, 4.14.3 first in odd repetitions and 4.15.0(off) first in even
+#   ones (order = "listed-reversed"): each release runs first 4 times per rate;
+# - swap-my-w3-05: 50% of S with each release twice back to back, 4.14.3,
+#   4.14.3, 4.15.0, 4.15.0, then the mirror order (aliases *-2nd: same image,
+#   same environment), to separate an order or warm-up effect from the release;
+# - prof-my-w3-05: 50% of S, each release once first and once second, with perf
+#   record of the proxy for 30 s after the warm-up (host/profile.sh). Profiled
+#   cells carry the profiler's overhead: they are not part of the latency
+#   comparison.
+# Decision rule: the regression holds if the paired difference 4.15.0(off) minus
+# 4.14.3 at 50% of S (ab-my-w3-05, n = 8) has a 95% interval that excludes 0 at
+# p50 or p99 (analysis/ab.py).
+
+[suite]
+name = "m2-mysql-ab"
+profile = "quick"
+order_seed = 2026102201
+reps = 8
+warmup_s = 15
+duration_s = 60
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-enforce-4143"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4143]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_14_3_IMAGE"
+label = "4.14.3"
+
+[variant.vericto-enforce-4150-off]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_15_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.15.0, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-4143-2nd]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_14_3_IMAGE"
+label = "4.14.3 (second back-to-back run)"
+
+[variant.vericto-enforce-4150-off-2nd]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_15_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.15.0, VERICTO_POLICY_RULES=off (second back-to-back run)"
+
+# Closed-loop saturation (S = 4.14.3's maximum), as in m2-quick
+[[curve]]
+id = "sat-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4143", "vericto-enforce-4150-off"]
+loop = "closed"
+concurrency = [1, 4, 16, 64]
+warmup_s = 10
+duration_s = 30
+reps = 1
+
+# The A/B: 40, 50, 60% of S, 8 alternating repetitions
+[[curve]]
+id = "ab-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4143", "vericto-enforce-4150-off"]
+rates_pct = [40, 50, 60]
+saturation_from = "sat-my-w3-05"
+order = "listed-reversed"
+reps = 8
+
+# Order / warm-up control at 50%: AABB then BBAA
+[[curve]]
+id = "swap-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4143", "vericto-enforce-4143-2nd", "vericto-enforce-4150-off", "vericto-enforce-4150-off-2nd"]
+rates_pct = [50]
+saturation_from = "sat-my-w3-05"
+order = "listed-reversed"
+reps = 2
+
+# CPU profiles at 50% (not used for latency)
+[[curve]]
+id = "prof-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4143", "vericto-enforce-4150-off"]
+rates_pct = [50]
+saturation_from = "sat-my-w3-05"
+order = "listed-reversed"
+reps = 2
+profile_s = 30

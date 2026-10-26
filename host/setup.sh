@@ -28,6 +28,11 @@ chmod 0755 "$LOG_DIR"
 log() { printf '%s setup[%s]: %s\n' "$(date -u +%FT%TZ)" "$ROLE" "$*"; }
 
 # ---------------------------------------------------------------- packages
+# OS updates at boot: the latest AL2023 release (the AMI is the latest too, from
+# its public SSM parameter). A newer kernel would only run after a reboot;
+# provenance records the running and the installed kernels.
+log "applying OS updates"
+dnf -y -q upgrade --releasever=latest >/dev/null
 log "installing packages"
 dnf -y -q install docker nftables chrony python3 python3.11 git jq sysstat unzip ethtool make tar gzip >/dev/null
 command -v aws >/dev/null || dnf -y -q install awscli-2 >/dev/null
@@ -59,9 +64,27 @@ if [ "$ROLE" = "sut" ] && [ -s "$ETC/sut_authorized_key" ]; then
 fi
 NFT="$(command -v nft)"
 SHUTDOWN="$(command -v shutdown)"
+PROFILE=""
+if [ "$ROLE" = sut ]; then
+  # CPU profiles (curves with profile_s > 0): perf and FlameGraph's stack
+  # collapser, pinned by commit.
+  dnf -y -q install perf perl >/dev/null
+  FG=/opt/vericto-bench-flamegraph
+  # Retried: egress through a just-created NAT gateway can fail for the first
+  # minutes after boot.
+  for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    [ -d "$FG/.git" ] && break
+    rm -rf "$FG"
+    git clone -q https://github.com/brendangregg/FlameGraph.git "$FG" && break
+    log "FlameGraph clone failed (attempt $attempt); retrying in 30 s"
+    sleep 30
+  done
+  git -C "$FG" checkout -q 41fee1f99f9276008b7cd112fca19dc3ea84ac32
+  PROFILE=", $HERE/profile.sh *"
+fi
 cat > /etc/sudoers.d/vericto-bench <<SUDO
 # vericto-bench: the only commands the bench user may run as root.
-bench ALL=(root) NOPASSWD: $SHUTDOWN -h now, $NFT -j list counters table inet vbench, $NFT list *
+bench ALL=(root) NOPASSWD: $SHUTDOWN -h now, $NFT -j list counters table inet vbench, $NFT list *$PROFILE
 SUDO
 chmod 0440 /etc/sudoers.d/vericto-bench
 visudo -cf /etc/sudoers.d/vericto-bench >/dev/null

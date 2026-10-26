@@ -39,7 +39,7 @@ make lint        # gofmt, go vet, bash -n, py_compile
 compose/smoke.sh # the laptop smoke run (Docker): NOT FOR PUBLISHED NUMBERS
 ```
 
-Requires Go 1.23+, Python 3.11+, Docker with Compose, and for `engine-eval`
+Requires Go 1.25+, Python 3.11+, Docker with Compose, and for `engine-eval`
 Rust 1.88+ with `libclang` (or build it in its image: `make tools`).
 
 New source files start with the two SPDX lines used everywhere in this

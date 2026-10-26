@@ -8,7 +8,7 @@ variable "region" {
 }
 
 variable "availability_zone" {
-  description = "AZ for both hosts. Empty = the first AZ (sorted) that offers every instance type used."
+  description = "AZ for both hosts. Empty = the first AZ (sorted) that offers every instance type used. Ignored with existing_vpc_id (the placement subnet decides)."
   type        = string
   default     = ""
 }
@@ -97,7 +97,7 @@ variable "auto_shutdown" {
 }
 
 variable "max_hours" {
-  description = "Hard runtime guard: every host schedules `shutdown -h` this many hours after boot. 0 = automatic: quick 3, c7i 14, day2 24, published 132 (the planner's upper bound of 118 h plus setup), otherwise 30."
+  description = "Hard runtime guard: every host schedules `shutdown -h` this many hours after boot. 0 = automatic: quick 3, m2-quick 9, m2-mysql-ab 5, m2-fix-ab 5, c7i 14, day2 24, published 132 (the planner's upper bound of 118 h plus setup), otherwise 30."
   type        = number
   default     = 0
 
@@ -126,5 +126,38 @@ variable "day" {
   validation {
     condition     = var.day >= 0 && var.day <= 9
     error_message = "day must be between 0 (automatic) and 9."
+  }
+}
+
+variable "existing_vpc_id" {
+  description = "Empty (default): the run creates its own VPC, subnets, internet gateway, NAT gateway and S3 endpoint. A VPC id: the run uses that VPC instead and creates none of them; its private subnets (existing_subnet_ids) must already route out through a NAT (gateway or instance), and an S3 gateway endpoint keeps the harness and results traffic off it."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.existing_vpc_id == "" || can(regex("^vpc-[0-9a-f]+$", var.existing_vpc_id))
+    error_message = "existing_vpc_id must be empty or a VPC id (vpc-...)."
+  }
+}
+
+variable "existing_subnet_ids" {
+  description = "With existing_vpc_id: private subnets of that VPC (no public IPs, default route to a NAT). Both hosts go into one of them, in an AZ that offers every instance type."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for s in var.existing_subnet_ids : can(regex("^subnet-[0-9a-f]+$", s))])
+    error_message = "existing_subnet_ids must be subnet ids (subnet-...)."
+  }
+}
+
+variable "existing_placement_subnet_id" {
+  description = "With existing_vpc_id: the subnet for both hosts and their cluster placement group (one AZ). Empty = the first of existing_subnet_ids in an AZ that offers every instance type."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.existing_placement_subnet_id == "" || can(regex("^subnet-[0-9a-f]+$", var.existing_placement_subnet_id))
+    error_message = "existing_placement_subnet_id must be empty or a subnet id (subnet-...)."
   }
 }

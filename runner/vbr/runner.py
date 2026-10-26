@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import secrets
 import statistics
 import subprocess
@@ -49,6 +50,14 @@ def mirror(ref: str, lock: dict[str, str]) -> str:
     return ref
 
 
+def variant_ref(image_key: str, lock: dict[str, str], env) -> str | None:
+    """The image reference of a variant: its versions.lock entry, or the run's
+    PROXY_IMAGE_OVERRIDE for image = "PROXY_IMAGE_OVERRIDE". None when unset."""
+    if image_key == S.OVERRIDE_IMAGE_KEY:
+        return env.get(S.OVERRIDE_IMAGE_KEY) or None
+    return lock.get(image_key)
+
+
 def pull_ref(ref: str) -> str:
     """docker run accepts name:tag@digest; keep only name@digest so the digest is what counts."""
     name, _, digest = ref.partition("@")
@@ -79,6 +88,18 @@ class Runner:
         self.proxy_ref = proxy_ref
         self._resolve_images({"proxy": proxy_ref, "postgres": self.lock["POSTGRES_IMAGE"], "mysql": self.lock["MYSQL_IMAGE"],
                               "haproxy": self.lock["HAPROXY_IMAGE"]})
+        # Variants (suite [variant.<name>]): other proxy images by digest, from versions.lock.
+        self.variant_refs: dict[str, str] = {}
+        self.variant_images: dict[str, str] = {}
+        for name, v in self.suite.variants.items():
+            ref = variant_ref(v.image_key, self.lock, os.environ)
+            if ref is None:
+                raise S.SuiteError(f"variant {name}: {v.image_key} is not in versions.lock (or, for "
+                                   f"{S.OVERRIDE_IMAGE_KEY}, not set for this run)")
+            if not re.search(r"@sha256:[0-9a-f]{64}$", ref):
+                raise S.SuiteError(f"variant {name}: {v.image_key} is not pinned by digest")
+            self.variant_refs[name] = ref
+            self.variant_images[name] = self._resolve_one(pull_ref(mirror(ref, self.lock)), ref)
         self.datasets = {"pgbench_scale": 100, "sysbench_tables": 8, "sysbench_rows": 1_000_000, "payload_rows": 10_000}
         self.datasets.update(self.suite.datasets)
         self.cells_path = os.path.join(self.out, "cells.jsonl")
@@ -89,6 +110,21 @@ class Runner:
             with open(args.caps) as f:
                 self.caps = json.load(f)
         self._check_profile()
+
+    def _resolve_one(self, mirrored: str, raw: str) -> str:
+        """_resolve_images for one reference: the mirror name, or the origin's
+        (same digest) where only that is on every host."""
+        origin = pull_ref(raw)
+        if self.topo.kind == "compose" or mirrored == origin:
+            return mirrored
+
+        def everywhere(ref: str) -> bool:
+            return all(h.docker("image", "inspect", "-f", "{{.Id}}", ref, check=False).returncode == 0
+                       for h in self.topo.hosts())
+        if not everywhere(mirrored) and everywhere(origin):
+            log(f"image {mirrored} not on every host; using the same digest as {origin}")
+            return origin
+        return mirrored
 
     def _resolve_images(self, origins: dict[str, str]):
         """host/pull-images.sh falls back to the original registry when a mirror
@@ -284,12 +320,20 @@ class Runner:
 
     # ---- cells ----------------------------------------------------------------------
 
+    def size_of(self, cell) -> str:
+        """The target's size in this cell: its variant's size, else the curve's."""
+        v = self.suite.variants.get(cell.target)
+        return (v.size if v and v.size else "") or cell.curve.size
+
     def start_targets(self, cell) -> list[T.Container]:
         c = cell.curve
         out = []
-        n = 2 if (c.size == "2x0.5" and cell.target.startswith("vericto")) else 1
+        size = self.size_of(cell)
+        n = 2 if (size == "2x0.5" and cell.target.startswith("vericto")) else 1
+        v = self.suite.variants.get(cell.target)
         for i in range(n):
-            t = TG.start_target(self.topo, self.images, c.engine, cell.target, c.size, c.tls, self.certs, second=i == 1)
+            t = TG.start_target(self.topo, self.images, c.engine, cell.target, size, c.tls, self.certs, second=i == 1,
+                                variant=v, variant_image=self.variant_images.get(cell.target, ""))
             if t:
                 out.append(t)
         return out
@@ -300,7 +344,7 @@ class Runner:
         task is its own container."""
         host, ports, _ = self.addr(cell.curve.engine, cell.target)
         hosts = [host]
-        if cell.curve.size == "2x0.5" and cell.target.startswith("vericto"):
+        if self.size_of(cell) == "2x0.5" and cell.target.startswith("vericto"):
             ports = [ports[0], TG.PORTS[(cell.curve.engine, "vericto2")]]
             hosts.append(T.addr(self.topo, self.topo.sut, f"vb-{cell.curve.engine}-{cell.target}-2"))
         return hosts, ports
@@ -314,7 +358,7 @@ class Runner:
         stop_local = os.path.join(local, "STOP")
         stop_data = f"{data}/STOP"
         rec = {"cell": cid, "curve": c.id, "engine": c.engine, "tool": c.tool, "arrival": c.arrival, "workload": c.workload, "mode": c.mode,
-               "tls": c.tls, "size": c.size, "target": cell.target, "loop": c.loop, "offered_rate": cell.rate,
+               "tls": c.tls, "size": self.size_of(cell), "target": cell.target, "loop": c.loop, "offered_rate": cell.rate,
                "rate_pct": cell.pct, "conc": cell.conc, "rep": cell.rep, "seq": cell.seq, "day": self.args.day,
                "started_at": now_iso(), "invalid_reasons": [], "warnings": []}
         log(f"cell {cid}")
@@ -323,18 +367,20 @@ class Runner:
             targets = self.start_targets(cell)
             hosts, ports = self.ports_for(cell)
             if cell.target != "direct":
-                self.wait_ready(c.engine, cell.target, timeout=120, expect_enforce=cell.target in ENFORCING, tls=c.tls)
+                self.wait_ready(c.engine, cell.target, timeout=120, expect_enforce=self.suite.base(cell.target) in ENFORCING,
+                                tls=c.tls)
                 if len(ports) > 1:
                     self._wait_port(c.engine, hosts[1], ports[1], c.tls)
-            if cell.target in ("vericto-enforce", "vericto-observe"):
+            base = self.suite.base(cell.target)
+            if base in ("vericto-enforce", "vericto-observe"):
                 st = TG.cpstub_get(self.topo, "/stats")
-                key = ("observe" if cell.target == "vericto-observe" else "enforce") + f"-{c.engine}"
+                key = ("observe" if base == "vericto-observe" else "enforce") + f"-{c.engine}"
                 rec["cpstub_syncs_before"] = st.get("syncs")
                 if not st.get("syncs"):
                     raise T.SetupError(f"{cid}: the proxy never synced with cpstub")
                 TG.cpstub_get(self.topo, "/reset", post=True)
             rec.update(self._load(cell, cid, local, data, stop_local, stop_data, hosts, ports, targets))
-            if cell.target in ("vericto-enforce", "vericto-observe"):
+            if base in ("vericto-enforce", "vericto-observe"):
                 time.sleep(6)  # one telemetry flush interval (5 s) so the cell's events reach the stub
                 rec["cpstub"] = TG.cpstub_get(self.topo, "/stats")
         except T.SetupError as e:
@@ -397,6 +443,10 @@ class Runner:
         proc = subprocess.Popen(lg.docker_cmd() + ["start", "-a", name], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         time.sleep(0.3)
         self._samplers(guard, load, targets, c.engine)
+        profiler = None
+        if c.profile_s > 0 and self.topo.kind == "two-host" and targets:
+            profiler = _Profiler(self.topo.sut, targets[0], cid, warmup + 5, c.profile_s)
+            profiler.start()
         pauser = None
         if c.pause_every_s > 0:
             pauser = _Pauser(self.topo.sut, TG.DB_NAME[c.engine], c.pause_every_s, c.pause_s, warmup)
@@ -411,6 +461,7 @@ class Runner:
         t_end = time.time()
         if pauser:
             pauser.stop()
+        prof = profiler.finish(local) if profiler else None
         with open(os.path.join(local, "load.log"), "w") as f:
             f.write(output)
         net = guard.stop()
@@ -453,9 +504,11 @@ class Runner:
             rec["reason"] = "network cap: " + str(net.get("reason"))
         mfrom = _ts(rec.get("measure_from")) or (t_start + warmup)
         mend = _ts(rec.get("end")) or (t_start + warmup + duration)
-        budgets = {"target": 1.0 if c.size == "1" else 0.5, "target2": 0.5}
+        budgets = {"target": 1.0 if self.size_of(cell) == "1" else 0.5, "target2": 0.5}
         rec["cpu"] = M.cpu_and_steal(os.path.join(local, "samples.jsonl"), mfrom, mend, budgets)
         rec["wall_s"] = t_end - t_start
+        if prof:
+            rec["profile"] = prof
         if pauser:
             frac = fraction_above(os.path.join(self.out, rec["intervals"]), 500_000) if rec.get("intervals") else None
             rec["validation"] = pauser.verdict(rec, frac)
@@ -571,7 +624,7 @@ class Runner:
                 if key in prev and prev[key] > 0 and ach < prev[key] * 1.03:
                     stopped.add(key)  # less than 3% more per doubling: past the knee
                 prev[key] = ach
-                if cell.target == "vericto-enforce":
+                if cell.target == self.suite.saturation_target:
                     r = rec.get("achieved_rate") or 0
                     best[cell.rep] = max(best.get(cell.rep, 0), r)
         # One rerun of an invalid repetition; the original stays in the raw data.
@@ -581,7 +634,7 @@ class Runner:
             self.run_cell(cell, attempt=".rerun")
         if curve.loop == "closed" and best:
             self.saturation[curve.id] = statistics.mean(best.values())
-            log(f"curve {curve.id}: S(vericto-enforce) = {self.saturation[curve.id]:.0f}/s")
+            log(f"curve {curve.id}: S({self.suite.saturation_target}) = {self.saturation[curve.id]:.0f}/s")
             # Recorded in full: day 2 runs the same absolute rates (suites/day2.toml).
             self.manifest.setdefault("saturation", {})[curve.id] = self.saturation[curve.id]
 
@@ -622,7 +675,8 @@ class Runner:
         expected traffic of every rate: refuse the curve if a component would
         pass 300 Mbps or the aggregate 600 Mbps (project rule: reduce the rates,
         never the margin)."""
-        heavy = "vericto-enforce" if "vericto-enforce" in curve.targets else curve.targets[-1]
+        heavy = next((t for t in (self.suite.saturation_target, "vericto-enforce") if t in curve.targets),
+                     next((t for t in curve.targets if self.suite.base(t) == "vericto-enforce"), curve.targets[-1]))
         rates = sorted({c.rate for c in cells})
         probe_rate = max(1.0, min(rates[0], 50.0))
         probe = S.Cell(curve, 0, heavy, probe_rate, 0, None, seq=10_000 + len(self.manifest.get("netprobes", {})))
@@ -674,14 +728,17 @@ class Runner:
         m.update({"run_id": self.run_id, "stage": stage, "profile": self.suite.profile, "suite": self.suite.name,
                   "suite_file": self.suite.raw, "order_seed": self.suite.order_seed, "topology": self.topo.kind,
                   "day": self.args.day, "versions_lock": self.lock, "proxy_image": self.proxy_ref,
-                  "images": self.images.__dict__, "caps": self.caps or "default (400/300 per component, 800/600 aggregate)",
+                  "images": self.images.__dict__, "saturation_target": self.suite.saturation_target,
+                  "proxy_variants": {n: {"base": v.base, "image": self.variant_refs.get(n), "pulled_as": self.variant_images.get(n),
+                                         "env": v.env, "label": v.label} for n, v in self.suite.variants.items()},
+                  "caps": self.caps or "default (400/300 per component, 800/600 aggregate)",
                   "harness_commit": os.environ.get("HARNESS_COMMIT") or _git(self.repo), "updated_at": now_iso()})
         m.setdefault("started_at", now_iso())
         m["hosts"] = {}
         for h in self.topo.hosts():
             info = {"env": h.env}
             ids = {}
-            for img in set(self.images.__dict__.values()):
+            for img in set(self.images.__dict__.values()) | set(self.variant_images.values()):
                 p = h.docker("image", "inspect", "-f", "{{.Id}} {{json .RepoDigests}}", img, check=False)
                 if p.returncode == 0:
                     ids[img] = p.stdout.decode().strip()
@@ -823,6 +880,45 @@ def steady_state(intervals_path: str, offered: float, poisson: bool = False) -> 
     elif drift > 0.10 and a > 0.2:
         out["flag"] = f"p50 drifts {drift * 100:.0f}% from the first to the last third"
     return out
+
+
+class _Profiler:
+    """perf record of the proxy under test on the SUT (curves with profile_s >
+    0), started after the warm-up, through host/profile.sh. Writes the folded
+    stacks (profile.folded.gz) and perf report (profile-report.txt) into the
+    cell directory. Profiled cells carry the profiler's overhead: they are for
+    where the time goes, not for latency."""
+
+    SCRIPT = "/opt/vericto-bench/host/profile.sh"
+
+    def __init__(self, host: T.Host, target: T.Container, name: str, delay_s: float, secs: float):
+        self.host, self.target, self.name, self.delay, self.secs = host, target, name, delay_s, int(secs)
+        self.result: dict = {}
+        self.t = threading.Thread(target=self._run, daemon=True)
+
+    def start(self):
+        self.t.start()
+
+    def _run(self):
+        time.sleep(self.delay)
+        try:
+            pid = self.target.pid()
+            p = self.host.shell(f"sudo {self.SCRIPT} record {pid} {self.secs} {self.name}", check=False)
+            self.result = {"seconds": self.secs, "frequency_hz": 499, "call_graph": "dwarf,16384",
+                           "record_exit": p.returncode, "data_bytes": p.stdout.decode(errors="replace").strip()[-40:]}
+        except T.SetupError as e:
+            self.result = {"error": str(e)[:300]}
+
+    def finish(self, local: str) -> dict:
+        self.t.join(timeout=self.delay + self.secs + 120)
+        if self.result.get("record_exit") == 0:
+            for sub, fname in (("script", "profile.folded.gz"), ("report", "profile-report.txt")):
+                p = self.host.shell(f"sudo {self.SCRIPT} {sub} {self.name}", check=False)
+                with open(os.path.join(local, fname), "wb") as f:
+                    f.write(p.stdout)
+                self.result[f"{sub}_exit"] = p.returncode
+        self.host.shell(f"sudo {self.SCRIPT} clean {self.name}", check=False)
+        return self.result
 
 
 class _Pauser:

@@ -1,0 +1,112 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# M2 release gate, re-measure after the fix: the A/B design of m2-mysql-ab
+# (results/bench-2026-11-m2-mysql-ab), with the candidate release in place of
+# 4.15.0, and PostgreSQL W1 added. vericto-proxy 4.14.3 against the candidate
+# with VERICTO_POLICY_RULES=off. The candidate is not released yet: it runs from
+# the run's image override (terraform -var proxy_image_override=<repo>@sha256:...,
+# image = "PROXY_IMAGE_OVERRIDE"), pinned by digest. Same hosts, configuration,
+# warm-up (15 s) and duration (60 s) per cell as m2-mysql-ab. Not published.
+#
+# Fixed before the run:
+# - S per engine: the closed-loop maximum of 4.14.3, measured in this session;
+# - ab-my-w3-05: MySQL W3 (oltp_read_only replay, text, TLS, 0.5 vCPU) at 40,
+#   50 and 60% of S, 8 repetitions;
+# - ab-pg-w1-05: PostgreSQL W1 (pgbench select-only, extended, TLS, 0.5 vCPU)
+#   at 30 and 50% of S, 8 repetitions;
+# - in each repetition the rates are shuffled with the seed and every rate runs
+#   both releases next to each other, 4.14.3 first in odd repetitions and the
+#   candidate first in even ones (order = "listed-reversed").
+# Decision rule (analysis/ab.py, paired difference candidate minus 4.14.3): the
+# candidate passes when the 95% interval of p50, p99 and CPU/tx includes 0 (or
+# lies below it) at every MySQL rate and every PostgreSQL rate.
+
+[suite]
+name = "m2-fix-ab"
+profile = "quick"
+order_seed = 2026102301
+reps = 8
+warmup_s = 15
+duration_s = 60
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-enforce-4143"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4143]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_14_3_IMAGE"
+label = "4.14.3"
+
+[variant.vericto-enforce-cand-off]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "candidate, VERICTO_POLICY_RULES=off"
+
+# Closed-loop saturation (S = 4.14.3's maximum), as in m2-mysql-ab
+[[curve]]
+id = "sat-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4143", "vericto-enforce-cand-off"]
+loop = "closed"
+concurrency = [1, 4, 16, 64]
+warmup_s = 10
+duration_s = 30
+reps = 1
+
+[[curve]]
+id = "sat-pg-w1-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4143", "vericto-enforce-cand-off"]
+loop = "closed"
+concurrency = [1, 4, 16, 64]
+warmup_s = 10
+duration_s = 30
+reps = 1
+
+# The A/B: MySQL W3 at 40, 50, 60% of S, 8 alternating repetitions
+[[curve]]
+id = "ab-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4143", "vericto-enforce-cand-off"]
+rates_pct = [40, 50, 60]
+saturation_from = "sat-my-w3-05"
+order = "listed-reversed"
+reps = 8
+
+# PostgreSQL W1 at 30 and 50% of S, 8 alternating repetitions
+[[curve]]
+id = "ab-pg-w1-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4143", "vericto-enforce-cand-off"]
+rates_pct = [30, 50]
+saturation_from = "sat-pg-w1-05"
+order = "listed-reversed"
+reps = 8

@@ -29,8 +29,11 @@ cp -a /var/log/vericto-bench/. "$STAGE/logs/$ROLE/" 2>/dev/null || true
 cp /etc/vericto-bench/provenance.json "$STAGE/logs/$ROLE/" 2>/dev/null || true
 if [ "$TOPOLOGY" = two-host ] && [ -n "${SUT_IP:-}" ]; then
   mkdir -p "$STAGE/logs/sut"
-  sudo -u bench -H scp -q -r -o BatchMode=yes -o ConnectTimeout=10 \
-    "bench@$SUT_IP:/var/log/vericto-bench/." "$STAGE/logs/sut/" 2>/dev/null || log "WARNING: could not copy the SUT logs"
+  # tar over ssh, not scp -r: OpenSSH's SFTP-based scp (the default since 9.0) did not
+  # copy "dir/." in the proxy-tail run, so the SUT's logs (schedmon.jsonl) were missing.
+  sudo -u bench -H ssh -o BatchMode=yes -o ConnectTimeout=10 "bench@$SUT_IP" \
+    tar czf - -C /var/log/vericto-bench . 2>/dev/null | tar xzf - -C "$STAGE/logs/sut/" \
+    || log "WARNING: could not copy the SUT logs"
   sudo -u bench -H scp -q -o BatchMode=yes -o ConnectTimeout=10 \
     "bench@$SUT_IP:/etc/vericto-bench/provenance.json" "$STAGE/logs/sut/" 2>/dev/null || true
 fi
