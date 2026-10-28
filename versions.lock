@@ -34,6 +34,9 @@ VERICTO_PROXY_4_15_3_IMAGE=docker.io/vericto/vericto-proxy:4.15.3@sha256:e543749
 VERICTO_PROXY_4_16_2_IMAGE=docker.io/vericto/vericto-proxy:4.16.2@sha256:91b4b805126ad913fde955381bcc37c64a7a8781fb95522770a36b6bdf7f97ec
 # 4.17.0: bounded reads (rewrite_limit business policies, engine 4.5.0); Latest on 2026-10-24.
 VERICTO_PROXY_4_17_0_IMAGE=docker.io/vericto/vericto-proxy:4.17.0@sha256:9306b0954e132040760aaf38fa48c95a31b1281882bc7555e74c9ea9e6864ada
+# 4.18.0: the kill switch is VERICTO-105 on the proxy (4.17.3 + 0065-v3); Latest on 2026-10-28, the
+# acceptance baseline of the 4.19.0/4.20.0 gate (multi-arch index, as published on Docker Hub and GHCR).
+VERICTO_PROXY_4_18_0_IMAGE=docker.io/vericto/vericto-proxy:4.18.0@sha256:2bc6df18f95e9de80c1a0d661778b8397bf30636c33c592710a380456e5a897f
 
 # --- Databases ----------------------------------------------------------------
 # Latest patch releases on 2026-10-23 (BENCH-2026-11 ran 17.6 and 8.4.11; the

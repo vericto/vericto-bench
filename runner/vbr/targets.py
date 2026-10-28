@@ -144,6 +144,11 @@ def policies_on(variant) -> bool:
     return bool(variant) and variant.env.get("VERICTO_POLICY_RULES", "off").strip().lower() not in ("", "off")
 
 
+def sanitized(variant) -> bool:
+    """Whether a variant's API key selects sanitized query telemetry (cpstub.SanitizedKeyMarker)."""
+    return bool(variant) and "-san" in variant.env.get("VERICTO_API_KEY", "")
+
+
 def cpstub_url(topo: T.Topology) -> str:
     return f"http://127.0.0.1:{CPSTUB_PORT}" if topo.sut.network == "host" else f"http://vb-cpstub:{CPSTUB_PORT}"
 
@@ -204,9 +209,12 @@ def start_target(topo: T.Topology, images: Images, engine: str, target: str, siz
                 env["VERICTO_BUNDLE_SIGNING_KEYS"] = cpstub_signing_keys(topo)
         c = T.create(topo, h, name, variant_image or images.proxy, env=env, cpuset=cpuset, cpus=cpus)
         if tls:
-            # Throwaway per-run key, readable by the image's non-root user.
+            # Throwaway per-run key, readable by the image's non-root user. The
+            # run's CA too, for a variant with UPSTREAM_SSLMODE=verify-full and
+            # UPSTREAM_SSLROOTCERT=/certs/ca.crt (the database's certificate names
+            # 127.0.0.1 and localhost).
             c.put("/", {"certs/": (b"", 0o755), "certs/server.crt": (certs["server.crt"], 0o644),
-                        "certs/server.key": (certs["server.key"], 0o644)})
+                        "certs/server.key": (certs["server.key"], 0o644), "certs/ca.crt": (certs["ca.crt"], 0o644)})
         c.start()
         return c
     if target == "haproxy-tcp":

@@ -247,3 +247,19 @@ class Components(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SysbenchModeTest(unittest.TestCase):
+    def test_ps_mode_follows_the_curve_mode(self):
+        from vbr import suite as S, tools as TL
+        suite = S.Suite(name="t", profile="quick", order_seed=1, reps=1, warmup_s=1, duration_s=2, cooldown_s=0,
+                        interval_s=1, datasets={}, curves=[], raw={}, database={}, engine_eval={})
+        for mode, want in (("text", ["--db-ps-mode=disable"]), ("prepared", ["--db-ps-mode=auto"]), ("", [])):
+            c = S.Curve(id="x", engine="mysql", tool="sysbench", workload="oltp_point_select", mode=mode, tls=False,
+                        size="0.5", targets=["direct"], loop="closed", concurrency=[16])
+            a = TL.sysbench_args(S.Cell(c, 1, "direct", 0.0, 16, None), ["h"], [3306], suite, {})
+            self.assertEqual([x for x in a if x.startswith("--db-ps-mode")], want)
+            self.assertEqual(a[-1], "run")
+        c.mode = "bogus"
+        with self.assertRaises(ValueError):
+            TL.sysbench_args(S.Cell(c, 1, "direct", 0.0, 16, None), ["h"], [3306], suite, {})

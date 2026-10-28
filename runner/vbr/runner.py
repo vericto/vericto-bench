@@ -364,6 +364,15 @@ class Runner:
                 if warning and any(bad in line for bad in ("No verified sync bundle", "does not compile", "signature")):
                     raise T.SetupError(f"{cid}: {t.name}: {line[:300]}")
 
+    def _check_sanitized(self, cid: str, targets) -> None:
+        """Sanitized telemetry (an API key with -san): the proxy applied a bundle
+        whose telemetry_query_mode is sanitized (else the cell would measure raw)."""
+        for t in targets:
+            p = t.host.docker("logs", t.name, check=False)
+            text = (p.stdout + p.stderr).decode(errors="replace")
+            if not any("Ruleset and policy updated from API" in ln and "anitized" in ln for ln in text.splitlines()):
+                raise T.SetupError(f"{cid}: {t.name} did not apply telemetry_query_mode sanitized")
+
     def run_cell(self, cell, attempt: str = "") -> dict:
         c = cell.curve
         cid = cell.id + attempt
@@ -395,6 +404,8 @@ class Runner:
                     raise T.SetupError(f"{cid}: the proxy never synced with cpstub")
                 if TG.policies_on(self.suite.variants.get(cell.target)):
                     self._check_policy_bundle(cid, targets)
+                if TG.sanitized(self.suite.variants.get(cell.target)):
+                    self._check_sanitized(cid, targets)
                 TG.cpstub_get(self.topo, "/reset", post=True)
             rec.update(self._load(cell, cid, local, data, stop_local, stop_data, hosts, ports, targets))
             if base in ("vericto-enforce", "vericto-observe"):

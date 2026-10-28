@@ -72,6 +72,12 @@ def sysbench_args(cell, hosts: list[str], ports: list[int], suite, datasets: dic
         raise ValueError(f"sysbench workload must be one of {SYSBENCH_TESTS}")
     warmup = c.warmup_s if c.warmup_s is not None else suite.warmup_s
     duration = c.duration_s if c.duration_s is not None else suite.duration_s
+    # mode: "text" = --db-ps-mode=disable (COM_QUERY with literal values),
+    # "prepared" = --db-ps-mode=auto (server-side prepared statements, sysbench's
+    # default); "" keeps sysbench's default as before.
+    ps = {"text": ["--db-ps-mode=disable"], "prepared": ["--db-ps-mode=auto"], "": []}
+    if c.mode not in ps:
+        raise ValueError(f"sysbench mode must be one of {list(ps)}")
     # Several ports: sysbench spreads its connections over the host list (two proxy tasks).
     return [c.workload, "--db-driver=mysql", "--mysql-host=" + ",".join(hosts),
             "--mysql-port=" + ",".join(str(p) for p in ports), "--mysql-user=bench",
@@ -80,7 +86,7 @@ def sysbench_args(cell, hosts: list[str], ports: list[int], suite, datasets: dic
             # sysbench 1.0.20 has no --warmup-time: the warm-up is dropped from
             # the per-interval reports instead (parse_sysbench).
             f"--threads={cell.conc}", f"--time={int(warmup + duration)}",
-            f"--report-interval={max(1, int(suite.interval_s))}", "--percentile=99", "--histogram=off", "--rand-seed=1", "run"]
+            f"--report-interval={max(1, int(suite.interval_s))}", "--percentile=99", "--histogram=off", "--rand-seed=1"] + ps[c.mode] + ["run"]
 
 
 # ---- percentiles ---------------------------------------------------------------

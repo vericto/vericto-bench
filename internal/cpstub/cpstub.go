@@ -16,8 +16,9 @@
 //	GET  /healthz
 //
 // The mode is chosen by the proxy's API key: a key starting with "observe"
-// gets monitor_mode=true, any other key gets monitor_mode=false. Nothing is
-// written to disk.
+// gets monitor_mode=true, any other key gets monitor_mode=false; a key that
+// contains "-san" gets telemetry_query_mode "sanitized", any other "raw".
+// Nothing is written to disk.
 //
 // Business policies (proxy VERICTO_POLICY_RULES on): with Config.Sign the stub
 // holds an Ed25519 key generated in memory at start (never written, never a
@@ -111,6 +112,14 @@ const AltKeySuffix = "-alt"
 // Alt reports whether an API key selects the alternative policy set.
 func Alt(apiKey string) bool { return strings.HasSuffix(apiKey, AltKeySuffix) }
 
+// SanitizedKeyMarker in an API key (e.g. "enforce-pg-san") selects
+// telemetry_query_mode "sanitized" instead of "raw": the proxy then normalises
+// and redacts every statement before it builds the event.
+const SanitizedKeyMarker = "-san"
+
+// Sanitized reports whether an API key selects sanitized query telemetry.
+func Sanitized(apiKey string) bool { return strings.Contains(apiKey, SanitizedKeyMarker) }
+
 // PolicyLanguageHeader is the request header a proxy with business policies
 // on announces its policy language in.
 const PolicyLanguageHeader = "X-Vericto-Policy-Language"
@@ -122,8 +131,9 @@ const SignatureHeader = "X-Vericto-Bundle-Signature"
 const bundleDomain = "vericto-sync-bundle/1\n"
 
 // variant of a /sync/rules body: monitor mode, whether the proxy speaks the
-// policy language, and whether its API key selects the alternative policy set.
-type variant struct{ monitor, cel, alt bool }
+// policy language, whether its API key selects the alternative policy set, and
+// whether it selects sanitized query telemetry (SanitizedKeyMarker).
+type variant struct{ monitor, cel, alt, san bool }
 
 // DefaultSeverityActions is EnforcementPolicy::default() of vericto-engine.
 func DefaultSeverityActions() map[string]string {
@@ -173,10 +183,20 @@ func New(cfg Config) (*Server, error) {
 		}
 		s.publicKey, private = public, priv
 	}
-	for _, v := range []variant{{false, false, false}, {true, false, false}, {false, true, false}, {true, true, false},
-		{false, true, true}, {true, true, true}} {
+	var variants []variant
+	for _, san := range []bool{false, true} {
+		for _, v := range []variant{{false, false, false, san}, {true, false, false, san}, {false, true, false, san},
+			{true, true, false, san}, {false, true, true, san}, {true, true, true, san}} {
+			variants = append(variants, v)
+		}
+	}
+	for _, v := range variants {
 		if v.alt && len(cfg.AltPolicyRules) == 0 {
 			continue
+		}
+		mode := "raw"
+		if v.san {
+			mode = "sanitized"
 		}
 		rules := cfg.Rules.Rules
 		version := cfg.Rules.RulesetVersion
@@ -194,7 +214,7 @@ func New(cfg Config) (*Server, error) {
 				"severity_actions":     cfg.SeverityActions,
 				"parse_error_action":   "allow_report",
 				"monitor_mode":         v.monitor,
-				"telemetry_query_mode": "raw",
+				"telemetry_query_mode": mode,
 			},
 			"sensitive_columns": cfg.SensitiveColumns,
 			"agent_access":      map[string]any{},
@@ -265,7 +285,8 @@ func (s *Server) sync(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	s.syncs++
 	s.mu.Unlock()
-	v := variant{monitor: Monitor(apiKey), cel: strings.HasPrefix(r.Header.Get(PolicyLanguageHeader), "cel/1")}
+	v := variant{monitor: Monitor(apiKey), cel: strings.HasPrefix(r.Header.Get(PolicyLanguageHeader), "cel/1"),
+		san: Sanitized(apiKey)}
 	if v.cel && Alt(apiKey) && len(s.cfg.AltPolicyRules) > 0 {
 		v.alt = true
 	}

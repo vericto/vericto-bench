@@ -276,3 +276,60 @@ func TestAltKeySelectsTheAlternativePolicySet(t *testing.T) {
 		t.Fatalf("no alt set: %s", body)
 	}
 }
+
+func TestSanKeySelectsSanitizedTelemetry(t *testing.T) {
+	base := []Rule{{RuleID: "VERICTO-001", Code: "VERICTO-001", Severity: "critical", DefaultAction: "block", RuleType: "standard"}}
+	s, err := New(Config{Rules: RulesExport{RulesetVersion: "r1", Rules: base}, Sign: true,
+		PolicyRules:    []Rule{{RuleID: "p-time", Code: "POL-TIME", Severity: "high", DefaultAction: "block", RuleType: "custom"}},
+		AltPolicyRules: []Rule{{RuleID: "p-free", Code: "POL-FREE", Severity: "high", DefaultAction: "block", RuleType: "custom"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(s.Handler())
+	t.Cleanup(ts.Close)
+	mode := func(key string, cel bool) (string, bool, int, string) {
+		req, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/v1/sync/rules", nil)
+		req.Header.Set("X-API-Key", key)
+		if cel {
+			req.Header.Set(PolicyLanguageHeader, "cel/1")
+		}
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		var b struct {
+			Version string `json:"version"`
+			Rules   []Rule `json:"rules"`
+			Policy  struct {
+				Monitor bool   `json:"monitor_mode"`
+				Mode    string `json:"telemetry_query_mode"`
+			} `json:"policy"`
+		}
+		if err := json.NewDecoder(res.Body).Decode(&b); err != nil {
+			t.Fatal(err)
+		}
+		return b.Policy.Mode, b.Policy.Monitor, len(b.Rules), b.Version
+	}
+	for _, c := range []struct {
+		key   string
+		cel   bool
+		want  string
+		mon   bool
+		rules int
+		ver   string
+	}{
+		{"enforce-pg", false, "raw", false, 1, "r1"},
+		{"enforce-pg-san", false, "sanitized", false, 1, "r1"},
+		{"observe-mysql-san", false, "sanitized", true, 1, "r1"},
+		{"enforce-pg-san", true, "sanitized", false, 2, "r1+policies"},
+		{"enforce-pg-san-alt", true, "sanitized", false, 2, "r1+policies-alt"},
+		{"enforce-pg-alt", true, "raw", false, 2, "r1+policies-alt"},
+	} {
+		m, mon, n, v := mode(c.key, c.cel)
+		if m != c.want || mon != c.mon || n != c.rules || v != c.ver {
+			t.Errorf("%s cel=%v: mode %q monitor %v rules %d version %q; want %q %v %d %q", c.key, c.cel, m, mon, n, v,
+				c.want, c.mon, c.rules, c.ver)
+		}
+	}
+}
