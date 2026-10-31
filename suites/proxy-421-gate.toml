@@ -1,0 +1,98 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Quick release-gate A/B of vericto-proxy 4.21.0 (the published image) against 4.20.0 (the
+# published image), on the deciding cells of the 4.20.0 gate (suites proxy-420-gate-a1/a2/b2):
+# CPU per transaction, p99 at 80/90% of S at the 0.5x2c Fargate shape, and one core (0.5)
+# at 80/90% of S. Both images from the bench-only ECR repository, by their published digests.
+# Not published.
+#
+# Fixed before the run: S pre-registered as in the earlier gates (PostgreSQL W1 6,032.6/s,
+# MySQL W3 356.6/s); a Williams order per (repetition, rate). Decision rule (the 4.20.0
+# gate's, harness/gate420.py): C1 CPU per transaction no worse than 4.20.0 (mean paired
+# difference <= 0, or an interval including 0); C2 p99 at 80/90% of S no worse than
+# 4.20.0 + 0.05 ms; C3 no collapse at 90% of S on one core (every repetition valid, >= 97%
+# of the offered rate achieved).
+
+[suite]
+name = "proxy-421-gate"
+profile = "quick"
+order_seed = 2026103104
+reps = 4
+warmup_s = 15
+duration_s = 60
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-enforce-4200"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4200]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE_2"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.20.0 (published digest 3d684637), VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-4210]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.21.0 (published digest 7cca3469), VERICTO_POLICY_RULES=off"
+
+[[curve]]
+id = "gate-pg-ext-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4200", "vericto-enforce-4210"]
+rates_pct = [30, 50]
+saturation_qps = 6032.6
+reps = 5
+
+[[curve]]
+id = "knee-pg-ext-fg"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5x2c"
+targets = ["direct", "vericto-enforce-4200", "vericto-enforce-4210"]
+rates_pct = [80, 90]
+saturation_qps = 6032.6
+warmup_s = 30
+duration_s = 120
+
+[[curve]]
+id = "knee-pg-ext-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4200", "vericto-enforce-4210"]
+rates_pct = [80, 90]
+saturation_qps = 6032.6
+warmup_s = 30
+duration_s = 120
+
+[[curve]]
+id = "gate-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4200", "vericto-enforce-4210"]
+rates_pct = [50, 80, 90]
+saturation_qps = 356.6
+reps = 5

@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Refresh of the published BENCH-2026-11 figures for vericto-proxy 4.21.0 (owner request
+# 2026-10-31), MySQL stack: the headline curve, W3 oltp_read_only replayed open loop
+# (text protocol), TLS on both legs, 0.5 vCPU, against direct and HAProxy TCP, 3 interleaved
+# repetitions of 300 s.
+#
+# S is pre-registered at the 4.14.2 publication's S (356.6 transactions/s, run
+# bench-2026-11-p2-day1), so the rates are the published ones (36 to 357 transactions/s).
+# 4.21.0's own closed-loop maximum cannot be measured under the harness's traffic caps: in the
+# 4.20.0 gate (2026-10-28) every closed-loop W3 step of the PGO build at 16 connections was
+# aborted by the network cap (METHODOLOGY.md section 9) before the proxy saturated.
+# Pre-registered: do not edit between the start of the run and its report.
+
+[suite]
+name = "pub421-day1-my"
+profile = "published"
+order_seed = 2026103102
+reps = 3
+warmup_s = 60
+duration_s = 300
+cooldown_s = 30
+interval_s = 10
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+# P-head-my: HEADLINE MySQL curve, W3 oltp_read_only (vbench replay, text protocol), TLS, 0.5 vCPU
+[[curve]]
+id = "head-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [10, 30, 50, 70, 80, 90, 100]
+saturation_qps = 356.59166666666664
