@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Refresh of the published figures for vericto-proxy 4.21.0, day 2 (as suites/day2.toml):
+# the two headline curves once more on a separately launched stack (new hosts), at day 1's
+# absolute rates. S: PostgreSQL 9,667.7/s, the closed-loop maximum of run
+# bench-2026-11-proxy-421-p (2026-10-31, sat-pg-w1-05 at 8 connections); MySQL 356.6
+# transactions/s, pre-registered as in pub421-day1-my. Run with -var day=2.
+# Pre-registered: do not edit between the start of the run and its report.
+
+[suite]
+name = "pub421-day2"
+profile = "published"
+order_seed = 2026103103
+reps = 1
+warmup_s = 60
+duration_s = 300
+cooldown_s = 30
+interval_s = 10
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[[curve]]
+id = "head-pg-w1-05-day2"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [10, 30, 50, 70, 80, 90, 100]
+saturation_from = ""
+conns = 64
+saturation_qps = 9667.7
+
+[[curve]]
+id = "head-my-w3-05-day2"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "haproxy-tcp", "vericto-enforce"]
+rates_pct = [10, 30, 50, 70, 80, 90, 100]
+saturation_from = ""
+saturation_qps = 356.59166666666664

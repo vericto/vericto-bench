@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Refresh of the published figures for vericto-proxy 4.21.0: one task or two (as
+# suites/core-h2.toml for 4.14.2). PostgreSQL W1 at 2 x 0.5 vCPU against direct at 30-200%
+# of day 1's S at 0.5 vCPU (9,667.7/s, run bench-2026-11-proxy-421-p), and 1 x 0.5 at 30, 90
+# and 120% on the same host. Budget trim: 2 interleaved repetitions (as every non-headline
+# curve of BENCH-2026-11), and the top rate is 200% (core-h2 went to 220% of a lower S;
+# 21,000/s would put the load generator near its CPU validity limit).
+# Pre-registered: do not edit between the start of the run and its report.
+
+[suite]
+name = "pub421-scaling"
+profile = "published"
+order_seed = 2026103105
+reps = 2
+warmup_s = 60
+duration_s = 300
+cooldown_s = 30
+interval_s = 10
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[[curve]]
+id = "h2-pg-w1-2x05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "2x0.5"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [30, 60, 90, 120, 150, 180, 200]
+saturation_qps = 9667.7
+conns = 128
+
+[[curve]]
+id = "h2-pg-w1-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [30, 90, 120]
+saturation_qps = 9667.7
+conns = 128
