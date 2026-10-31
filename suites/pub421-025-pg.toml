@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# vericto-proxy 4.21.0 at 0.25 vCPU (owner request 2026-10-31), PostgreSQL stack. The
+# conditions of pub421-day1-pg (published profile, TLS on both legs, enforce mode, 42 built-in
+# rules, open loop, 3 interleaved repetitions of 300 s, same published image); only the proxy's
+# CPU quota changes, to one core with a 25% CFS quota (size 0.25, the smallest Fargate task).
+# Closed-loop saturation gives S at 0.25 vCPU; the headline curve runs at the same fractions of
+# S as the published curve. Budget trim: no HAProxy baseline and no generator validation (both
+# are independent of the proxy's quota and were measured in pub421-day1-pg).
+# Pre-registered: do not edit between the start of the run and its report.
+
+[suite]
+name = "pub421-025-pg"
+profile = "published"
+order_seed = 2026103111
+reps = 3
+warmup_s = 60
+duration_s = 300
+cooldown_s = 30
+interval_s = 10
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+# P-sat at 0.25: closed-loop saturation, W1 select-only extended, TLS, 0.25 vCPU
+[[curve]]
+id = "sat-pg-w1-025"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.25"
+targets = ["vericto-enforce"]
+loop = "closed"
+concurrency = [1, 2, 4, 8, 16, 32, 64, 128]
+warmup_s = 30
+duration_s = 120
+reps = 1
+
+# P-head-pg at 0.25: W1 pgbench select-only, extended protocol, TLS, 0.25 vCPU
+[[curve]]
+id = "head-pg-w1-025"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.25"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [10, 30, 50, 70, 80, 90, 100]
+saturation_from = "sat-pg-w1-025"
+conns = 64

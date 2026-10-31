@@ -23,7 +23,8 @@ PROFILES = ("smoke", "quick", "published")
 TOOLS = ("vbench", "pgbench", "sysbench")
 # 0.5x2c: the 0.5 vCPU quota over two cores, as a 0.5 vCPU Fargate task on its
 # 2-vCPU host (the quota caps CPU time, not the CPUs the threads run on).
-SIZES = ("0.5", "1", "2x0.5", "0.5x2c")
+# 0.25: one core with a 25% CFS quota, the smallest Fargate task (0.25 vCPU).
+SIZES = ("0.5", "1", "2x0.5", "0.5x2c", "0.25")
 TARGETS = {
     "pg": ("direct", "haproxy-tcp", "pgbouncer-session", "vericto-offline", "vericto-enforce", "vericto-observe"),
     "mysql": ("direct", "haproxy-tcp", "proxysql", "vericto-offline", "vericto-enforce", "vericto-observe"),

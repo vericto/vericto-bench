@@ -164,12 +164,13 @@ def cpstub_get(topo: T.Topology, path: str, post: bool = False) -> dict:
 def budget(topo: T.Topology, size: str, second: bool = False) -> tuple[str, str]:
     """(cpuset, cpus) of an intermediary at a size: 0.5 = one core with a 50%
     CFS quota, 1 = one whole core, 2x0.5 = two cores at 50% each, 0.5x2c = a
-    50% quota over two cores (as a 0.5 vCPU Fargate task on its 2-vCPU host)."""
+    50% quota over two cores (as a 0.5 vCPU Fargate task on its 2-vCPU host),
+    0.25 = one core with a 25% CFS quota."""
     h = topo.sut
     cpuset = h.cpuset("CPU_PROXY2" if second else "CPU_PROXY")
     if size == "0.5x2c":
         cpuset = ",".join(x for x in (h.cpuset("CPU_PROXY"), h.cpuset("CPU_PROXY2")) if x)
-    cpus = "" if size == "1" else "0.5"
+    cpus = {"1": "", "0.25": "0.25"}.get(size, "0.5")
     return cpuset, cpus
 
 

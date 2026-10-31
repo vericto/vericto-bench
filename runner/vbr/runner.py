@@ -532,7 +532,7 @@ class Runner:
             rec["reason"] = "network cap: " + str(net.get("reason"))
         mfrom = _ts(rec.get("measure_from")) or (t_start + warmup)
         mend = _ts(rec.get("end")) or (t_start + warmup + duration)
-        budgets = {"target": 1.0 if self.size_of(cell) == "1" else 0.5, "target2": 0.5}
+        budgets = {"target": {"1": 1.0, "0.25": 0.25}.get(self.size_of(cell), 0.5), "target2": 0.5}
         rec["cpu"] = M.cpu_and_steal(os.path.join(local, "samples.jsonl"), mfrom, mend, budgets)
         rec["wall_s"] = t_end - t_start
         if prof:

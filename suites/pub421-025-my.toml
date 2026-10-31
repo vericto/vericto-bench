@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# vericto-proxy 4.21.0 at 0.25 vCPU (owner request 2026-10-31), MySQL stack. The conditions of
+# pub421-day1-my (W3 oltp_read_only replayed open loop, text protocol, TLS on both legs, enforce
+# mode, 3 interleaved repetitions of 300 s, same published image); only the proxy's CPU quota
+# changes, to one core with a 25% CFS quota (size 0.25).
+#
+# The published MySQL rates that fit under the 0.25 vCPU quota: 10/30/50% of the published S
+# (356.6 transactions/s), i.e. 36, 107 and 178 transactions/s. At about 0.95 ms of proxy CPU
+# per W3 transaction (4.21.0 gate), 250 transactions/s (70%) would need about 0.24 vCPU, the
+# whole quota, so it is not run. Budget trim: no HAProxy baseline.
+# Pre-registered: do not edit between the start of the run and its report.
+
+[suite]
+name = "pub421-025-my"
+profile = "published"
+order_seed = 2026103112
+reps = 3
+warmup_s = 60
+duration_s = 300
+cooldown_s = 30
+interval_s = 10
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+# P-head-my at 0.25: W3 oltp_read_only (vbench replay, text protocol), TLS, 0.25 vCPU
+[[curve]]
+id = "head-my-w3-025"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.25"
+targets = ["direct", "vericto-enforce"]
+rates_pct = [10, 30, 50]
+saturation_qps = 356.59166666666664

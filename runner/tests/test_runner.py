@@ -263,3 +263,24 @@ class SysbenchModeTest(unittest.TestCase):
         c.mode = "bogus"
         with self.assertRaises(ValueError):
             TL.sysbench_args(S.Cell(c, 1, "direct", 0.0, 16, None), ["h"], [3306], suite, {})
+
+
+class QuarterVcpuTest(unittest.TestCase):
+    def test_quarter_vcpu_is_one_core_at_25_percent(self):
+        from vbr import targets as TG
+
+        class H:
+            def cpuset(self, name):
+                return {"CPU_PROXY": "6", "CPU_PROXY2": "7"}.get(name, "")
+
+        class Topo:
+            sut = H()
+        self.assertEqual(TG.budget(Topo(), "0.25"), ("6", "0.25"))
+        self.assertEqual(TG.budget(Topo(), "0.5"), ("6", "0.5"))
+        self.assertEqual(TG.budget(Topo(), "1"), ("6", ""))
+        s = S.load(os.path.join(REPO, "suites", "pub421-025-pg.toml"))
+        self.assertEqual({c.size for c in s.curves}, {"0.25"})
+        m = S.load(os.path.join(REPO, "suites", "pub421-025-my.toml"))
+        cells = S.expand(m, m.curves[0], {})
+        # the published MySQL rates that fit under a 0.25 vCPU quota (36, 107, 178 tx/s)
+        self.assertEqual(sorted({round(c.rate) for c in cells}), [36, 107, 178])
