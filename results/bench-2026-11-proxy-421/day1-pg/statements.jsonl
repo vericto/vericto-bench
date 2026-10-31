@@ -1,0 +1,1 @@
+{"bytes":52,"class":"select_only","dialect":"postgres","part":0,"sql":"SELECT abalance FROM pgbench_accounts WHERE aid = $1","verdict":"flag","workload":"select-only"}

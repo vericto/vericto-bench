@@ -1,0 +1,116 @@
+**day1-my.**
+
+# vericto-bench report: pub421-day1-my
+
+| Run | Profile | Topology | Proxy image | Harness commit | Started | Finished |
+| --- | --- | --- | --- | --- | --- | --- |
+| bench-2026-11-proxy-421-m | published | two-host | `<bench-account>.dkr.ecr.us-east-1.amazonaws.com/vericto-bench/proxy-421:4.21.0@sha256:7cca34697f61cf2baadb85a963520813ef108f10ad379906ffffb60b860c3bfd` | `f041a49d177d` | 2026-10-31T13:42:41.821712+00:00 | 2026-10-31T20:38:45.259058+00:00 |
+
+Cells: 64 recorded, 63 used, 0 invalid (listed at the end, not used).
+
+## Added latency (open loop, from intended send time; target minus direct, paired)
+
+| Curve | Target | Rate/s | % of S | n | added p50 ms [95%] | added p99 ms [95%] | added p99.9 ms [95%] | Note |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| head-my-w3-05 | haproxy-tcp | 36 | 10 | 3 | 0.537 [0.474, 0.601] | 0.555 [0.481, 0.628] | 0.649 [0.377, 0.920] |  |
+| head-my-w3-05 | haproxy-tcp | 107 | 30 | 3 | 0.453 [0.402, 0.504] | 0.493 [0.451, 0.534] | 0.556 [0.255, 0.857] |  |
+| head-my-w3-05 | haproxy-tcp | 178 | 50 | 3 | 0.463 [0.349, 0.576] | 0.471 [0.336, 0.605] | 0.551 [0.259, 0.843] |  |
+| head-my-w3-05 | haproxy-tcp | 250 | 70 | 3 | 0.470 [0.455, 0.485] | 0.472 [0.441, 0.503] | 0.533 [0.430, 0.636] |  |
+| head-my-w3-05 | haproxy-tcp | 285 | 80 | 3 | 0.474 [0.429, 0.519] | 0.519 [0.437, 0.601] | 0.565 [0.394, 0.735] |  |
+| head-my-w3-05 | haproxy-tcp | 321 | 90 | 3 | 0.433 [0.409, 0.456] | 0.491 [0.427, 0.556] | 0.522 [0.271, 0.773] |  |
+| head-my-w3-05 | haproxy-tcp | 357 | 100 | 3 | 0.295 [0.289, 0.300] | 0.515 [0.439, 0.591] | 0.617 [0.478, 0.756] |  |
+| head-my-w3-05 | vericto-enforce | 36 | 10 | 3 | 1.205 [1.068, 1.341] | 1.325 [1.176, 1.475] | 2.253 [1.689, 2.816] |  |
+| head-my-w3-05 | vericto-enforce | 107 | 30 | 3 | 1.093 [1.018, 1.169] | 1.544 [1.492, 1.596] | 2.700 [2.056, 3.344] |  |
+| head-my-w3-05 | vericto-enforce | 178 | 50 | 3 | 1.112 [0.990, 1.234] | 1.870 [1.711, 2.029] | 3.030 [2.307, 3.753] |  |
+| head-my-w3-05 | vericto-enforce | 250 | 70 | 3 | 1.082 [1.017, 1.147] | 2.008 [1.930, 2.086] | 4.363 [4.070, 4.656] |  |
+| head-my-w3-05 | vericto-enforce | 285 | 80 | 3 | 1.027 [0.992, 1.062] | 2.143 [2.011, 2.275] | 4.456 [4.317, 4.595] |  |
+| head-my-w3-05 | vericto-enforce | 321 | 90 | 3 | 0.667 [0.641, 0.692] | 1.647 [1.433, 1.861] | 4.827 [4.757, 4.896] |  |
+| head-my-w3-05 | vericto-enforce | 357 | 100 | 3 | 0.842 [0.790, 0.894] | 1.891 [1.803, 1.978] | 7.169 [4.002, 10.337] |  |
+
+## Every cell
+
+| Cell | Status | Achieved/s | p50 ms | p99 ms | p99.9 ms | max ms | proxy vCPU | max aggregate Mbps |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| head-my-w3-05.vericto-enforce.r35.7.rep0.netprobe | ok | 35.7 | 3.979 | 4.611 | 5.255 | 5.255 | 0.040 | 62.3 |
+| head-my-w3-05.vericto-enforce.r35.7.rep1 | ok | 35.7 | 4.013 | 4.703 | 5.779 | 11.271 | 0.042 | 62.8 |
+| head-my-w3-05.direct.r35.7.rep1 | ok | 35.7 | 2.755 | 3.329 | 3.479 | 4.003 | - | 44.5 |
+| head-my-w3-05.haproxy-tcp.r35.7.rep1 | ok | 35.7 | 3.309 | 3.909 | 4.215 | 14.887 | 0.012 | 70.2 |
+| head-my-w3-05.direct.r320.9.rep1 | ok | 320.9 | 2.585 | 3.175 | 3.339 | 4.559 | - | 332.8 |
+| head-my-w3-05.haproxy-tcp.r320.9.rep1 | ok | 320.9 | 3.021 | 3.693 | 3.961 | 12.695 | 0.101 | 564.9 |
+| head-my-w3-05.vericto-enforce.r320.9.rep1 | ok | 320.9 | 3.249 | 4.911 | 8.163 | 17.839 | 0.322 | 564.8 |
+| head-my-w3-05.haproxy-tcp.r107.rep1 | ok | 107 | 3.177 | 3.777 | 4.079 | 8.295 | 0.034 | 184.4 |
+| head-my-w3-05.vericto-enforce.r107.rep1 | ok | 107 | 3.829 | 4.803 | 6.151 | 13.767 | 0.113 | 201.1 |
+| head-my-w3-05.direct.r107.rep1 | ok | 107 | 2.701 | 3.271 | 3.385 | 4.447 | - | 122.7 |
+| head-my-w3-05.haproxy-tcp.r285.3.rep1 | ok | 285.3 | 3.041 | 3.663 | 3.887 | 6.831 | 0.090 | 490.4 |
+| head-my-w3-05.direct.r285.3.rep1 | ok | 285.3 | 2.585 | 3.177 | 3.363 | 4.231 | - | 310.9 |
+| head-my-w3-05.vericto-enforce.r285.3.rep1 | ok | 285.3 | 3.613 | 5.287 | 7.883 | 16.543 | 0.284 | 503.8 |
+| head-my-w3-05.vericto-enforce.r178.3.rep1 | ok | 178.3 | 3.779 | 5.127 | 6.303 | 16.607 | 0.188 | 308.7 |
+| head-my-w3-05.haproxy-tcp.r178.3.rep1 | ok | 178.3 | 3.101 | 3.685 | 3.949 | 12.919 | 0.056 | 318.9 |
+| head-my-w3-05.direct.r178.3.rep1 | ok | 178.3 | 2.647 | 3.235 | 3.443 | 4.823 | - | 192.1 |
+| head-my-w3-05.direct.r249.6.rep1 | ok | 249.6 | 2.593 | 3.183 | 3.363 | 4.795 | - | 259.2 |
+| head-my-w3-05.vericto-enforce.r249.6.rep1 | ok | 249.6 | 3.691 | 5.219 | 7.595 | 17.007 | 0.258 | 443.6 |
+| head-my-w3-05.haproxy-tcp.r249.6.rep1 | ok | 249.6 | 3.069 | 3.669 | 3.941 | 6.751 | 0.079 | 429.0 |
+| head-my-w3-05.vericto-enforce.r356.6.rep1 | ok | 356.6 | 3.365 | 5.091 | 11.319 | 19.631 | 0.364 | 615.4 |
+| head-my-w3-05.direct.r356.6.rep1 | ok | 356.6 | 2.533 | 3.205 | 3.373 | 5.707 | - | 381.2 |
+| head-my-w3-05.haproxy-tcp.r356.6.rep1 | ok | 356.6 | 2.825 | 3.685 | 3.927 | 223.103 | 0.113 | 612.6 |
+| head-my-w3-05.direct.r178.3.rep2 | ok | 178.3 | 2.619 | 3.199 | 3.353 | 4.851 | - | 185.6 |
+| head-my-w3-05.haproxy-tcp.r178.3.rep2 | ok | 178.3 | 3.131 | 3.731 | 4.037 | 6.759 | 0.057 | 317.4 |
+| head-my-w3-05.vericto-enforce.r178.3.rep2 | ok | 178.3 | 3.767 | 5.119 | 6.719 | 15.111 | 0.182 | 308.4 |
+| head-my-w3-05.haproxy-tcp.r35.7.rep2 | ok | 35.7 | 3.259 | 3.863 | 4.123 | 12.551 | 0.012 | 73.9 |
+| head-my-w3-05.vericto-enforce.r35.7.rep2 | ok | 35.7 | 3.899 | 4.599 | 5.603 | 9.823 | 0.040 | 71.2 |
+| head-my-w3-05.direct.r35.7.rep2 | ok | 35.7 | 2.751 | 3.341 | 3.597 | 4.395 | - | 37.8 |
+| head-my-w3-05.haproxy-tcp.r285.3.rep2 | ok | 285.3 | 3.045 | 3.671 | 3.873 | 6.539 | 0.090 | 501.1 |
+| head-my-w3-05.direct.r285.3.rep2 | ok | 285.3 | 2.571 | 3.151 | 3.347 | 4.219 | - | 307.9 |
+| head-my-w3-05.vericto-enforce.r285.3.rep2 | ok | 285.3 | 3.611 | 5.355 | 7.779 | 16.511 | 0.286 | 493.0 |
+| head-my-w3-05.vericto-enforce.r249.6.rep2 | ok | 249.6 | 3.691 | 5.211 | 7.795 | 16.911 | 0.254 | 447.7 |
+| head-my-w3-05.haproxy-tcp.r249.6.rep2 | ok | 249.6 | 3.065 | 3.659 | 3.923 | 13.167 | 0.079 | 443.1 |
+| head-my-w3-05.direct.r249.6.rep2 | ok | 249.6 | 2.595 | 3.197 | 3.397 | 5.247 | - | 259.0 |
+| head-my-w3-05.direct.r320.9.rep2 | ok | 320.9 | 2.609 | 3.231 | 3.407 | 4.287 | - | 345.5 |
+| head-my-w3-05.vericto-enforce.r320.9.rep2 | ok | 320.9 | 3.267 | 4.871 | 8.263 | 17.199 | 0.320 | 562.3 |
+| head-my-w3-05.haproxy-tcp.r320.9.rep2 | ok | 320.9 | 3.049 | 3.721 | 3.931 | 6.991 | 0.101 | 551.5 |
+| head-my-w3-05.vericto-enforce.r107.rep2 | ok | 107 | 3.823 | 4.823 | 5.995 | 13.703 | 0.110 | 201.9 |
+| head-my-w3-05.direct.r107.rep2 | ok | 107 | 2.743 | 3.291 | 3.581 | 4.871 | - | 125.6 |
+| head-my-w3-05.haproxy-tcp.r107.rep2 | ok | 107 | 3.191 | 3.789 | 4.049 | 9.751 | 0.034 | 185.1 |
+| head-my-w3-05.direct.r356.6.rep2 | ok | 356.6 | 2.537 | 3.209 | 3.381 | 4.267 | - | 387.7 |
+| head-my-w3-05.haproxy-tcp.r356.6.rep2 | ok | 356.6 | 2.833 | 3.743 | 4.019 | 5.599 | 0.112 | 623.4 |
+| head-my-w3-05.vericto-enforce.r356.6.rep2 | ok | 356.6 | 3.365 | 5.067 | 9.079 | 17.055 | 0.349 | 615.5 |
+| head-my-w3-05.haproxy-tcp.r178.3.rep3 | ok | 178.3 | 3.111 | 3.703 | 3.929 | 5.935 | 0.057 | 320.3 |
+| head-my-w3-05.vericto-enforce.r178.3.rep3 | ok | 178.3 | 3.745 | 5.071 | 6.331 | 14.727 | 0.182 | 308.3 |
+| head-my-w3-05.direct.r178.3.rep3 | ok | 178.3 | 2.689 | 3.273 | 3.467 | 4.263 | - | 185.5 |
+| head-my-w3-05.haproxy-tcp.r320.9.rep3 | ok | 320.9 | 3.029 | 3.697 | 3.931 | 7.555 | 0.101 | 563.7 |
+| head-my-w3-05.direct.r320.9.rep3 | ok | 320.9 | 2.607 | 3.231 | 3.511 | 4.363 | - | 332.8 |
+| head-my-w3-05.vericto-enforce.r320.9.rep3 | ok | 320.9 | 3.285 | 4.795 | 8.311 | 17.535 | 0.328 | 570.9 |
+| head-my-w3-05.vericto-enforce.r249.6.rep3 | ok | 249.6 | 3.651 | 5.171 | 7.867 | 16.815 | 0.244 | 439.5 |
+| head-my-w3-05.haproxy-tcp.r249.6.rep3 | ok | 249.6 | 3.063 | 3.665 | 3.903 | 13.223 | 0.079 | 429.0 |
+| head-my-w3-05.direct.r249.6.rep3 | ok | 249.6 | 2.599 | 3.197 | 3.407 | 4.077 | - | 273.8 |
+| head-my-w3-05.direct.r107.rep3 | ok | 107 | 2.723 | 3.275 | 3.495 | 5.227 | - | 125.6 |
+| head-my-w3-05.vericto-enforce.r107.rep3 | ok | 107 | 3.795 | 4.843 | 6.415 | 14.271 | 0.109 | 185.8 |
+| head-my-w3-05.haproxy-tcp.r107.rep3 | ok | 107 | 3.159 | 3.749 | 4.001 | 5.899 | 0.035 | 203.4 |
+| head-my-w3-05.vericto-enforce.r35.7.rep3 | ok | 35.7 | 3.967 | 4.679 | 5.943 | 13.599 | 0.041 | 77.6 |
+| head-my-w3-05.direct.r35.7.rep3 | ok | 35.7 | 2.759 | 3.335 | 3.491 | 3.937 | - | 37.7 |
+| head-my-w3-05.haproxy-tcp.r35.7.rep3 | ok | 35.7 | 3.309 | 3.897 | 4.175 | 12.671 | 0.012 | 75.7 |
+| head-my-w3-05.direct.r285.3.rep3 | ok | 285.3 | 2.601 | 3.193 | 3.383 | 4.107 | - | 305.2 |
+| head-my-w3-05.haproxy-tcp.r285.3.rep3 | ok | 285.3 | 3.093 | 3.745 | 4.027 | 4.983 | 0.090 | 490.4 |
+| head-my-w3-05.vericto-enforce.r285.3.rep3 | ok | 285.3 | 3.613 | 5.307 | 7.799 | 16.143 | 0.286 | 504.7 |
+| head-my-w3-05.haproxy-tcp.r356.6.rep3 | ok | 356.6 | 2.835 | 3.739 | 4.027 | 5.227 | 0.113 | 629.5 |
+| head-my-w3-05.vericto-enforce.r356.6.rep3 | ok | 356.6 | 3.405 | 5.135 | 11.231 | 20.463 | 0.370 | 616.2 |
+| head-my-w3-05.direct.r356.6.rep3 | ok | 356.6 | 2.539 | 3.207 | 3.367 | 4.863 | - | 385.0 |
+
+## Proxy CPU per 1,000 QPS (linear fit, open-loop cells below 80% of S)
+
+| Curve | Target | Size | n | vCPU per 1,000 QPS [95%] | intercept vCPU | USD/month per 1,000 QPS at 70% utilisation |
+| --- | --- | --- | --- | --- | --- | --- |
+| head-my-w3-05 | vericto-enforce | 0.5 | 12 | 0.0619 [0.0599, 0.0638] | 0.0057 | 2.09 |
+
+## Network traffic (caps: 400 Mbps per component, 800 Mbps aggregate)
+
+Cells aborted by a cap: 0. Per-cell maxima are in traffic.csv; bytes/s per direction over each measured window in traffic_directions.csv.
+
+Bytes per direction at vericto-enforce, highest offered rate of each open-loop curve (saturated cells included; Mbps, window mean):
+
+| Curve | Rate/s | client to proxy | proxy to client | proxy to DB | DB to proxy | telemetry out | proxy total | result bytes per request |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| head-my-w3-05 | 357 | 5.9 | 115.9 | 5.4 | 115.9 | 2.28 | 245.4 | 40625 |
+
+## Charts
+

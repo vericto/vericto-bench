@@ -1,0 +1,2 @@
+{"agree":true,"bytes":52,"class":"select_only","decision":"flag","declared":"flag","dialect":"postgres","rewritten":false,"rule":"VERICTO-050"}
+{"disagreements":0,"engine_version":"4.3.0","rules":42}

@@ -1,0 +1,3 @@
+# day1-pg
+curve,engine,target,size,n,slope,slope_lo,slope_hi,intercept,intercept_lo,intercept_hi,usd_per_month_per_1000qps_at_100pct,usd_per_month_per_1000qps_at_70pct,usd_per_month_per_1000qps_at_50pct
+head-pg-w1-05,pg,vericto-enforce,0.5,12,0.062205916199601106,0.060891591391446134,0.06352024100775608,0.01859790353956567,0.012779805553159867,0.02441600152597147,1.470386123576451,2.100551605109216,2.940772247152902
