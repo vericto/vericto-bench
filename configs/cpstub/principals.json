@@ -1,0 +1,1 @@
+{"version": "bench-p1", "entries": [{"id": "pgbench", "type": "service", "identify": {"db_user": "bench"}}]}

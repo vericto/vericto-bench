@@ -1,0 +1,122 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# vericto-proxy 4.17.3 with business policies ON (VERICTO_POLICY_RULES=enforce),
+# against 4.17.0 and the 4.17.2 candidate with policies on, and 4.17.3 with
+# policies off; for two bundles. Not gated: reported against 4.17.0 policies on
+# and 4.17.2 policies on (owner target: most of 4.17.2's +54% extended / 3.5x
+# prepared recovered for time-free policies). Not published.
+#
+# 4.17.2 evaluates every Execute again while any business policy is active.
+# 4.17.3 does so only when the bundle's policies read time (time.*); otherwise
+# a prepared statement's verdict is reused while its snapshots (rules,
+# effective policy, bundle, session context) are unchanged. Two bundles, from
+# one control-plane stub:
+#   time-dependent (configs/cpstub/policy-rules.json, the 4.17.2 policy):
+#     deny_if: in_window(time.now, "Wed 03:00-03:01", "UTC") on select of
+#     public.pgbench_accounts by service principals (engine fields time.now,
+#     time.tz): 4.17.3 must still evaluate every Execute;
+#   time-free (configs/cpstub/policy-rules-alt.json, variants vericto-poltf-*,
+#     VERICTO_API_KEY=enforce-pg-alt): deny_if: stmt.has_where == false, same
+#     scope (engine field stmt.has_where): reused by 4.17.3.
+# Neither refuses a pgbench statement. pgbench's database user `bench` is the
+# service principal `pgbench` (configs/cpstub/principals.json).
+#
+# The stub signs every bundle with an Ed25519 key it generates in memory for
+# this run (cpstub -sign; never a Vericto key) and the proxies trust only that
+# key (VERICTO_BUNDLE_SIGNING_KEYS from the stub's /signing-keys); a cell whose
+# proxy did not apply a verified bundle is aborted.
+#
+# Fixed before the run: S as in the gate (PostgreSQL W1 6,032.6/s); 0.5 vCPU,
+# TLS on both legs; open loop at 30 and 50% of S, 5 repetitions x 60 s (15 s
+# warm-up), a Williams order per (repetition, rate); closed loop at 16
+# connections, 3 repetitions. The 4.17.2 policies-on extended cells at 50% of S
+# saturate by design (166 us/tx in the 4.17.2 run: the 0.5 quota).
+#
+# Stack C1: PostgreSQL W1 extended protocol.
+
+[suite]
+name = "proxy-4173-policies-ext"
+profile = "quick"
+order_seed = 2026102515
+reps = 5
+warmup_s = 15
+duration_s = 60
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-pol-4170"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-pol-4170]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_17_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "enforce" }
+label = "4.17.0, VERICTO_POLICY_RULES=enforce, time-dependent policy"
+
+[variant.vericto-pol-4172]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE_2"
+env = { VERICTO_POLICY_RULES = "enforce" }
+label = "4.17.2 candidate, VERICTO_POLICY_RULES=enforce, time-dependent policy"
+
+[variant.vericto-pol-4173]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "enforce" }
+label = "4.17.3 candidate, VERICTO_POLICY_RULES=enforce, time-dependent policy"
+
+[variant.vericto-poltf-4170]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_17_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "enforce", VERICTO_API_KEY = "enforce-pg-alt" }
+label = "4.17.0, VERICTO_POLICY_RULES=enforce, time-free policy"
+
+[variant.vericto-poltf-4172]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE_2"
+env = { VERICTO_POLICY_RULES = "enforce", VERICTO_API_KEY = "enforce-pg-alt" }
+label = "4.17.2 candidate, VERICTO_POLICY_RULES=enforce, time-free policy"
+
+[variant.vericto-poltf-4173]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "enforce", VERICTO_API_KEY = "enforce-pg-alt" }
+label = "4.17.3 candidate, VERICTO_POLICY_RULES=enforce, time-free policy"
+
+[variant.vericto-enforce-4173]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.17.3 candidate, VERICTO_POLICY_RULES=off"
+
+[[curve]]
+id = "sat-pg-ext-pol"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["vericto-pol-4170", "vericto-pol-4172", "vericto-pol-4173", "vericto-poltf-4170", "vericto-poltf-4172", "vericto-poltf-4173", "vericto-enforce-4173"]
+loop = "closed"
+concurrency = [16]
+warmup_s = 10
+duration_s = 30
+reps = 3
+
+[[curve]]
+id = "pol-pg-ext-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-pol-4170", "vericto-pol-4172", "vericto-pol-4173", "vericto-poltf-4170", "vericto-poltf-4172", "vericto-poltf-4173", "vericto-enforce-4173"]
+rates_pct = [30, 50]
+saturation_qps = 6032.6

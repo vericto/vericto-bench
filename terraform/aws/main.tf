@@ -15,7 +15,7 @@ locals {
   two_host     = var.topology == "two-host"
   name         = "vericto-bench-${var.run_id}"
   repo_root    = abspath("${path.module}/../..")
-  auto_hours   = { quick = 3, "m2-quick" = 9, "m2-mysql-ab" = 5, "m2-fix-ab" = 5, "proxy-tail" = 10, "proxy-tail-control" = 3, c7i = 14, day2 = 24, published = 132 }
+  auto_hours   = { quick = 3, "m2-quick" = 9, "m2-mysql-ab" = 5, "m2-fix-ab" = 5, "proxy-tail" = 10, "proxy-tail-control" = 3, "proxy-4171-gate-a" = 8, "proxy-4171-gate-b" = 8, "proxy-4172-gate-a" = 8, "proxy-4172-gate-b" = 8, "proxy-4172-policies" = 5, "proxy-4173-gate-a1" = 7, "proxy-4173-gate-a2" = 7, "proxy-4173-gate-b1" = 6, "proxy-4173-gate-b2" = 7, "proxy-4173-policies-ext" = 5, "proxy-4173-policies-prep" = 5, "proxy-4172-prof" = 3, c7i = 14, day2 = 24, published = 132 }
   max_hours    = var.max_hours > 0 ? var.max_hours : lookup(local.auto_hours, var.suite, 30)
   max_minutes  = local.max_hours * 60
   day          = var.day > 0 ? var.day : (var.suite == "day2" ? 2 : 1)
@@ -364,6 +364,7 @@ data "archive_file" "harness" {
     "terraform/aws/.build",
     "terraform/aws/terraform.tfstate",
     "terraform/aws/terraform.tfstate.backup",
+    "terraform/aws/terraform.tfstate.d",
     "terraform/aws/results",
     "terraform/aws/run.tfplan",
     "terraform/aws/.terraform.tfstate.lock.info",
@@ -553,17 +554,18 @@ resource "aws_iam_instance_profile" "loadgen" {
 
 locals {
   common_vars = {
-    run_id               = var.run_id
-    suite                = var.suite
-    topology             = var.topology
-    bucket               = aws_s3_bucket.results.id
-    harness_key          = local.harness_key
-    region               = var.region
-    max_minutes          = local.max_minutes
-    auto_shutdown        = var.auto_shutdown ? "1" : "0"
-    proxy_image_override = var.proxy_image_override
-    harness_commit       = var.harness_commit
-    day                  = local.day
+    run_id                 = var.run_id
+    suite                  = var.suite
+    topology               = var.topology
+    bucket                 = aws_s3_bucket.results.id
+    harness_key            = local.harness_key
+    region                 = var.region
+    max_minutes            = local.max_minutes
+    auto_shutdown          = var.auto_shutdown ? "1" : "0"
+    proxy_image_override   = var.proxy_image_override
+    proxy_image_override_2 = var.proxy_image_override_2
+    harness_commit         = var.harness_commit
+    day                    = local.day
   }
 }
 
@@ -610,6 +612,11 @@ resource "aws_instance" "sut" {
     precondition {
       condition     = local.own_network || (local.host_subnet_id != "" && contains(local.az_candidates, local.az))
       error_message = "existing_vpc_id: no subnet among existing_subnet_ids / existing_placement_subnet_id is in an AZ that offers every instance type of this run."
+    }
+    precondition {
+      # The hosts may pull exactly the repository of proxy_image_override.
+      condition     = var.proxy_image_override_2 == "" || (var.proxy_image_override != "" && split("@", var.proxy_image_override_2)[0] == split("@", var.proxy_image_override)[0])
+      error_message = "proxy_image_override_2 must be in the repository of proxy_image_override."
     }
   }
 

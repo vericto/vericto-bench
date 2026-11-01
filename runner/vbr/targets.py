@@ -24,6 +24,7 @@ on both sides; see the README, "Design choices and changes").
 from __future__ import annotations
 
 import json
+import time
 import os
 from dataclasses import dataclass
 
@@ -95,15 +96,57 @@ def start_db(topo: T.Topology, images: Images, engine: str, tuning: dict, certs:
     return c
 
 
-def start_cpstub(topo: T.Topology, images: Images) -> T.Container:
+def start_cpstub(topo: T.Topology, images: Images, sign: bool = False) -> T.Container:
+    """sign: the stub signs every bundle with an Ed25519 key it generates in
+    memory (bench-only, never a Vericto key), and serves the bench business
+    policy and principals to a proxy that announces cel/1; for variants with
+    VERICTO_POLICY_RULES on (see start_target). A variant with an API key
+    ending in -alt (env VERICTO_API_KEY = "enforce-pg-alt") gets the
+    alternative policy set (configs/cpstub/policy-rules-alt.json) instead."""
     h = topo.sut
     listen = f"127.0.0.1:{CPSTUB_PORT}" if h.network == "host" else f"0.0.0.0:{CPSTUB_PORT}"
-    c = T.create(topo, h, "vb-cpstub", images.tools,
-                 args=["cpstub", "-listen", listen, "-rules", "/opt/vericto-bench/rules.json",
-                       "-sensitive", "/opt/vericto-bench/sensitive.json"],
-                 cpuset=h.cpuset("CPU_AUX"))
+    args = ["cpstub", "-listen", listen, "-rules", "/opt/vericto-bench/rules.json",
+            "-sensitive", "/opt/vericto-bench/sensitive.json"]
+    if sign:
+        # Two bundles: the default policy set, and the alternative one for a
+        # variant whose VERICTO_API_KEY ends in -alt (cpstub.AltKeySuffix).
+        args += ["-sign", "-policy-rules", "/opt/vericto-bench/policy-rules.json",
+                 "-policy-rules-alt", "/opt/vericto-bench/policy-rules-alt.json",
+                 "-principals", "/opt/vericto-bench/principals.json"]
+    _SIGNING_KEYS.clear()
+    c = T.create(topo, h, "vb-cpstub", images.tools, args=args, cpuset=h.cpuset("CPU_AUX"))
     c.start()
     return c
+
+
+_SIGNING_KEYS: dict[str, str] = {}
+
+
+def cpstub_signing_keys(topo: T.Topology) -> str:
+    """The running stub's public key as VERICTO_BUNDLE_SIGNING_KEYS JSON."""
+    if "keys" not in _SIGNING_KEYS:
+        url = f"{cpstub_url(topo) if topo.sut.network != 'host' else f'http://127.0.0.1:{CPSTUB_PORT}'}/signing-keys"
+        for _ in range(30):
+            p = topo.sut.docker("exec", "vb-cpstub", "wget", "-qO-", url, check=False)
+            out = p.stdout.decode().strip()
+            if p.returncode == 0 and out.startswith("["):
+                json.loads(out)  # well formed
+                _SIGNING_KEYS["keys"] = out
+                break
+            time.sleep(1)
+        else:
+            raise T.SetupError("cpstub serves no signing key (started without -sign?)")
+    return _SIGNING_KEYS["keys"]
+
+
+def policies_on(variant) -> bool:
+    """Whether a variant runs business policy rules (VERICTO_POLICY_RULES on)."""
+    return bool(variant) and variant.env.get("VERICTO_POLICY_RULES", "off").strip().lower() not in ("", "off")
+
+
+def sanitized(variant) -> bool:
+    """Whether a variant's API key selects sanitized query telemetry (cpstub.SanitizedKeyMarker)."""
+    return bool(variant) and "-san" in variant.env.get("VERICTO_API_KEY", "")
 
 
 def cpstub_url(topo: T.Topology) -> str:
@@ -121,12 +164,13 @@ def cpstub_get(topo: T.Topology, path: str, post: bool = False) -> dict:
 def budget(topo: T.Topology, size: str, second: bool = False) -> tuple[str, str]:
     """(cpuset, cpus) of an intermediary at a size: 0.5 = one core with a 50%
     CFS quota, 1 = one whole core, 2x0.5 = two cores at 50% each, 0.5x2c = a
-    50% quota over two cores (as a 0.5 vCPU Fargate task on its 2-vCPU host)."""
+    50% quota over two cores (as a 0.5 vCPU Fargate task on its 2-vCPU host),
+    0.25 = one core with a 25% CFS quota."""
     h = topo.sut
     cpuset = h.cpuset("CPU_PROXY2" if second else "CPU_PROXY")
     if size == "0.5x2c":
         cpuset = ",".join(x for x in (h.cpuset("CPU_PROXY"), h.cpuset("CPU_PROXY2")) if x)
-    cpus = "" if size == "1" else "0.5"
+    cpus = {"1": "", "0.25": "0.25"}.get(size, "0.5")
     return cpuset, cpus
 
 
@@ -161,11 +205,17 @@ def start_target(topo: T.Topology, images: Images, engine: str, target: str, siz
                 env["VERICTO_ALLOW_INSECURE_API_URL"] = "true"
         if variant:
             env.update(variant.env)
+            if policies_on(variant) and "VERICTO_BUNDLE_SIGNING_KEYS" not in env:
+                # Trust only the stub's ephemeral key: the bundle must verify.
+                env["VERICTO_BUNDLE_SIGNING_KEYS"] = cpstub_signing_keys(topo)
         c = T.create(topo, h, name, variant_image or images.proxy, env=env, cpuset=cpuset, cpus=cpus)
         if tls:
-            # Throwaway per-run key, readable by the image's non-root user.
+            # Throwaway per-run key, readable by the image's non-root user. The
+            # run's CA too, for a variant with UPSTREAM_SSLMODE=verify-full and
+            # UPSTREAM_SSLROOTCERT=/certs/ca.crt (the database's certificate names
+            # 127.0.0.1 and localhost).
             c.put("/", {"certs/": (b"", 0o755), "certs/server.crt": (certs["server.crt"], 0o644),
-                        "certs/server.key": (certs["server.key"], 0o644)})
+                        "certs/server.key": (certs["server.key"], 0o644), "certs/ca.crt": (certs["ca.crt"], 0o644)})
         c.start()
         return c
     if target == "haproxy-tcp":

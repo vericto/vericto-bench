@@ -23,7 +23,8 @@ PROFILES = ("smoke", "quick", "published")
 TOOLS = ("vbench", "pgbench", "sysbench")
 # 0.5x2c: the 0.5 vCPU quota over two cores, as a 0.5 vCPU Fargate task on its
 # 2-vCPU host (the quota caps CPU time, not the CPUs the threads run on).
-SIZES = ("0.5", "1", "2x0.5", "0.5x2c")
+# 0.25: one core with a 25% CFS quota, the smallest Fargate task (0.25 vCPU).
+SIZES = ("0.5", "1", "2x0.5", "0.5x2c", "0.25")
 TARGETS = {
     "pg": ("direct", "haproxy-tcp", "pgbouncer-session", "vericto-offline", "vericto-enforce", "vericto-observe"),
     "mysql": ("direct", "haproxy-tcp", "proxysql", "vericto-offline", "vericto-enforce", "vericto-observe"),
@@ -124,6 +125,10 @@ def _get(d: dict, key: str, typ, default=None, required=False):
 # A variant with this image runs the image the run was given by digest
 # (PROXY_IMAGE_OVERRIDE in the environment), not a versions.lock entry.
 OVERRIDE_IMAGE_KEY = "PROXY_IMAGE_OVERRIDE"
+# A second run image (PROXY_IMAGE_OVERRIDE_2, terraform proxy_image_override_2,
+# in the same bench-only repository): two unreleased candidates in one run.
+OVERRIDE_IMAGE_KEY_2 = "PROXY_IMAGE_OVERRIDE_2"
+OVERRIDE_IMAGE_KEYS = (OVERRIDE_IMAGE_KEY, OVERRIDE_IMAGE_KEY_2)
 
 
 def _variants(raw: dict) -> dict[str, Variant]:
@@ -139,8 +144,8 @@ def _variants(raw: dict) -> dict[str, Variant]:
         image_key = _get(v, "image", str, "VERICTO_PROXY_IMAGE")
         # PROXY_IMAGE_OVERRIDE: the run's own image by digest (terraform
         # proxy_image_override), e.g. an unreleased candidate in a bench-only registry.
-        if not image_key.endswith("_IMAGE") and image_key != OVERRIDE_IMAGE_KEY:
-            raise SuiteError(f"variant {name}: image must be a *_IMAGE key of versions.lock or {OVERRIDE_IMAGE_KEY}")
+        if not image_key.endswith("_IMAGE") and image_key not in OVERRIDE_IMAGE_KEYS:
+            raise SuiteError(f"variant {name}: image must be a *_IMAGE key of versions.lock or one of {OVERRIDE_IMAGE_KEYS}")
         env = _get(v, "env", dict, {})
         for k, x in env.items():
             if not re.fullmatch(r"[A-Z][A-Z0-9_]*", k) or not isinstance(x, str):

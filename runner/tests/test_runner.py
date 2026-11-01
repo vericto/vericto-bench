@@ -76,6 +76,42 @@ class Suites(unittest.TestCase):
         self.assertIsNone(variant_ref(cand.image_key, {"PROXY_IMAGE_OVERRIDE": ref}, {}))  # never from the lock
         self.assertEqual(variant_ref("VERICTO_PROXY_4_14_3_IMAGE", {"VERICTO_PROXY_4_14_3_IMAGE": ref}, {}), ref)
         self.assertIsNone(variant_ref("VERICTO_X_IMAGE", {}, {"PROXY_IMAGE_OVERRIDE": ref}))
+        ref2 = "registry.example/vericto-proxy@sha256:" + "b" * 64
+        env = {"PROXY_IMAGE_OVERRIDE": ref, "PROXY_IMAGE_OVERRIDE_2": ref2}
+        self.assertEqual(variant_ref(S.OVERRIDE_IMAGE_KEY_2, {}, env), ref2)
+        self.assertEqual(variant_ref(S.OVERRIDE_IMAGE_KEY, {}, env), ref)
+        self.assertIsNone(variant_ref(S.OVERRIDE_IMAGE_KEY_2, {"PROXY_IMAGE_OVERRIDE_2": ref2}, {"PROXY_IMAGE_OVERRIDE": ref}))
+
+    def test_policies_on_variants_need_the_signing_stub(self):
+        from vbr import targets as TG
+        s = S.load(os.path.join(REPO, "suites", "proxy-4172-policies.toml"))
+        self.assertTrue(TG.policies_on(s.variants["vericto-pol-4172"]))
+        self.assertTrue(TG.policies_on(s.variants["vericto-pol-4170"]))
+        self.assertFalse(TG.policies_on(s.variants["vericto-enforce-4172"]))
+        self.assertFalse(TG.policies_on(None))
+        g = S.load(os.path.join(REPO, "suites", "proxy-4172-gate-a.toml"))
+        self.assertFalse(any(TG.policies_on(v) for v in g.variants.values()), "the gate runs policies off")
+
+    def test_4173_suites_two_candidates_and_two_bundles(self):
+        from vbr import targets as TG
+        for f in ("a1", "a2", "b1", "b2"):
+            g = S.load(os.path.join(REPO, "suites", f"proxy-4173-gate-{f}.toml"))
+            self.assertFalse(any(TG.policies_on(v) for v in g.variants.values()), f)
+            self.assertEqual(g.variants["vericto-enforce-4173"].image_key, S.OVERRIDE_IMAGE_KEY)
+            self.assertEqual(g.variants["vericto-enforce-4172"].image_key, S.OVERRIDE_IMAGE_KEY_2)
+            for c in g.curves:
+                if c.loop == "open" and not c.id.startswith("prof"):
+                    self.assertEqual(c.targets, ["direct", "vericto-enforce-4162", "vericto-enforce-4170",
+                                                 "vericto-enforce-4172", "vericto-enforce-4173"], c.id)
+        for m in ("ext", "prep"):
+            p = S.load(os.path.join(REPO, "suites", f"proxy-4173-policies-{m}.toml"))
+            for name, v in p.variants.items():
+                alt = name.startswith("vericto-poltf-")
+                self.assertEqual(TG.policies_on(v), name.startswith("vericto-pol"), name)
+                self.assertEqual(v.env.get("VERICTO_API_KEY", "enforce-pg").endswith("-alt"), alt, name)
+        with open(os.path.join(REPO, "configs", "cpstub", "policy-rules-alt.json")) as f:
+            alt_rules = json.load(f)
+        self.assertNotIn("time.", alt_rules[0]["ast_condition_yaml"])
 
     def test_variant_sizes(self):
         s = S.load(os.path.join(REPO, "suites", "proxy-tail.toml"))
@@ -211,3 +247,40 @@ class Components(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SysbenchModeTest(unittest.TestCase):
+    def test_ps_mode_follows_the_curve_mode(self):
+        from vbr import suite as S, tools as TL
+        suite = S.Suite(name="t", profile="quick", order_seed=1, reps=1, warmup_s=1, duration_s=2, cooldown_s=0,
+                        interval_s=1, datasets={}, curves=[], raw={}, database={}, engine_eval={})
+        for mode, want in (("text", ["--db-ps-mode=disable"]), ("prepared", ["--db-ps-mode=auto"]), ("", [])):
+            c = S.Curve(id="x", engine="mysql", tool="sysbench", workload="oltp_point_select", mode=mode, tls=False,
+                        size="0.5", targets=["direct"], loop="closed", concurrency=[16])
+            a = TL.sysbench_args(S.Cell(c, 1, "direct", 0.0, 16, None), ["h"], [3306], suite, {})
+            self.assertEqual([x for x in a if x.startswith("--db-ps-mode")], want)
+            self.assertEqual(a[-1], "run")
+        c.mode = "bogus"
+        with self.assertRaises(ValueError):
+            TL.sysbench_args(S.Cell(c, 1, "direct", 0.0, 16, None), ["h"], [3306], suite, {})
+
+
+class QuarterVcpuTest(unittest.TestCase):
+    def test_quarter_vcpu_is_one_core_at_25_percent(self):
+        from vbr import targets as TG
+
+        class H:
+            def cpuset(self, name):
+                return {"CPU_PROXY": "6", "CPU_PROXY2": "7"}.get(name, "")
+
+        class Topo:
+            sut = H()
+        self.assertEqual(TG.budget(Topo(), "0.25"), ("6", "0.25"))
+        self.assertEqual(TG.budget(Topo(), "0.5"), ("6", "0.5"))
+        self.assertEqual(TG.budget(Topo(), "1"), ("6", ""))
+        s = S.load(os.path.join(REPO, "suites", "pub421-025-pg.toml"))
+        self.assertEqual({c.size for c in s.curves}, {"0.25"})
+        m = S.load(os.path.join(REPO, "suites", "pub421-025-my.toml"))
+        cells = S.expand(m, m.curves[0], {})
+        # the published MySQL rates that fit under a 0.25 vCPU quota (36, 107, 178 tx/s)
+        self.assertEqual(sorted({round(c.rate) for c in cells}), [36, 107, 178])

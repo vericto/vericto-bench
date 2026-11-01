@@ -1,0 +1,155 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Release gate of the vericto-proxy 4.20.0 candidate (4.19.0's CPU work, PR #95,
+# + 4.20.0's parser-version warning + patch 0072; tree 26c4e770) against 4.18.0
+# (current Latest; the acceptance baseline), with the candidate built twice from
+# the same tree: plain (no PGO, PROXY_IMAGE_OVERRIDE_2) and PGO-trained as
+# release.yml does (PROXY_IMAGE_OVERRIDE). Not published.
+#
+# Fixed before the run: S pre-registered as in proxy-tail and the 4.17.x gates
+# (PostgreSQL W1 6,032.6/s, MySQL W3 356.6/s), other curves at fixed rates or at
+# a share of this run's closed-loop S of 4.18.0; a Williams order per
+# (repetition, rate). Decision (owner, 2026-10-28): CPU per transaction no worse
+# than 4.18.0 in any cell; p99 at 80/90% of S no worse than 4.18.0 + 0.05 ms; no
+# collapse at 90% of S on one core; PGO kept only if cheaper than plain.
+#
+# Stack C2: business policies on (VERICTO_POLICY_RULES=enforce, the signed
+# time-free bundle of cpstub -policy-rules-alt) for PostgreSQL W1 extended and
+# prepared at 30/50% of S (4 x 60 s); connection churn with TLS on both hops (W7:
+# a new connection, TLS, authentication and one PK lookup per request), PostgreSQL
+# with UPSTREAM_SSLMODE=verify-full and MySQL with require, at 50/s (5 x 60 s); a
+# large result with TLS on both hops (W8 payload-100k, PostgreSQL extended) at
+# 100/s (5 x 60 s).
+
+[suite]
+name = "proxy-420-policies-churn"
+profile = "quick"
+order_seed = 2026102806
+reps = 5
+warmup_s = 15
+duration_s = 60
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-enforce-4180"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4180]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_18_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.18.0, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-plain]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE_2"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "candidate 26c4e770 without PGO, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-pgo]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "candidate 26c4e770 with PGO (release.yml), VERICTO_POLICY_RULES=off"
+
+[variant.vericto-poltf-4180]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_18_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "enforce", VERICTO_API_KEY = "enforce-pg-alt" }
+label = "4.18.0, business policies on, time-free bundle (stmt.has_where)"
+
+[variant.vericto-poltf-plain]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE_2"
+env = { VERICTO_POLICY_RULES = "enforce", VERICTO_API_KEY = "enforce-pg-alt" }
+label = "candidate without PGO, business policies on, time-free bundle"
+
+[variant.vericto-poltf-pgo]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "enforce", VERICTO_API_KEY = "enforce-pg-alt" }
+label = "candidate with PGO, business policies on, time-free bundle"
+
+[variant.vericto-vf-4180]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_18_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "off", UPSTREAM_SSLMODE = "verify-full", UPSTREAM_SSLROOTCERT = "/certs/ca.crt" }
+label = "4.18.0, UPSTREAM_SSLMODE=verify-full"
+
+[variant.vericto-vf-plain]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE_2"
+env = { VERICTO_POLICY_RULES = "off", UPSTREAM_SSLMODE = "verify-full", UPSTREAM_SSLROOTCERT = "/certs/ca.crt" }
+label = "candidate without PGO, UPSTREAM_SSLMODE=verify-full"
+
+[variant.vericto-vf-pgo]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off", UPSTREAM_SSLMODE = "verify-full", UPSTREAM_SSLROOTCERT = "/certs/ca.crt" }
+label = "candidate with PGO, UPSTREAM_SSLMODE=verify-full"
+
+[[curve]]
+id = "pol-pg-ext-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-poltf-4180", "vericto-poltf-plain", "vericto-poltf-pgo"]
+rates_pct = [30, 50]
+saturation_qps = 6032.6
+reps = 4
+
+[[curve]]
+id = "pol-pg-prep-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "prepared"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-poltf-4180", "vericto-poltf-plain", "vericto-poltf-pgo"]
+rates_pct = [30, 50]
+saturation_qps = 6032.6
+reps = 4
+
+[[curve]]
+id = "churn-pg-vf-05"
+engine = "pg"
+tool = "vbench"
+workload = "connect"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-vf-4180", "vericto-vf-plain", "vericto-vf-pgo"]
+rates = [50]
+conn_mode = "newconn"
+
+[[curve]]
+id = "churn-my-tls-05"
+engine = "mysql"
+tool = "vbench"
+workload = "connect"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4180", "vericto-enforce-plain", "vericto-enforce-pgo"]
+rates = [50]
+conn_mode = "newconn"
+
+[[curve]]
+id = "large-pg-100k-05"
+engine = "pg"
+tool = "vbench"
+workload = "payload-100k"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4180", "vericto-enforce-plain", "vericto-enforce-pgo"]
+rates = [100]

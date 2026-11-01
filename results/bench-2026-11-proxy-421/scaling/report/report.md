@@ -1,0 +1,99 @@
+**scaling.**
+
+# vericto-bench report: pub421-scaling
+
+| Run | Profile | Topology | Proxy image | Harness commit | Started | Finished |
+| --- | --- | --- | --- | --- | --- | --- |
+| bench-2026-11-proxy-421-h2 | published | two-host | `<bench-account>.dkr.ecr.us-east-1.amazonaws.com/vericto-bench/proxy-421:4.21.0@sha256:7cca34697f61cf2baadb85a963520813ef108f10ad379906ffffb60b860c3bfd` | `30131ce74266` | 2026-10-31T14:14:54.693556+00:00 | 2026-10-31T18:52:58.730505+00:00 |
+
+Cells: 42 recorded, 40 used, 0 invalid (listed at the end, not used).
+
+## Added latency (open loop, from intended send time; target minus direct, paired)
+
+| Curve | Target | Rate/s | % of S | n | added p50 ms [95%] | added p99 ms [95%] | added p99.9 ms [95%] | Note |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h2-pg-w1-05 | vericto-enforce | 2900 | 30 | 2 | 0.085 [0.060, 0.110] | 0.283 [0.276, 0.289] | 1.213 [1.175, 1.251] |  |
+| h2-pg-w1-2x05 | vericto-enforce | 2900 | 30 | 2 | 0.085 [0.078, 0.091] | 0.169 [0.144, 0.194] | 1.091 [0.971, 1.212] |  |
+| h2-pg-w1-2x05 | vericto-enforce | 5801 | 60 | 2 | 0.081 [0.068, 0.094] | 0.297 [0.240, 0.355] | 1.115 [1.084, 1.147] |  |
+| h2-pg-w1-2x05 | vericto-enforce | 8701 | 90 | 2 | 0.082 [0.075, 0.088] | 0.501 [0.463, 0.539] | 1.171 [1.076, 1.267] |  |
+| h2-pg-w1-2x05 | vericto-enforce | 11601 | 120 | 2 | 0.095 [0.075, 0.114] | 0.860 [0.167, 1.552] | 2.381 [0.584, 4.179] |  |
+| h2-pg-w1-2x05 | vericto-enforce | 14502 | 150 | 2 | 0.116 [0.116, 0.116] | 1.377 [0.849, 1.904] | 5.146 [-1.442, 11.735] | not distinguishable from the direct path |
+| h2-pg-w1-2x05 | vericto-enforce | 17402 | 180 | 2 | 4.272 [-45.491, 54.036] | 46.506 [-221.794, 314.806] | 24.462 [-1126.308, 1175.232] | not distinguishable from the direct path |
+
+## Every cell
+
+| Cell | Status | Achieved/s | p50 ms | p99 ms | p99.9 ms | max ms | proxy vCPU | max aggregate Mbps |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h2-pg-w1-2x05.vericto-enforce.r50.rep0.netprobe | ok | 47.1 | 0.616 | 1.274 | 1.388 | 1.388 | 0.009 | 1.6 |
+| h2-pg-w1-2x05.vericto-enforce.r5800.6.rep1 | ok | 5796.0 | 0.382 | 0.698 | 1.610 | 219.870 | 0.400 | 85.5 |
+| h2-pg-w1-2x05.direct.r5800.6.rep1 | ok | 5795.4 | 0.302 | 0.396 | 0.492 | 280.573 | - | 120.2 |
+| h2-pg-w1-2x05.direct.r8700.9.rep1 | ok | 8684.2 | 0.300 | 0.451 | 0.555 | 249.147 | - | 148.0 |
+| h2-pg-w1-2x05.vericto-enforce.r8700.9.rep1 | ok | 8688.1 | 0.382 | 0.949 | 1.734 | 264.063 | 0.578 | 126.9 |
+| h2-pg-w1-2x05.vericto-enforce.r2900.3.rep1 | ok | 2898.1 | 0.394 | 0.531 | 1.530 | 408.745 | 0.226 | 126.0 |
+| h2-pg-w1-2x05.direct.r2900.3.rep1 | ok | 2896.3 | 0.309 | 0.364 | 0.448 | 274.278 | - | 105.6 |
+| h2-pg-w1-2x05.direct.r11601.2.rep1 | ok | 11590.3 | 0.297 | 0.499 | 0.643 | 206.855 | - | 100.9 |
+| h2-pg-w1-2x05.vericto-enforce.r11601.2.rep1 | ok | 11600.1 | 0.393 | 1.413 | 3.166 | 211.827 | 0.770 | 236.9 |
+| h2-pg-w1-2x05.vericto-enforce.r14501.5.rep1 | ok | 14483.1 | 0.418 | 1.929 | 5.445 | 350.719 | 0.913 | 282.7 |
+| h2-pg-w1-2x05.direct.r14501.5.rep1 | ok | 14491.5 | 0.302 | 0.594 | 0.817 | 191.633 | - | 125.8 |
+| h2-pg-w1-2x05.direct.r17401.9.rep1 | ok | 17375.8 | 0.312 | 0.789 | 1.143 | 402.167 | - | 221.3 |
+| h2-pg-w1-2x05.vericto-enforce.r17401.9.rep1 | ok | 17386.3 | 8.501 | 68.411 | 116.174 | 333.617 | 1.000 | 324.2 |
+| h2-pg-w1-2x05.vericto-enforce.r19335.4.rep1 | saturated (achieved rate below 99% of offered) | 17761.6 | 22353.720 | 52105.850 | 53164.945 | 53340.874 | 1.000 | 265.1 |
+| h2-pg-w1-2x05.direct.r19335.4.rep1 | ok | 19298.6 | 0.344 | 1.087 | 1.606 | 132.632 | - | 243.5 |
+| h2-pg-w1-2x05.direct.r5800.6.rep2 | ok | 5793.9 | 0.303 | 0.398 | 0.496 | 239.169 | - | 122.6 |
+| h2-pg-w1-2x05.vericto-enforce.r5800.6.rep2 | ok | 5792.7 | 0.385 | 0.691 | 1.609 | 223.142 | 0.410 | 84.9 |
+| h2-pg-w1-2x05.vericto-enforce.r8700.9.rep2 | ok | 8690.7 | 0.382 | 0.956 | 1.721 | 218.829 | 0.575 | 194.3 |
+| h2-pg-w1-2x05.direct.r8700.9.rep2 | ok | 8679.1 | 0.301 | 0.452 | 0.557 | 198.121 | - | 146.4 |
+| h2-pg-w1-2x05.direct.r2900.3.rep2 | ok | 2895.4 | 0.309 | 0.365 | 0.453 | 297.405 | - | 29.8 |
+| h2-pg-w1-2x05.vericto-enforce.r2900.3.rep2 | ok | 2900.2 | 0.393 | 0.536 | 1.554 | 418.627 | 0.223 | 125.7 |
+| h2-pg-w1-2x05.vericto-enforce.r11601.2.rep2 | ok | 11578.0 | 0.392 | 1.308 | 2.887 | 198.602 | 0.764 | 241.7 |
+| h2-pg-w1-2x05.direct.r11601.2.rep2 | ok | 11580.1 | 0.299 | 0.503 | 0.647 | 210.281 | - | 100.8 |
+| h2-pg-w1-2x05.direct.r14501.5.rep2 | ok | 14486.0 | 0.301 | 0.594 | 0.819 | 390.482 | - | 202.4 |
+| h2-pg-w1-2x05.vericto-enforce.r14501.5.rep2 | ok | 14481.5 | 0.417 | 2.012 | 6.484 | 132.635 | 0.918 | 281.0 |
+| h2-pg-w1-2x05.vericto-enforce.r17401.9.rep2 | ok | 17369.3 | 0.667 | 26.202 | 37.994 | 149.488 | 1.000 | 251.4 |
+| h2-pg-w1-2x05.direct.r17401.9.rep2 | ok | 17376.8 | 0.311 | 0.812 | 104.101 | 254.451 | - | 223.8 |
+| h2-pg-w1-2x05.direct.r19335.4.rep2 | ok | 19290.5 | 0.343 | 1.070 | 1.599 | 178.288 | - | 242.7 |
+| h2-pg-w1-2x05.vericto-enforce.r19335.4.rep2 | saturated (achieved rate below 99% of offered) | 18329.5 | 6806.677 | 58148.945 | 59603.527 | 59902.981 | 1.000 | 274.2 |
+| h2-pg-w1-05.vericto-enforce.r50.rep0.netprobe | ok | 46.8 | 0.571 | 1.232 | 1.333 | 1.333 | 0.007 | 1.7 |
+| h2-pg-w1-05.vericto-enforce.r8700.9.rep1 | saturated (achieved rate below 99% of offered) | 8350.1 | 10154.283 | 31497.056 | 32424.456 | 32540.449 | 0.500 | 205.5 |
+| h2-pg-w1-05.direct.r8700.9.rep1 | ok | 8686.1 | 0.300 | 0.449 | 0.553 | 407.841 | - | 146.3 |
+| h2-pg-w1-05.direct.r2900.3.rep1 | ok | 2892.1 | 0.312 | 0.367 | 0.446 | 414.222 | - | 29.4 |
+| h2-pg-w1-05.vericto-enforce.r2900.3.rep1 | ok | 2895.2 | 0.395 | 0.649 | 1.656 | 232.439 | 0.207 | 116.8 |
+| h2-pg-w1-05.vericto-enforce.r11601.2.rep1 | saturated (achieved rate below 99% of offered) | 6548.5 | 129162.577 | 199070.753 | 202918.771 | 203327.877 | 0.500 | 198.8 |
+| h2-pg-w1-05.direct.r11601.2.rep1 | ok | 11576.3 | 0.299 | 0.502 | 0.654 | 206.473 | - | 101.2 |
+| h2-pg-w1-05.direct.r8700.9.rep2 | ok | 8693.1 | 0.301 | 0.451 | 0.554 | 228.804 | - | 149.7 |
+| h2-pg-w1-05.vericto-enforce.r8700.9.rep2 | saturated (achieved rate below 99% of offered) | 8467.2 | 5603.538 | 21971.542 | 22866.914 | 22991.731 | 0.500 | 206.2 |
+| h2-pg-w1-05.vericto-enforce.r2900.3.rep2 | ok | 2898.6 | 0.397 | 0.648 | 1.662 | 404.936 | 0.216 | 48.8 |
+| h2-pg-w1-05.direct.r2900.3.rep2 | ok | 2897.0 | 0.310 | 0.365 | 0.446 | 276.873 | - | 107.0 |
+| h2-pg-w1-05.direct.r11601.2.rep2 | ok | 11583.4 | 0.299 | 0.504 | 0.655 | 400.589 | - | 170.5 |
+| h2-pg-w1-05.vericto-enforce.r11601.2.rep2 | saturated (achieved rate below 99% of offered) | 6667.7 | 126434.258 | 195154.447 | 198758.979 | 199207.760 | 0.500 | 140.1 |
+
+## Network traffic (caps: 400 Mbps per component, 800 Mbps aggregate)
+
+Cells aborted by a cap: 0. Per-cell maxima are in traffic.csv; bytes/s per direction over each measured window in traffic_directions.csv.
+
+Bytes per direction at vericto-enforce, highest offered rate of each open-loop curve (saturated cells included; Mbps, window mean):
+
+| Curve | Rate/s | client to proxy | proxy to client | proxy to DB | DB to proxy | telemetry out | proxy total | result bytes per request |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h2-pg-w1-05 | 11601 | 12.4 | 11.2 | 13.5 | 10.1 | 2.70 | 49.9 | 212 |
+| h2-pg-w1-2x05 | 19335 | 27.1 | 22.4 | 27.3 | 22.1 | 5.85 | 104.8 | 155 |
+
+## Horizontal scaling (P-2tasks): 1 x 0.5, 1 x 1 and 2 x 0.5 vCPU at the same absolute rates
+
+Saturated cells end a curve (never latency). With two tasks the client spreads its connections over both ports; task 1 / task 2 vCPU show whether the load split evenly.
+
+| Engine | Proxy | Rate/s | cells (saturated) | achieved/s | added p50 ms | added p99 ms | task 1 vCPU | task 2 vCPU | task 1 throttled ms |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| pg | 1x0.5 | 2900 | 2 (0) | 2897 | 0.085 | 0.283 | 0.212 | - | 0 |
+| pg | 2x0.5 | 2900 | 2 (0) | 2899 | 0.085 | 0.169 | 0.097 | 0.127 | 0 |
+| pg | 2x0.5 | 5801 | 2 (0) | 5794 | 0.081 | 0.297 | 0.229 | 0.176 | 0 |
+| pg | 1x0.5 | 8701 | 2 (2) | 8409 | - | - | 0.500 | - | 145876 |
+| pg | 2x0.5 | 8701 | 2 (0) | 8689 | 0.082 | 0.501 | 0.290 | 0.286 | 0 |
+| pg | 1x0.5 | 11601 | 2 (2) | 6608 | - | - | 0.500 | - | 149236 |
+| pg | 2x0.5 | 11601 | 2 (0) | 11589 | 0.095 | 0.860 | 0.368 | 0.399 | 113 |
+| pg | 2x0.5 | 14502 | 2 (0) | 14482 | 0.116 | 1.377 | 0.452 | 0.464 | 441 |
+| pg | 2x0.5 | 17402 | 2 (0) | 17378 | 4.272 | 46.506 | 0.500 | 0.500 | 69116 |
+| pg | 2x0.5 | 19335 | 2 (2) | 18046 | - | - | 0.500 | 0.500 | 95757 |
+
+## Charts
+

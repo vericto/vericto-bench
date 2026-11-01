@@ -1,0 +1,3 @@
+# day1-my
+curve,engine,target,size,n,slope,slope_lo,slope_hi,intercept,intercept_lo,intercept_hi,usd_per_month_per_1000qps_at_100pct,usd_per_month_per_1000qps_at_70pct,usd_per_month_per_1000qps_at_50pct
+head-my-w3-05,mysql,vericto-enforce,0.5,12,0.06185094069139085,0.059895907046031,0.0638059743367507,0.005656835468742433,0.0005452396079267232,0.010768431329558143,1.461995425498682,2.0885648935695458,2.923990850997364

@@ -15,6 +15,10 @@ LOCK="${1:-$REPO_DIR/versions.lock}"
 if [ -z "${PROXY_IMAGE_OVERRIDE:-}" ] && [ -f /etc/vericto-bench/run.env ]; then
   PROXY_IMAGE_OVERRIDE="$(sed -n 's/^PROXY_IMAGE_OVERRIDE=//p' /etc/vericto-bench/run.env)"
 fi
+# A second candidate (terraform proxy_image_override_2), same repository.
+if [ -z "${PROXY_IMAGE_OVERRIDE_2:-}" ] && [ -f /etc/vericto-bench/run.env ]; then
+  PROXY_IMAGE_OVERRIDE_2="$(sed -n 's/^PROXY_IMAGE_OVERRIDE_2=//p' /etc/vericto-bench/run.env)"
+fi
 
 images=()
 while IFS= read -r line; do
@@ -28,6 +32,12 @@ done < "$LOCK"
 if [ -n "${PROXY_IMAGE_OVERRIDE:-}" ]; then
   [[ "$PROXY_IMAGE_OVERRIDE" =~ @sha256:[0-9a-f]{64}$ ]] || { echo "PROXY_IMAGE_OVERRIDE is not pinned by digest" >&2; exit 3; }
   images+=("$PROXY_IMAGE_OVERRIDE")
+fi
+if [ -n "${PROXY_IMAGE_OVERRIDE_2:-}" ]; then
+  [[ "$PROXY_IMAGE_OVERRIDE_2" =~ @sha256:[0-9a-f]{64}$ ]] || { echo "PROXY_IMAGE_OVERRIDE_2 is not pinned by digest" >&2; exit 3; }
+  [ -n "${PROXY_IMAGE_OVERRIDE:-}" ] && [ "${PROXY_IMAGE_OVERRIDE%@*}" = "${PROXY_IMAGE_OVERRIDE_2%@*}" ] || {
+    echo "PROXY_IMAGE_OVERRIDE_2 must be in the repository of PROXY_IMAGE_OVERRIDE" >&2; exit 3; }
+  images+=("$PROXY_IMAGE_OVERRIDE_2")
 fi
 [ "${#images[@]}" -gt 0 ] || { echo "no *_IMAGE entries in $LOCK" >&2; exit 3; }
 

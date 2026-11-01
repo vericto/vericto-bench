@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Profiles of the 4.17.2 candidate against 4.16.2 and 4.17.0 (policies off, 0.5
+# vCPU, TLS on both legs), after the 4.17.2 gate (stacks A-C) showed a residual
+# CPU per transaction: perf record (cycles, call graphs) for 20 s per cell, at 50
+# and 80% of S, PostgreSQL W1 simple, extended and prepared, 2 repetitions. Not
+# gated (profiler overhead), not published.
+
+[suite]
+name = "proxy-4172-prof"
+profile = "quick"
+order_seed = 2026102504
+reps = 2
+warmup_s = 15
+duration_s = 40
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-enforce-4170"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4162]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_16_2_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.16.2, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-4170]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_17_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.17.0, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-4172]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.17.2 candidate, VERICTO_POLICY_RULES=off"
+
+[[curve]]
+id = "prof-pg-simple"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "simple"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4162", "vericto-enforce-4170", "vericto-enforce-4172"]
+rates_pct = [50, 80]
+saturation_qps = 6032.6
+profile_s = 20
+
+[[curve]]
+id = "prof-pg-ext"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4162", "vericto-enforce-4170", "vericto-enforce-4172"]
+rates_pct = [50, 80]
+saturation_qps = 6032.6
+profile_s = 20
+
+[[curve]]
+id = "prof-pg-prep"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "prepared"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4162", "vericto-enforce-4170", "vericto-enforce-4172"]
+rates_pct = [50, 80]
+saturation_qps = 6032.6
+profile_s = 20

@@ -52,9 +52,9 @@ def mirror(ref: str, lock: dict[str, str]) -> str:
 
 def variant_ref(image_key: str, lock: dict[str, str], env) -> str | None:
     """The image reference of a variant: its versions.lock entry, or the run's
-    PROXY_IMAGE_OVERRIDE for image = "PROXY_IMAGE_OVERRIDE". None when unset."""
-    if image_key == S.OVERRIDE_IMAGE_KEY:
-        return env.get(S.OVERRIDE_IMAGE_KEY) or None
+    PROXY_IMAGE_OVERRIDE (PROXY_IMAGE_OVERRIDE_2) for image = that key. None when unset."""
+    if image_key in S.OVERRIDE_IMAGE_KEYS:
+        return env.get(image_key) or None
     return lock.get(image_key)
 
 
@@ -95,7 +95,7 @@ class Runner:
             ref = variant_ref(v.image_key, self.lock, os.environ)
             if ref is None:
                 raise S.SuiteError(f"variant {name}: {v.image_key} is not in versions.lock (or, for "
-                                   f"{S.OVERRIDE_IMAGE_KEY}, not set for this run)")
+                                   f"{'/'.join(S.OVERRIDE_IMAGE_KEYS)}, not set for this run)")
             if not re.search(r"@sha256:[0-9a-f]{64}$", ref):
                 raise S.SuiteError(f"variant {name}: {v.image_key} is not pinned by digest")
             self.variant_refs[name] = ref
@@ -224,7 +224,8 @@ class Runner:
                    "GRANT ALL PRIVILEGES ON *.* TO 'bench'@'%';\nFLUSH PRIVILEGES;\n").encode()
             self.topo.sut.docker("exec", "-i", "-e", "MYSQL_PWD", TG.DB_NAME["mysql"], "mysql", "-uroot", input=sql)
         self.seed()
-        self.cpstub = TG.start_cpstub(self.topo, self.images)
+        self.cpstub = TG.start_cpstub(self.topo, self.images,
+                                      sign=any(TG.policies_on(v) for v in self.suite.variants.values()))
         self.verdict_preflight()
         self.write_manifest(stage="running")
 
@@ -349,6 +350,29 @@ class Runner:
             hosts.append(T.addr(self.topo, self.topo.sut, f"vb-{cell.curve.engine}-{cell.target}-2"))
         return hosts, ports
 
+    def _check_policy_bundle(self, cid: str, targets) -> None:
+        """Business policies on: the proxy applied a signed bundle (a refused
+        signature leaves it on its built-in rules, which would measure
+        policies off) and every policy compiled."""
+        for t in targets:
+            p = t.host.docker("logs", t.name, check=False)
+            text = (p.stdout + p.stderr).decode(errors="replace")
+            if "Ruleset and policy updated from API" not in text:
+                raise T.SetupError(f"{cid}: {t.name} applied no verified bundle")
+            for line in text.splitlines():
+                warning = '"level":"WARN"' in line or '"level":"ERROR"' in line
+                if warning and any(bad in line for bad in ("No verified sync bundle", "does not compile", "signature")):
+                    raise T.SetupError(f"{cid}: {t.name}: {line[:300]}")
+
+    def _check_sanitized(self, cid: str, targets) -> None:
+        """Sanitized telemetry (an API key with -san): the proxy applied a bundle
+        whose telemetry_query_mode is sanitized (else the cell would measure raw)."""
+        for t in targets:
+            p = t.host.docker("logs", t.name, check=False)
+            text = (p.stdout + p.stderr).decode(errors="replace")
+            if not any("Ruleset and policy updated from API" in ln and "anitized" in ln for ln in text.splitlines()):
+                raise T.SetupError(f"{cid}: {t.name} did not apply telemetry_query_mode sanitized")
+
     def run_cell(self, cell, attempt: str = "") -> dict:
         c = cell.curve
         cid = cell.id + attempt
@@ -378,6 +402,10 @@ class Runner:
                 rec["cpstub_syncs_before"] = st.get("syncs")
                 if not st.get("syncs"):
                     raise T.SetupError(f"{cid}: the proxy never synced with cpstub")
+                if TG.policies_on(self.suite.variants.get(cell.target)):
+                    self._check_policy_bundle(cid, targets)
+                if TG.sanitized(self.suite.variants.get(cell.target)):
+                    self._check_sanitized(cid, targets)
                 TG.cpstub_get(self.topo, "/reset", post=True)
             rec.update(self._load(cell, cid, local, data, stop_local, stop_data, hosts, ports, targets))
             if base in ("vericto-enforce", "vericto-observe"):
@@ -504,7 +532,7 @@ class Runner:
             rec["reason"] = "network cap: " + str(net.get("reason"))
         mfrom = _ts(rec.get("measure_from")) or (t_start + warmup)
         mend = _ts(rec.get("end")) or (t_start + warmup + duration)
-        budgets = {"target": 1.0 if self.size_of(cell) == "1" else 0.5, "target2": 0.5}
+        budgets = {"target": {"1": 1.0, "0.25": 0.25}.get(self.size_of(cell), 0.5), "target2": 0.5}
         rec["cpu"] = M.cpu_and_steal(os.path.join(local, "samples.jsonl"), mfrom, mend, budgets)
         rec["wall_s"] = t_end - t_start
         if prof:

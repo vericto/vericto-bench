@@ -11,16 +11,18 @@
 # identifies the image whatever the registry.
 
 # --- System under test --------------------------------------------------------
-# BENCH-2026-11 measures vericto-proxy 4.14.2 (chosen on 2026-10-19 as the
-# latest release). 4.14.2 is documentation-only over 4.14.1 (same code, engine
-# v4.3.0, 42 built-in rules); the code's default log filter is still
-# info,vericto_proxy=debug, so the harness sets RUST_LOG=info explicitly.
+# BENCH-2026-11 published vericto-proxy 4.14.2 (2026-10-20/21; results/bench-2026-11).
+# The refresh of 2026-10-31 (results/bench-2026-11-proxy-421) measures 4.21.0, the
+# latest release (engine v4.6.0, the same 42 built-in rules; default log filter info,
+# which the harness also sets as RUST_LOG=info). The 4.14.2 digest stays below as
+# VERICTO_PROXY_4_14_2_IMAGE.
 # runner/run.py refuses profile=published unless the tag equals PUBLISHED_PROXY_VERSION.
-VERICTO_PROXY_IMAGE=docker.io/vericto/vericto-proxy:4.14.2@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b
+VERICTO_PROXY_IMAGE=docker.io/vericto/vericto-proxy:4.21.0@sha256:7cca34697f61cf2baadb85a963520813ef108f10ad379906ffffb60b860c3bfd
+VERICTO_PROXY_4_14_2_IMAGE=docker.io/vericto/vericto-proxy:4.14.2@sha256:0446e4357183cf676461c2eac42377d0e331ad19d044d12cde1045608785eb6b
 VERICTO_PROXY_MIRROR=ghcr.io/vericto/vericto-proxy
-PUBLISHED_PROXY_VERSION=4.14.2
+PUBLISHED_PROXY_VERSION=4.21.0
 # The engine the proxy pins (vericto-proxy Cargo.toml): engine-eval and the stub's rules use the same tag.
-VERICTO_ENGINE_TAG=v4.3.0
+VERICTO_ENGINE_TAG=v4.6.0
 # Release comparisons (suite [variant.*] targets; never profile=published). Same
 # digests on GHCR (VERICTO_PROXY_MIRROR). 4.14.3 changes only the code's default
 # log filter (the harness sets RUST_LOG=info anyway); 4.15.0 pins engine v4.4.0,
@@ -30,6 +32,15 @@ VERICTO_PROXY_4_14_3_IMAGE=docker.io/vericto/vericto-proxy:4.14.3@sha256:66fa5e9
 VERICTO_PROXY_4_15_0_IMAGE=docker.io/vericto/vericto-proxy:4.15.0@sha256:f4fd543e764204162a04320feefa54e52ac3a1670ea3d8419d32987f70d75124
 # 4.15.3: less CPU per statement (telemetry serialization); the baseline of the tail-latency investigation.
 VERICTO_PROXY_4_15_3_IMAGE=docker.io/vericto/vericto-proxy:4.15.3@sha256:e543749208dbc485de08d139de6b4e7c82fd29f227c6b1b52a7ec7b0669667cf
+# 4.16.2: tokio workers sized from the CPU limit (cgroup quota, ECS task limit); the fix of the 4.15.x tail.
+VERICTO_PROXY_4_16_2_IMAGE=docker.io/vericto/vericto-proxy:4.16.2@sha256:91b4b805126ad913fde955381bcc37c64a7a8781fb95522770a36b6bdf7f97ec
+# 4.17.0: bounded reads (rewrite_limit business policies, engine 4.5.0); Latest on 2026-10-24.
+VERICTO_PROXY_4_17_0_IMAGE=docker.io/vericto/vericto-proxy:4.17.0@sha256:9306b0954e132040760aaf38fa48c95a31b1281882bc7555e74c9ea9e6864ada
+# 4.18.0: the kill switch is VERICTO-105 on the proxy (4.17.3 + 0065-v3); Latest on 2026-10-28, the
+# acceptance baseline of the 4.19.0/4.20.0 gate (multi-arch index, as published on Docker Hub and GHCR).
+VERICTO_PROXY_4_18_0_IMAGE=docker.io/vericto/vericto-proxy:4.18.0@sha256:2bc6df18f95e9de80c1a0d661778b8397bf30636c33c592710a380456e5a897f
+# 4.20.0: 4.19.0's CPU work, PGO release build; Latest on 2026-10-30, the baseline of the 4.21.0 gate.
+VERICTO_PROXY_4_20_0_IMAGE=docker.io/vericto/vericto-proxy:4.20.0@sha256:3d6846372be718cc58a8dfec5e6f4e81d3a768eafb1f35d26470850213a2b3b8
 
 # --- Databases ----------------------------------------------------------------
 # Latest patch releases on 2026-10-23 (BENCH-2026-11 ran 17.6 and 8.4.11; the

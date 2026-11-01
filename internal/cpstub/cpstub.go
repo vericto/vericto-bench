@@ -16,15 +16,36 @@
 //	GET  /healthz
 //
 // The mode is chosen by the proxy's API key: a key starting with "observe"
-// gets monitor_mode=true, any other key gets monitor_mode=false. Nothing is
-// written to disk.
+// gets monitor_mode=true, any other key gets monitor_mode=false; a key that
+// contains "-san" gets telemetry_query_mode "sanitized", any other "raw".
+// Nothing is written to disk.
+//
+// Business policies (proxy VERICTO_POLICY_RULES on): with Config.Sign the stub
+// holds an Ed25519 key generated in memory at start (never written, never a
+// Vericto key) and signs every /sync/rules body as the control plane does
+// (X-Vericto-Bundle-Signature, scheme ed25519-sha256 over
+// "vericto-sync-bundle/1\n" + body). GET /signing-keys returns the public key
+// as the proxy's VERICTO_BUNDLE_SIGNING_KEYS JSON. To a proxy that announces
+// the policy language (X-Vericto-Policy-Language: cel/1...) the body also
+// carries Config.PolicyRules after the built-in rules, and Config.Principals.
+//
+// A second policy set (Config.AltPolicyRules) goes instead to a proxy whose
+// API key ends in AltKeySuffix ("-alt"), so one stub serves two bundles to the
+// variants of one run (e.g. a time-dependent and a time-free policy): each
+// variant picks its bundle with VERICTO_API_KEY. Both are signed with the same
+// ephemeral key.
 package cpstub
 
 import (
 	"compress/gzip"
+	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"net/http"
@@ -71,7 +92,48 @@ type Config struct {
 	// Policy: the default policy of the proxy (critical/high block, medium
 	// flag, low/informational monitor, parse errors allowed and reported).
 	SeverityActions map[string]string
+	// Sign: sign every /sync/rules body with an ephemeral Ed25519 key.
+	Sign bool
+	// KeyID: the signature's key-id (default "bench-ephemeral").
+	KeyID string
+	// PolicyRules: business policy rules (rule_type custom, the policy YAML in
+	// ast_condition_yaml), sent only to a proxy that announces cel/1.
+	PolicyRules []Rule
+	// Principals: the principals section, with PolicyRules.
+	Principals json.RawMessage
+	// AltPolicyRules: the business policy rules sent, instead of PolicyRules,
+	// to a proxy that announces cel/1 with an API key ending in AltKeySuffix.
+	AltPolicyRules []Rule
 }
+
+// AltKeySuffix selects Config.AltPolicyRules (an API key such as "enforce-pg-alt").
+const AltKeySuffix = "-alt"
+
+// Alt reports whether an API key selects the alternative policy set.
+func Alt(apiKey string) bool { return strings.HasSuffix(apiKey, AltKeySuffix) }
+
+// SanitizedKeyMarker in an API key (e.g. "enforce-pg-san") selects
+// telemetry_query_mode "sanitized" instead of "raw": the proxy then normalises
+// and redacts every statement before it builds the event.
+const SanitizedKeyMarker = "-san"
+
+// Sanitized reports whether an API key selects sanitized query telemetry.
+func Sanitized(apiKey string) bool { return strings.Contains(apiKey, SanitizedKeyMarker) }
+
+// PolicyLanguageHeader is the request header a proxy with business policies
+// on announces its policy language in.
+const PolicyLanguageHeader = "X-Vericto-Policy-Language"
+
+// SignatureHeader carries the bundle signature.
+const SignatureHeader = "X-Vericto-Bundle-Signature"
+
+// bundleDomain prefixes the signed digest's input (as vericto-fmw).
+const bundleDomain = "vericto-sync-bundle/1\n"
+
+// variant of a /sync/rules body: monitor mode, whether the proxy speaks the
+// policy language, whether its API key selects the alternative policy set, and
+// whether it selects sanitized query telemetry (SanitizedKeyMarker).
+type variant struct{ monitor, cel, alt, san bool }
 
 // DefaultSeverityActions is EnforcementPolicy::default() of vericto-engine.
 func DefaultSeverityActions() map[string]string {
@@ -82,9 +144,11 @@ type key struct{ apiKey, status string }
 
 // Server is the stub.
 type Server struct {
-	cfg    Config
-	bodies map[bool][]byte // monitor_mode -> response body
-	etags  map[bool]string
+	cfg        Config
+	bodies     map[variant][]byte
+	etags      map[variant]string
+	signatures map[variant]string // header value, with Config.Sign
+	publicKey  ed25519.PublicKey
 
 	mu         sync.Mutex
 	hists      map[key]*hdr.Histogram
@@ -107,28 +171,71 @@ func New(cfg Config) (*Server, error) {
 	if cfg.SeverityActions == nil {
 		cfg.SeverityActions = DefaultSeverityActions()
 	}
-	s := &Server{cfg: cfg, bodies: map[bool][]byte{}, etags: map[bool]string{}}
-	for _, monitor := range []bool{false, true} {
+	if cfg.KeyID == "" {
+		cfg.KeyID = "bench-ephemeral"
+	}
+	s := &Server{cfg: cfg, bodies: map[variant][]byte{}, etags: map[variant]string{}, signatures: map[variant]string{}}
+	var private ed25519.PrivateKey
+	if cfg.Sign {
+		public, priv, err := ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			return nil, err
+		}
+		s.publicKey, private = public, priv
+	}
+	var variants []variant
+	for _, san := range []bool{false, true} {
+		for _, v := range []variant{{false, false, false, san}, {true, false, false, san}, {false, true, false, san},
+			{true, true, false, san}, {false, true, true, san}, {true, true, true, san}} {
+			variants = append(variants, v)
+		}
+	}
+	for _, v := range variants {
+		if v.alt && len(cfg.AltPolicyRules) == 0 {
+			continue
+		}
+		mode := "raw"
+		if v.san {
+			mode = "sanitized"
+		}
+		rules := cfg.Rules.Rules
+		version := cfg.Rules.RulesetVersion
+		if v.alt {
+			rules = append(append([]Rule{}, rules...), cfg.AltPolicyRules...)
+			version += "+policies-alt"
+		} else if v.cel && len(cfg.PolicyRules) > 0 {
+			rules = append(append([]Rule{}, rules...), cfg.PolicyRules...)
+			version += "+policies"
+		}
 		body := map[string]any{
-			"version": cfg.Rules.RulesetVersion,
-			"rules":   cfg.Rules.Rules,
+			"version": version,
+			"rules":   rules,
 			"policy": map[string]any{
 				"severity_actions":     cfg.SeverityActions,
 				"parse_error_action":   "allow_report",
-				"monitor_mode":         monitor,
-				"telemetry_query_mode": "raw",
+				"monitor_mode":         v.monitor,
+				"telemetry_query_mode": mode,
 			},
 			"sensitive_columns": cfg.SensitiveColumns,
 			"agent_access":      map[string]any{},
 			"telemetry_quota":   "ok",
+		}
+		if v.cel && len(cfg.Principals) > 0 {
+			body["principals"] = cfg.Principals
 		}
 		b, err := json.Marshal(body)
 		if err != nil {
 			return nil, err
 		}
 		sum := sha256.Sum256(b)
-		s.bodies[monitor] = b
-		s.etags[monitor] = `"` + hex.EncodeToString(sum[:8]) + `"`
+		s.bodies[v] = b
+		s.etags[v] = `"` + hex.EncodeToString(sum[:8]) + `"`
+		if cfg.Sign {
+			digest := sha256.Sum256(append([]byte(bundleDomain), b...))
+			sig := ed25519.Sign(private, digest[:])
+			s.signatures[v] = fmt.Sprintf("scheme=ed25519-sha256; key-id=%s; sha256=%s; sig=%s",
+				cfg.KeyID, hex.EncodeToString(digest[:]), base64.StdEncoding.EncodeToString(sig))
+		}
 	}
 	s.reset()
 	return s, nil
@@ -161,6 +268,7 @@ func (s *Server) Handler() http.Handler {
 		w.WriteHeader(http.StatusNoContent)
 	})
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { _, _ = io.WriteString(w, "ok\n") })
+	mux.HandleFunc("/signing-keys", s.signingKeys)
 	return mux
 }
 
@@ -177,14 +285,46 @@ func (s *Server) sync(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	s.syncs++
 	s.mu.Unlock()
-	m := Monitor(apiKey)
-	w.Header().Set("ETag", s.etags[m])
-	if r.Header.Get("If-None-Match") == s.etags[m] {
+	v := variant{monitor: Monitor(apiKey), cel: strings.HasPrefix(r.Header.Get(PolicyLanguageHeader), "cel/1"),
+		san: Sanitized(apiKey)}
+	if v.cel && Alt(apiKey) && len(s.cfg.AltPolicyRules) > 0 {
+		v.alt = true
+	}
+	w.Header().Set("ETag", s.etags[v])
+	if r.Header.Get("If-None-Match") == s.etags[v] {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
+	if sig, ok := s.signatures[v]; ok {
+		w.Header().Set(SignatureHeader, sig)
+	}
 	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(s.bodies[m])
+	_, _ = w.Write(s.bodies[v])
+}
+
+// SigningKeysJSON is the proxy's VERICTO_BUNDLE_SIGNING_KEYS for this stub's
+// key; empty without Config.Sign.
+func (s *Server) SigningKeysJSON() (string, error) {
+	if s.publicKey == nil {
+		return "", nil
+	}
+	der, err := x509.MarshalPKIXPublicKey(s.publicKey)
+	if err != nil {
+		return "", err
+	}
+	pemKey := string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der}))
+	b, err := json.Marshal([]map[string]string{{"key_id": s.cfg.KeyID, "public_key": pemKey}})
+	return string(b), err
+}
+
+func (s *Server) signingKeys(w http.ResponseWriter, r *http.Request) {
+	keys, err := s.SigningKeysJSON()
+	if err != nil || keys == "" {
+		http.Error(w, `{"error":"not signing"}`, http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = io.WriteString(w, keys)
 }
 
 type ingestEvent struct {

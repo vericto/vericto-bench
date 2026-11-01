@@ -1,0 +1,140 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Release gate of vericto-proxy 4.17.3 (4.17.2 / patch 0066 plus: client->database
+# writes coalesced per client read, compact Parse/Bind commit bookkeeping, and
+# Execute re-evaluation only for time-dependent business policies), policies
+# off, against 4.17.0 (current Latest; the acceptance baseline), 4.16.2 (the
+# control) and the 4.17.2 candidate. The same curves, rates, repetitions and
+# durations as the 4.17.2 gate (proxy-4172-gate-{a,b}.toml, 2026-10-25) with
+# both candidates as targets; with five open-loop targets the stacks are split
+# so none runs longer than about 5 h (A1, A2, B1, B2; C1/C2 business policies
+# on). Not published.
+#
+# Fixed before the run: S pre-registered as in proxy-tail and the 4.17.1/4.17.2
+# gates (PostgreSQL W1 6,032.6/s, MySQL W3 356.6/s); targets direct, 4.16.2 and
+# 4.17.0 by digest (versions.lock), the 4.17.3 candidate (PROXY_IMAGE_OVERRIDE)
+# and the 4.17.2 candidate (PROXY_IMAGE_OVERRIDE_2), both built with the proxy's
+# Dockerfile (linux/arm64) into one bench-only registry, all with
+# VERICTO_POLICY_RULES=off; a Williams order per (repetition, rate).
+# Decision (owner, 2026-10-25): against 4.17.0, at most +3% CPU per transaction
+# and +0.05 ms p99 per cell below the knee; no p99 tail at 80-90% of S in the
+# 0.5x2c (Fargate) shape (added p99 in line with 4.17.0/4.16.2) and no collapse
+# at 90% one-core beyond 4.17.0's behaviour. 4.16.2 reported as the control.
+#
+# Stack B1: PostgreSQL W1 simple (closed loop 16/64; 30/50/80% of S, 5 x 60 s)
+# and prepared (closed loop 16/64), and one profile each of 4.17.0 and 4.17.3
+# in prepared mode at 50%.
+
+[suite]
+name = "proxy-4173-gate-b1"
+profile = "quick"
+order_seed = 2026102513
+reps = 5
+warmup_s = 15
+duration_s = 60
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-enforce-4170"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4162]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_16_2_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.16.2, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-4170]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_17_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.17.0, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-4172]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE_2"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.17.2 candidate (patch 0066 on 77ff155), VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-4173]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.17.3 candidate (on 77ff155, supersedes 0066), VERICTO_POLICY_RULES=off"
+
+[[curve]]
+id = "sat-pg-simple-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "simple"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4162", "vericto-enforce-4170", "vericto-enforce-4172", "vericto-enforce-4173"]
+loop = "closed"
+concurrency = [16, 64]
+warmup_s = 10
+duration_s = 30
+reps = 3
+
+[[curve]]
+id = "sat-pg-prep-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "prepared"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4162", "vericto-enforce-4170", "vericto-enforce-4172", "vericto-enforce-4173"]
+loop = "closed"
+concurrency = [16, 64]
+warmup_s = 10
+duration_s = 30
+reps = 3
+
+[[curve]]
+id = "gate-pg-simple-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "simple"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4162", "vericto-enforce-4170", "vericto-enforce-4172", "vericto-enforce-4173"]
+rates_pct = [30, 50, 80]
+saturation_qps = 6032.6
+
+[[curve]]
+id = "prof-pg-prep-4170"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "prepared"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4170"]
+rates_pct = [50]
+saturation_qps = 6032.6
+duration_s = 40
+reps = 1
+profile_s = 20
+
+[[curve]]
+id = "prof-pg-prep-4173"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "prepared"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4173"]
+rates_pct = [50]
+saturation_qps = 6032.6
+duration_s = 40
+reps = 1
+profile_s = 20

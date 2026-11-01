@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Release gate of the vericto-proxy 4.20.0 candidate (4.19.0's CPU work, PR #95,
+# + 4.20.0's parser-version warning + patch 0072; tree 26c4e770) against 4.18.0
+# (current Latest; the acceptance baseline), with the candidate built twice from
+# the same tree: plain (no PGO, PROXY_IMAGE_OVERRIDE_2) and PGO-trained as
+# release.yml does (PROXY_IMAGE_OVERRIDE). Not published.
+#
+# Fixed before the run: S pre-registered as in proxy-tail and the 4.17.x gates
+# (PostgreSQL W1 6,032.6/s, MySQL W3 356.6/s), other curves at fixed rates or at
+# a share of this run's closed-loop S of 4.18.0; a Williams order per
+# (repetition, rate). Decision (owner, 2026-10-28): CPU per transaction no worse
+# than 4.18.0 in any cell; p99 at 80/90% of S no worse than 4.18.0 + 0.05 ms; no
+# collapse at 90% of S on one core; PGO kept only if cheaper than plain.
+#
+# Stack G (optional, item 3 of 4.19.0): the PGO candidate built generic
+# (PROXY_IMAGE_OVERRIDE) against the same build with --build-arg
+# TARGET_CPU=neoverse-v1 (PROXY_IMAGE_OVERRIDE_2), on c7g (Graviton3, Neoverse
+# V1), with 4.18.0 for scale: PostgreSQL W1 extended 30/50/80% and prepared 50% of
+# S, MySQL W3 text 50/80% of S, one core at 0.5 vCPU (4 x 60 s).
+
+[suite]
+name = "proxy-420-graviton3"
+profile = "quick"
+order_seed = 2026102807
+reps = 5
+warmup_s = 15
+duration_s = 60
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-enforce-4180"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4180]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_18_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.18.0, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-pgo]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "candidate with PGO (release.yml), generic target"
+
+[variant.vericto-enforce-pgo-n1v1]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE_2"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "candidate with PGO and TARGET_CPU=neoverse-v1 (Graviton3 only)"
+
+[[curve]]
+id = "g3-pg-ext-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4180", "vericto-enforce-pgo", "vericto-enforce-pgo-n1v1"]
+rates_pct = [30, 50, 80]
+saturation_qps = 6032.6
+reps = 4
+
+[[curve]]
+id = "g3-pg-prep-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "prepared"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4180", "vericto-enforce-pgo", "vericto-enforce-pgo-n1v1"]
+rates_pct = [50]
+saturation_qps = 6032.6
+reps = 4
+
+[[curve]]
+id = "g3-my-w3-05"
+engine = "mysql"
+tool = "vbench"
+workload = "sysbench-ro"
+mode = "text"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4180", "vericto-enforce-pgo", "vericto-enforce-pgo-n1v1"]
+rates_pct = [50, 80]
+saturation_qps = 356.6
+reps = 4

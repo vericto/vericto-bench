@@ -1,0 +1,3 @@
+# 0.25 vCPU, run bench-2026-11-proxy-421-025-q
+curve,engine,target,size,n,slope,slope_lo,slope_hi,intercept,intercept_lo,intercept_hi,usd_per_month_per_1000qps_at_100pct,usd_per_month_per_1000qps_at_70pct,usd_per_month_per_1000qps_at_50pct
+head-pg-w1-025,pg,vericto-enforce,0.25,12,0.06929688794931199,0.06676596180558954,0.07182781409303444,0.009757569581628461,0.004846287535366489,0.014668851627890434,1.6379982592130673,2.3399975131615247,3.2759965184261346

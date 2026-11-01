@@ -1,0 +1,118 @@
+# SPDX-FileCopyrightText: 2026 Vericto S.A.S.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Release gate of the vericto-proxy 4.20.0 candidate (4.19.0's CPU work, PR #95,
+# + 4.20.0's parser-version warning + patch 0072; tree 26c4e770) against 4.18.0
+# (current Latest; the acceptance baseline), with the candidate built twice from
+# the same tree: plain (no PGO, PROXY_IMAGE_OVERRIDE_2) and PGO-trained as
+# release.yml does (PROXY_IMAGE_OVERRIDE). Not published.
+#
+# Fixed before the run: S pre-registered as in proxy-tail and the 4.17.x gates
+# (PostgreSQL W1 6,032.6/s, MySQL W3 356.6/s), other curves at fixed rates or at
+# a share of this run's closed-loop S of 4.18.0; a Williams order per
+# (repetition, rate). Decision (owner, 2026-10-28): CPU per transaction no worse
+# than 4.18.0 in any cell; p99 at 80/90% of S no worse than 4.18.0 + 0.05 ms; no
+# collapse at 90% of S on one core; PGO kept only if cheaper than plain.
+#
+# Stack B1: PostgreSQL W1 prepared: closed loop at 16/64, 30/50/80% of S (5 x 60 s);
+# PostgreSQL W2 TPC-B (pgbench tpcb-like: BEGIN, 3 UPDATE, SELECT, INSERT, END; the
+# trivial-statement fast path) in the extended protocol: closed loop at 16 for this
+# run's S (4.18.0), then 50/80% of it (4 x 60 s, 16 connections), with the fast path
+# switched off on the PGO candidate as a fifth target.
+
+[suite]
+name = "proxy-420-gate-b1"
+profile = "quick"
+order_seed = 2026102803
+reps = 5
+warmup_s = 15
+duration_s = 60
+cooldown_s = 10
+interval_s = 10
+saturation_target = "vericto-enforce-4180"
+
+[datasets]
+pgbench_scale = 100
+sysbench_tables = 8
+sysbench_rows = 1000000
+payload_rows = 10000
+
+[variant.vericto-enforce-4180]
+base = "vericto-enforce"
+image = "VERICTO_PROXY_4_18_0_IMAGE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "4.18.0, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-plain]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE_2"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "candidate 26c4e770 without PGO, VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-pgo]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off" }
+label = "candidate 26c4e770 with PGO (release.yml), VERICTO_POLICY_RULES=off"
+
+[variant.vericto-enforce-pgo-fpoff]
+base = "vericto-enforce"
+image = "PROXY_IMAGE_OVERRIDE"
+env = { VERICTO_POLICY_RULES = "off", VERICTO_TRIVIAL_FAST_PATH = "off" }
+label = "candidate with PGO, VERICTO_TRIVIAL_FAST_PATH=off"
+
+[[curve]]
+id = "sat-pg-prep-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "prepared"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4180", "vericto-enforce-plain", "vericto-enforce-pgo"]
+concurrency = [16, 64]
+loop = "closed"
+warmup_s = 10
+duration_s = 30
+reps = 3
+
+[[curve]]
+id = "gate-pg-prep-05"
+engine = "pg"
+tool = "pgbench"
+workload = "select-only"
+mode = "prepared"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4180", "vericto-enforce-plain", "vericto-enforce-pgo"]
+rates_pct = [30, 50, 80]
+saturation_qps = 6032.6
+
+[[curve]]
+id = "sat-pg-tpcb-05"
+engine = "pg"
+tool = "pgbench"
+workload = "tpcb-like"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["vericto-enforce-4180", "vericto-enforce-plain", "vericto-enforce-pgo"]
+concurrency = [16]
+loop = "closed"
+warmup_s = 10
+duration_s = 30
+reps = 3
+
+[[curve]]
+id = "gate-pg-tpcb-05"
+engine = "pg"
+tool = "pgbench"
+workload = "tpcb-like"
+mode = "extended"
+tls = true
+size = "0.5"
+targets = ["direct", "vericto-enforce-4180", "vericto-enforce-plain", "vericto-enforce-pgo", "vericto-enforce-pgo-fpoff"]
+rates_pct = [50, 80]
+saturation_from = "sat-pg-tpcb-05"
+conns = 16
+reps = 4
