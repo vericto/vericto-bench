@@ -1,0 +1,99 @@
+{
+  "banner": null,
+  "runs": [
+    "bench-2026-11-proxy-421-025-r"
+  ],
+  "profiles": [
+    "published"
+  ],
+  "cells": 19,
+  "used": 18,
+  "invalid": 0,
+  "deltas": [
+    {
+      "curve": "head-my-w3-025",
+      "engine": "mysql",
+      "target": "vericto-enforce",
+      "offered_rate": 35.7,
+      "rate_pct": 10.0,
+      "n": 3,
+      "added_p50_ms": 1.1760000000000002,
+      "added_p50_lo": 1.140170364817189,
+      "added_p50_hi": 1.2118296351828113,
+      "p50_note": "",
+      "added_p99_ms": 1.2800000000000002,
+      "added_p99_lo": 1.2627880000000002,
+      "added_p99_hi": 1.2972120000000003,
+      "p99_note": "",
+      "added_p999_ms": 2.274,
+      "added_p999_lo": 2.2023407296343778,
+      "added_p999_hi": 2.3456592703656223,
+      "p999_note": ""
+    },
+    {
+      "curve": "head-my-w3-025",
+      "engine": "mysql",
+      "target": "vericto-enforce",
+      "offered_rate": 107,
+      "rate_pct": 30.0,
+      "n": 3,
+      "added_p50_ms": 1.164666666666667,
+      "added_p50_lo": 1.0154960000000006,
+      "added_p50_hi": 1.3138373333333333,
+      "p50_note": "",
+      "added_p99_ms": 1.7100000000000002,
+      "added_p99_lo": 1.515458709791469,
+      "added_p99_hi": 1.9045412902085315,
+      "p99_note": "",
+      "added_p999_ms": 8.816666666666666,
+      "added_p999_lo": 6.554710721339604,
+      "added_p999_hi": 11.07862261199373,
+      "p999_note": ""
+    },
+    {
+      "curve": "head-my-w3-025",
+      "engine": "mysql",
+      "target": "vericto-enforce",
+      "offered_rate": 178.3,
+      "rate_pct": 50.0,
+      "n": 3,
+      "added_p50_ms": 1.1520000000000001,
+      "added_p50_lo": 1.1095476100869062,
+      "added_p50_hi": 1.194452389913094,
+      "p50_note": "",
+      "added_p99_ms": 2.1453333333333333,
+      "added_p99_lo": 2.025534296245754,
+      "added_p99_hi": 2.2651323704209125,
+      "p99_note": "",
+      "added_p999_ms": 41.300000000000004,
+      "added_p999_lo": 39.04420449057071,
+      "added_p999_hi": 43.555795509429295,
+      "p999_note": ""
+    }
+  ],
+  "cpu_fits": [
+    {
+      "curve": "head-my-w3-025",
+      "engine": "mysql",
+      "target": "vericto-enforce",
+      "size": "0.25",
+      "n": 9,
+      "slope": 0.06438973243107675,
+      "slope_lo": 0.06183877101264901,
+      "slope_hi": 0.06694069384950449,
+      "intercept": 0.004390202946847027,
+      "intercept_lo": -0.0005815146338857555,
+      "intercept_hi": 0.009361920527579809,
+      "usd_per_month_per_1000qps_at_100pct": 1.5220058613663334,
+      "usd_per_month_per_1000qps_at_70pct": 2.174294087666191,
+      "usd_per_month_per_1000qps_at_50pct": 3.044011722732667
+    }
+  ],
+  "validation": [],
+  "aborted_by_cap": [],
+  "charts": [],
+  "label": "0.25 vCPU, run bench-2026-11-proxy-421-025-r",
+  "size_fits": [],
+  "large_results": [],
+  "large_results_cpu_fits": []
+}

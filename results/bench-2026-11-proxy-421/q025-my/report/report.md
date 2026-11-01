@@ -1,0 +1,54 @@
+**0.25 vCPU, run bench-2026-11-proxy-421-025-r.**
+
+# vericto-bench report: pub421-025-my
+
+| Run | Profile | Topology | Proxy image | Harness commit | Started | Finished |
+| --- | --- | --- | --- | --- | --- | --- |
+| bench-2026-11-proxy-421-025-r | published | two-host | `<bench-account>.dkr.ecr.us-east-1.amazonaws.com/vericto-bench/proxy-421-025:4.21.0@sha256:7cca34697f61cf2baadb85a963520813ef108f10ad379906ffffb60b860c3bfd` | `0f90258` | 2026-10-31T23:28:54.268232+00:00 | 2026-11-01T01:30:08.115511+00:00 |
+
+Cells: 19 recorded, 18 used, 0 invalid (listed at the end, not used).
+
+## Added latency (open loop, from intended send time; target minus direct, paired)
+
+| Curve | Target | Rate/s | % of S | n | added p50 ms [95%] | added p99 ms [95%] | added p99.9 ms [95%] | Note |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| head-my-w3-025 | vericto-enforce | 36 | 10 | 3 | 1.176 [1.140, 1.212] | 1.280 [1.263, 1.297] | 2.274 [2.202, 2.346] |  |
+| head-my-w3-025 | vericto-enforce | 107 | 30 | 3 | 1.165 [1.015, 1.314] | 1.710 [1.515, 1.905] | 8.817 [6.555, 11.079] |  |
+| head-my-w3-025 | vericto-enforce | 178 | 50 | 3 | 1.152 [1.110, 1.194] | 2.145 [2.026, 2.265] | 41.300 [39.044, 43.556] |  |
+
+## Every cell
+
+| Cell | Status | Achieved/s | p50 ms | p99 ms | p99.9 ms | max ms | proxy vCPU | max aggregate Mbps |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| head-my-w3-025.vericto-enforce.r35.7.rep0.netprobe | ok | 35.7 | 3.907 | 4.515 | 5.647 | 5.647 | 0.039 | 62.4 |
+| head-my-w3-025.direct.r178.3.rep1 | ok | 178.3 | 2.635 | 3.203 | 3.297 | 3.441 | - | 185.5 |
+| head-my-w3-025.vericto-enforce.r178.3.rep1 | ok | 178.3 | 3.789 | 5.343 | 45.503 | 68.671 | 0.190 | 325.1 |
+| head-my-w3-025.vericto-enforce.r107.rep1 | ok | 107.0 | 3.851 | 4.987 | 13.239 | 41.311 | 0.118 | 195.9 |
+| head-my-w3-025.direct.r107.rep1 | ok | 107 | 2.625 | 3.189 | 3.371 | 4.455 | - | 111.4 |
+| head-my-w3-025.direct.r35.7.rep1 | ok | 35.7 | 2.727 | 3.307 | 3.417 | 3.585 | - | 51.4 |
+| head-my-w3-025.vericto-enforce.r35.7.rep1 | ok | 35.7 | 3.919 | 4.583 | 5.683 | 14.407 | 0.041 | 72.6 |
+| head-my-w3-025.vericto-enforce.r178.3.rep2 | ok | 178.3 | 3.757 | 5.287 | 43.679 | 73.279 | 0.182 | 308.2 |
+| head-my-w3-025.direct.r178.3.rep2 | ok | 178.3 | 2.623 | 3.187 | 3.289 | 7.239 | - | 199.9 |
+| head-my-w3-025.direct.r35.7.rep2 | ok | 35.7 | 2.703 | 3.271 | 3.385 | 3.517 | - | 48.3 |
+| head-my-w3-025.vericto-enforce.r35.7.rep2 | ok | 35.7 | 3.875 | 4.559 | 5.691 | 11.151 | 0.040 | 62.5 |
+| head-my-w3-025.vericto-enforce.r107.rep2 | ok | 107 | 3.817 | 4.915 | 11.647 | 35.039 | 0.113 | 198.9 |
+| head-my-w3-025.direct.r107.rep2 | ok | 107 | 2.711 | 3.267 | 3.359 | 4.727 | - | 123.5 |
+| head-my-w3-025.direct.r35.7.rep3 | ok | 35.7 | 2.727 | 3.307 | 3.457 | 4.299 | - | 37.6 |
+| head-my-w3-025.vericto-enforce.r35.7.rep3 | ok | 35.7 | 3.891 | 4.583 | 5.707 | 13.519 | 0.040 | 77.7 |
+| head-my-w3-025.vericto-enforce.r107.rep3 | ok | 107 | 3.845 | 4.931 | 11.647 | 39.007 | 0.117 | 197.3 |
+| head-my-w3-025.direct.r107.rep3 | ok | 107 | 2.683 | 3.247 | 3.353 | 3.557 | - | 111.6 |
+| head-my-w3-025.direct.r178.3.rep3 | ok | 178.3 | 2.631 | 3.211 | 3.303 | 4.527 | - | 200.6 |
+| head-my-w3-025.vericto-enforce.r178.3.rep3 | ok | 178.3 | 3.799 | 5.407 | 44.607 | 66.303 | 0.190 | 330.4 |
+
+## Proxy CPU per 1,000 QPS (linear fit, open-loop cells below 80% of S)
+
+| Curve | Target | Size | n | vCPU per 1,000 QPS [95%] | intercept vCPU | USD/month per 1,000 QPS at 70% utilisation |
+| --- | --- | --- | --- | --- | --- | --- |
+| head-my-w3-025 | vericto-enforce | 0.25 | 9 | 0.0644 [0.0618, 0.0669] | 0.0044 | 2.17 |
+
+## Network traffic (caps: 400 Mbps per component, 800 Mbps aggregate)
+
+Cells aborted by a cap: 0. Per-cell maxima are in traffic.csv; bytes/s per direction over each measured window in traffic_directions.csv.
+
+## Charts
+

@@ -73,3 +73,48 @@ their `SHA256SUMS` (in each run directory here). Available on request:
 | `bench-2026-11-proxy-421-m/` | 8,131,640 + 996,970 |
 | `bench-2026-11-proxy-421-d2/` | 449,315,334 + 776,313 |
 | `bench-2026-11-proxy-421-h2/` | 1,541,520,459 + 1,926,222 |
+| `bench-2026-11-proxy-421-025-q/` | 456,759,561 + 1,490,002 |
+| `bench-2026-11-proxy-421-025-r/` | 2,201,576 + 446,572 |
+
+## 0.25 vCPU (runs of 2026-10-31/11-01)
+
+Owner request of 2026-10-31: the same published image and conditions (published profile, c7g,
+TLS on both legs, enforce mode, 42 built-in rules, open loop, 3 interleaved repetitions of 300 s,
+60 s warm-up), with the proxy's CPU quota at **0.25 vCPU** (one Graviton3 core, 25% CFS quota;
+the runner's new size `0.25`). Two stacks, each in its own VPC (us-east-1c, us-east-1d).
+
+| Directory | Run | Suite | What |
+| --- | --- | --- | --- |
+| `q025-pg/` | bench-2026-11-proxy-421-025-q | `pub421-025-pg` | PostgreSQL: closed-loop saturation of vericto-enforce at 0.25 vCPU (S = 4,237.1/s at 2 connections; the quota was already full at 1 connection: 4,137.2/s), then the headline curve at 10-100% of that S against direct, 3 repetitions |
+| `q025-my/` | bench-2026-11-proxy-421-025-r | `pub421-025-my` | MySQL W3 oltp_read_only at the published rates that fit under the quota: 36, 107 and 178 transactions/s (10/30/50% of the pre-registered S = 356.6 tx/s), against direct, 3 repetitions |
+| `report-q025/` | both | | `analysis/report.py --publishable --label "0.25 vCPU"` over `q025-pg` and `q025-my` |
+
+Budget trims (fixed in the suites before the runs): no HAProxy baseline and no generator
+validation (both independent of the proxy's quota, measured in `day1-pg/`); MySQL stops at 50%
+of the published S, because 250 tx/s would need about 0.24 vCPU, the whole quota.
+
+Validity: steal 0% on every host; no cell aborted. PostgreSQL 90%: one not-steady repetition,
+replaced by its valid rerun. PostgreSQL 100%: one repetition saturated, the others and their
+reruns not steady (the end of the curve). As for 0.5 vCPU, latency is quoted up to 70% of S:
+at 80% the added p99 was 13.7 ms with an interval crossing zero (the quota's knee).
+
+| Rate | Share of S | Proxy vCPU (share of quota) | Added p50 ms [95%] | Added p99 ms [95%] |
+| --- | --- | --- | --- | --- |
+| PostgreSQL 424/s | 10% | 0.038 (15%) | 0.096 [0.093, 0.099] | 0.14 [0.13, 0.16] |
+| PostgreSQL 1,271/s | 30% | 0.099 (40%) | 0.086 [0.080, 0.091] | 0.14 [0.13, 0.16] |
+| PostgreSQL 2,119/s | 50% | 0.155 (62%) | 0.083 [0.079, 0.086] | 0.27 [0.25, 0.30] |
+| PostgreSQL 2,966/s | 70% | 0.215 (86%) | 0.083 [0.079, 0.087] | 0.94 [0.60, 1.29] |
+| MySQL 36 tx/s | 10% of 356.6 | 0.040 (16%) | 1.18 [1.14, 1.21] per tx | 1.28 [1.26, 1.30] |
+| MySQL 107 tx/s | 30% of 356.6 | 0.115 (46%) | 1.16 [1.02, 1.31] per tx | 1.71 [1.52, 1.90] |
+| MySQL 178 tx/s | 50% of 356.6 | 0.187 (75%) | 1.15 [1.11, 1.19] per tx | 2.15 [2.03, 2.27] |
+
+CPU fit (open-loop cells below 80% of S): PostgreSQL 0.0098 + 0.069 [0.067, 0.072] vCPU per
+1,000 statements/s; MySQL 0.0044 + 0.064 [0.062, 0.067] per 1,000 statements/s.
+
+Proxy memory (container cgroup, sampled every 30 s on the SUT as for day 1): peak 20.2 MiB on
+PostgreSQL (64 client connections, up to 100% of S), 15.0 MiB on MySQL.
+
+Harness commit recorded at run time: `0f90258` ("runner, suites: a 0.25 vCPU size ...", the
+commit of the patch that adds this section; match it by message after `git am`). Proxy image:
+the same digest as the other runs, copied to a separate bench-only ECR repository
+(`vericto-bench/proxy-421-025`), deleted after the runs.
