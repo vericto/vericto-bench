@@ -135,18 +135,26 @@ benchmark must never reach 1 Gbps:
 | Each component (a host's interface, an intermediary's both hops plus telemetry, the database's port) | 400 Mbps | 300 Mbps |
 | **Aggregate of every component running at the same time** | **800 Mbps** | 600 Mbps |
 
-The same bytes are counted at every interface they cross: a byte relayed by the
-proxy counts at the load generator's NIC, at the SUT's NIC, twice at the proxy
-(in and out) and at the database. `hostmon sample` reads interface counters,
-nftables counters per port and direction, and cgroup CPU once a second on every
-host; `hostmon guard` aborts the cell (vbench exits 9; pgbench and sysbench are
-stopped) after three consecutive one-second samples above a hard cap, records
-`aborted: network cap`, and the runner runs no higher rate of that curve. Before
-every open-loop curve, a 10-s probe measures bytes per request at each component
-and `hostmon preflight` refuses the curve if any planned rate would pass a design
-target, printing the highest rate that fits: rates are reduced, never the margin.
-No iperf or bandwidth test of any kind is part of the harness. Why the caps
-exist and what is reported instead of high traffic: [METHODOLOGY.md, section 9](METHODOLOGY.md#9-network-traffic-caps).
+Traffic is counted at every interface it crosses. A byte relayed by the proxy is
+counted five times: at the load generator's NIC, at the SUT's NIC, twice at the
+proxy (in and out), and at the database.
+
+- **Measurement.** `hostmon sample` reads interface counters, nftables counters
+  per port and direction, and cgroup CPU once a second on every host.
+- **Hard cap.** If three consecutive one-second samples exceed a hard cap,
+  `hostmon guard` aborts the cell: vbench exits with status 9, and pgbench and
+  sysbench are stopped. The cell is recorded as `aborted: network cap`, and the
+  runner skips every higher rate of that curve.
+- **Design target.** Before each open-loop curve, a 10-second probe measures
+  bytes per request at each component. `hostmon preflight` refuses the curve if
+  any planned rate would exceed a design target, and prints the highest rate
+  that fits. A curve that does not fit gets lower rates; the targets are never
+  raised.
+
+The harness runs no iperf or other bandwidth test.
+[METHODOLOGY.md, section 9](METHODOLOGY.md#9-network-traffic-caps) explains why
+the caps exist and what is reported instead of high-traffic results.
+
 
 ## Quick start: laptop smoke (NOT FOR PUBLISHED NUMBERS)
 
