@@ -155,6 +155,7 @@ The harness runs no iperf or other bandwidth test.
 [METHODOLOGY.md, section 9](METHODOLOGY.md#9-network-traffic-caps) explains why
 the caps exist and what is reported instead of high-traffic results.
 
+
 ## Quick start: laptop smoke (NOT FOR PUBLISHED NUMBERS)
 
 Needs Docker (with Compose) and about 4 GB of memory for Docker.
